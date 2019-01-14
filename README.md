@@ -34,3 +34,9 @@ def lambda_handler(event, context):
 
 ```
 
+## Todo
+
+- WebSocket support through API Gateway
+- Chunked responses/streaming
+- Tests
+- Detailed instructions
