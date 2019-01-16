@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
-    description="A brief description.",
+    description="ASGI to AWS Lambda adapter",
     long_description=get_long_description(),
     install_requires=[],
     long_description_content_type="text/markdown",
