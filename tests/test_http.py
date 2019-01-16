@@ -24,4 +24,9 @@ def test_asgi_response():
         "queryStringParameters": None,
     }
     response = asgi_response(App, event, {})
-    print(response)
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain"},
+        "body": "Hello, world!",
+    }
