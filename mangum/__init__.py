@@ -76,7 +76,6 @@ def asgi_response(app, event, context):
     scheme = headers.get("X-Forwarded-Proto", "http")
     method = event["httpMethod"]
     path = event["path"]
-
     host = headers.get("Host")
     x_forwarded_port = headers.get("X-Forwarded-Port")
 
