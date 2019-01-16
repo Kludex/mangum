@@ -1,5 +1,6 @@
 import asyncio
 import enum
+import urllib.parse
 
 
 class ASGICycleState(enum.Enum):
@@ -75,10 +76,20 @@ def asgi_response(app, event, context):
     scheme = headers.get("X-Forwarded-Proto", "http")
     method = event["httpMethod"]
     path = event["path"]
-    server = None
-    client = None
-    query_string = event["queryStringParameters"]
 
+    host = headers.get("Host")
+    x_forwarded_port = headers.get("X-Forwarded-Port")
+
+    if not any((host, x_forwarded_port)):
+        server = None
+    else:
+        server = (host, int(x_forwarded_port))
+
+    client = headers.get("X-Forwarded-For", None)
+    if client:
+        client = client.split(", ")[-2]
+
+    query_string = event["queryStringParameters"]
     if query_string:
         query_string = urllib.parse.urlencode(query_string)
 
