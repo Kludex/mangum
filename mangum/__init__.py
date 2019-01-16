@@ -84,9 +84,8 @@ def asgi_response(app, event, context):
     else:
         server = (host, int(x_forwarded_port))
 
-    client = headers.get("X-Forwarded-For", None)
-    if client:
-        client = client.split(", ")[-2]
+    # client = headers.get("X-Forwarded-For", None)
+    client = None
 
     query_string = event["queryStringParameters"]
     if query_string:
