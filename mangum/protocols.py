@@ -1,7 +1,6 @@
 import asyncio
 import enum
 import urllib.parse
-import base64
 
 
 class ASGICycleState(enum.Enum):

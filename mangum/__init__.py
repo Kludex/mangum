@@ -6,23 +6,23 @@ from mangum.protocols import ASGIHTTPCycle, ASGIWebSocketCycle
 
 
 def asgi_handler(app, event, context):
-
     headers = event["headers"] or {}
     host = headers.get("Host")
+    scheme = headers.get("X-Forwarded-Proto", "http")
     x_forwarded_port = headers.get("X-Forwarded-Port")
+
     if not any((host, x_forwarded_port)):
         server = None
     else:
         server = (host, int(x_forwarded_port))
-    # client = headers.get("X-Forwarded-For", None)
-    client = None
+
+    client = None  # client = headers.get("X-Forwarded-For", None)
 
     query_string_params = event["queryStringParameters"]
     if query_string_params:
         query_string = urllib.parse.urlencode(query_string_params).encode("ascii")
     else:
         query_string = ""
-    scheme = headers.get("X-Forwarded-Proto", "http")
 
     is_websocket = "Sec-WebSocket-Key" in headers
     loop = asyncio.get_event_loop()
@@ -61,11 +61,9 @@ def asgi_handler(app, event, context):
         )
 
     else:
-
         request_context = event["requestContext"]
         route_key = request_context["routeKey"]
         connection_id = request_context["connectionId"]
-
         # headers["Sec-WebSocket-Extensions"] # ["permessage-deflate; " "client_max_window_bits"]
         # headers["Sec-WebSocket-Key"] # ["XXXXX"],
 
@@ -77,7 +75,7 @@ def asgi_handler(app, event, context):
             "server": server,
             "client": client,
             "root_path": "",
-            "path": unquote(path_portion),
+            "path": "",
             "query_string": query_string,
             "headers": headers.items(),
             "subprotocols": subprotocols,
