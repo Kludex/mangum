@@ -1,10 +1,14 @@
 # mangum
 
-An attempt to provide simple AWS Lambda support to any ASGI application.
+An attempt to provide simple AWS Lambda/API Gateway support to any ASGI application.
 
 Work in progress.
 
-## Example
+## Examples
+
+### Plain ASGI
+
+Below is a basic ASGI application that returns a "hello world" response:
 
 ```python
 from mangum import asgi_response
@@ -32,9 +36,31 @@ def lambda_handler(event, context):
 
 ```
 
+### Starlette
+
+Here is another example, this time using [Starlette](https://github.com/encode/starlette/), to demonstrate that the response method can be used with frameworks as well:
+
+```python
+from mangum import asgi_response
+from starlette.applications import Starlette
+from starlette.responses import PlainTextResponse
+
+app = Starlette()
+
+@app.route("/")
+def homepage(request):
+    return PlainTextResponse("Hello, world!")
+
+def lambda_handler(event, context):
+    return asgi_response(app, event, context)
+
+```
+
 ## Todo
 
 - WebSocket support through API Gateway
 - Chunked responses/streaming
-- Tests
+- More tests
 - Detailed instructions
+- More framework examples
+- Lots

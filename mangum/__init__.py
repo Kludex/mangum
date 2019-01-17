@@ -1,10 +1,10 @@
 import asyncio
 import enum
 import urllib.parse
+import base64
 
 
 class ASGICycleState(enum.Enum):
-
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
     CLOSED = enum.auto()
@@ -20,16 +20,13 @@ class ASGICycle:
     def put_message(self, message) -> None:
         if self.state is ASGICycleState.CLOSED:
             return
-
         self.app_queue.put_nowait(message)
 
     async def receive(self) -> dict:
         message = await self.app_queue.get()
-
         return message
 
     async def send(self, message) -> None:
-
         message_type = message["type"]
 
         if self.state is ASGICycleState.REQUEST:
@@ -41,6 +38,8 @@ class ASGICycle:
             status_code = message["status"]
             headers = message.get("headers", [])
 
+            # We have received the headers and can now begin populating the initial part
+            # of the response.
             self.response["statusCode"] = message["status"]
             self.response["isBase64Encoded"] = False
             self.response["headers"] = {
@@ -54,20 +53,23 @@ class ASGICycle:
                     f"Expected 'http.response.body', received: {message_type}"
                 )
 
-            body = message["body"].decode("utf-8")
-            more_body = message.get("more_body")
+            # Handle setting the body in the response and complete the response.
+            body = message["body"]
+            if isinstance(body, bytes):
+                body = body.decode("utf-8")
 
-            self.response["body"] = message["body"].decode("utf-8")
+            self.response["body"] = body
 
-            if not more_body:
-                self.state = ASGICycleState.CLOSED
+            # TODO: Currently only handle sending a single body response, so this will
+            # always be closed.
+            # more_body = message.get("more_body")
+            # if not more_body:
+            #     self.state = ASGICycleState.CLOSED
+
+            self.state = ASGICycleState.CLOSED
 
         if self.state is ASGICycleState.CLOSED:
             self.put_message({"type": "http.disconnect"})
-        # body = event["body"]
-        # if event["isBase64Encoded"]:
-        #     body = base64.standard_b64decode(body)
-        # return {"type": "http.request", "body": body, "more_body": False}
 
 
 def asgi_response(app, event, context):
@@ -79,6 +81,7 @@ def asgi_response(app, event, context):
     host = headers.get("Host")
     x_forwarded_port = headers.get("X-Forwarded-Port")
 
+    # Build the server key based on the listening address and port, default to None.
     if not any((host, x_forwarded_port)):
         server = None
     else:
@@ -87,9 +90,21 @@ def asgi_response(app, event, context):
     # client = headers.get("X-Forwarded-For", None)
     client = None
 
-    query_string = event["queryStringParameters"]
-    if query_string:
-        query_string = urllib.parse.urlencode(query_string)
+    body = b""
+    more_body = False
+    # TODO
+    # body = event.get("body", b"")
+    # more_body = False
+    # if body and event.get("isBase64Encoded"):
+    #     body = base64.standard_b64decode(body)
+
+    # If the query parameters are provided, then we need to encode them to bytes per the
+    # ASGI spec, otherwise send empty bytes.
+    query_string_params = event["queryStringParameters"]
+    if query_string_params:
+        query_string = urllib.parse.urlencode(query_string_params).encode()
+    else:
+        query_string = b""
 
     scope = {
         "type": "http",
@@ -105,10 +120,16 @@ def asgi_response(app, event, context):
     }
 
     loop = asyncio.get_event_loop()
+
+    # Create the ASGI cycle task using the scope built from the event with the app.
     asgi_cycle = ASGICycle(scope)
     asgi_instance = app(asgi_cycle.scope)
     asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
-    asgi_cycle.put_message({"type": "http.request", "body": b""})
+
+    # Send the initial HTTP request message, optionally send the body data
+    asgi_cycle.put_message(
+        {"type": "http.request", "body": body, "more_body": more_body}
+    )
     loop.run_until_complete(asgi_task)
 
     return asgi_cycle.response
