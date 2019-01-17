@@ -68,10 +68,12 @@ class ASGIHTTPCycle:
 
 
 class ASGIWebSocketCycle:
-    def __init__(self, scope):
+    def __init__(self, scope, connections_url, connection_id):
         self.scope = scope
         self.app_queue = asyncio.Queue()
         self.state = ASGICycleState.REQUEST
+        self.connections_url = connections_url
+        self.connection_id = connection_id
         self.response = {}
 
     def put_message(self, message) -> None:
@@ -85,30 +87,28 @@ class ASGIWebSocketCycle:
 
     async def send(self, message) -> None:
         message_type = message["type"]
+        from pprint import pprint
 
-        if self.state is ASGICycleState.CLOSED:
-            raise RuntimeError(f"Unexpected message, ASGIConnection is closed.")
+        pprint(message)
 
-        if self.state == ASGICycleState.REQUEST:
-            # subprotocol = message.get("subprotocol", None)
-            # if subprotocol is not None:
-            #     self.handshake_headers.append(
-            #         (b"Sec-WebSocket-Protocol", subprotocol.encode("utf-8"))
-            #     )
+        if message_type == "websocket.accept":
+            # handle connections
+            print("accept")
 
-            accept = message_type == "websocket.accept"
-            close = message_type == "websocket.close"
+            self.state = ASGICycleState.RESPONSE
 
-            if accept or close:
-                # accept()
-                self.state = ASGICycleState.RESPONSE
-            else:
-                # reject()
-                self.state = ASGICycleState.CLOSED
+        elif message_type == "websocket.send":
+            # handle send
+            print("send")
 
-        if self.state is ASGICycleState.RESPONSE:
-            print("do a thing")
+            if "bytes" in message:
+                data = message["bytes"]
 
-        if message_type == "websocket.close":
-            code = message.get("code", 1000)
-            self.state = ASGICycleState.CLOSED
+            if "text" in message:
+                data = message["text"]
+
+            print(data)
+
+        elif message_type == "websocket.close":
+            # handle close
+            print("close")

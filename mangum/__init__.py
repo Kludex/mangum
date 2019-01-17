@@ -6,6 +6,7 @@ from mangum.protocols import ASGIHTTPCycle, ASGIWebSocketCycle
 
 
 def asgi_handler(app, event, context):
+
     headers = event["headers"] or {}
     host = headers.get("Host")
     scheme = headers.get("X-Forwarded-Proto", "http")
@@ -18,8 +19,8 @@ def asgi_handler(app, event, context):
 
     client = None  # client = headers.get("X-Forwarded-For", None)
 
-    query_string_params = event["queryStringParameters"]
-    if query_string_params:
+    if "queryStringParameters" in event:
+        query_string_params = event["queryStringParameters"]
         query_string = urllib.parse.urlencode(query_string_params).encode("ascii")
     else:
         query_string = ""
@@ -55,18 +56,24 @@ def asgi_handler(app, event, context):
         )
 
     else:
+
+        subprotocols = None
+
         request_context = event["requestContext"]
+        stage = request_context["stage"]
         route_key = request_context["routeKey"]
         connection_id = request_context["connectionId"]
-        # headers["Sec-WebSocket-Extensions"] # ["permessage-deflate; " "client_max_window_bits"]
-        # headers["Sec-WebSocket-Key"] # ["XXXXX"],
-        # endpoint = f"{event['requestContext']['domainName']}/{event['requestContext']['stage']}"
-        subprotocols = None
+        domain_name = request_context["domainName"]
+        endpoint = f"{domain_name}/{stage}"
+        connections_url = f"{endpoint}/@connections"
+
         scheme = "wss" if scheme == "https" else "ws"
         scope.update(
             {"type": "websocket", "scheme": scheme, "subprotocols": subprotocols}
         )
-        asgi_cycle = ASGIWebSocketCycle(scope)
+        asgi_cycle = ASGIWebSocketCycle(
+            scope, connections_url=connections_url, connection_id=connection_id
+        )
         asgi_cycle.put_message({"type": "websocket.connect"})
 
     asgi_instance = app(asgi_cycle.scope)
