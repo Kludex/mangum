@@ -2,7 +2,7 @@
 
 An attempt to provide simple AWS Lambda/API Gateway support to any ASGI application.
 
-Work in progress.
+Work in progress. Things will be broken and changing a lot.
 
 ## Examples
 
@@ -11,7 +11,7 @@ Work in progress.
 Below is a basic ASGI application that returns a "hello world" response:
 
 ```python
-from mangum import asgi_response
+from mangum import asgi_handler
 
 
 class App:
@@ -32,7 +32,7 @@ class App:
 
 
 def lambda_handler(event, context):
-    return asgi_response(App, event, context)
+    return asgi_handler(App, event, context)
 
 ```
 
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
 Here is another example, this time using [Starlette](https://github.com/encode/starlette/), to demonstrate that the response method can be used with frameworks as well:
 
 ```python
-from mangum import asgi_response
+from mangum import asgi_handler
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 
@@ -52,7 +52,7 @@ def homepage(request):
     return PlainTextResponse("Hello, world!")
 
 def lambda_handler(event, context):
-    return asgi_response(app, event, context)
+    return asgi_handler(app, event, context)
 
 ```
 

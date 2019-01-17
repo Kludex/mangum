@@ -3,7 +3,7 @@ import asyncio
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 
-from mangum import asgi_response
+from mangum import asgi_handler
 
 
 REQUEST_EVENT = {
@@ -74,7 +74,7 @@ def test_asgi_response() -> None:
                 )
                 await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    response = asgi_response(App, REQUEST_EVENT, {})
+    response = asgi_handler(App, REQUEST_EVENT, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -91,7 +91,7 @@ def test_starlette_response() -> None:
     def homepage(request):
         return PlainTextResponse("Hello, world!")
 
-    response = asgi_response(app, REQUEST_EVENT, {})
+    response = asgi_handler(app, REQUEST_EVENT, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
