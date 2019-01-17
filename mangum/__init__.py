@@ -24,38 +24,32 @@ def asgi_handler(app, event, context):
     else:
         query_string = ""
 
+    scope = {
+        "server": server,
+        "client": client,
+        "scheme": scheme,
+        "root_path": "",
+        "query_string": query_string,
+        "headers": headers.items(),
+    }
+
     is_websocket = "Sec-WebSocket-Key" in headers
+
     loop = asyncio.get_event_loop()
 
     if not is_websocket:
-
         method = event["httpMethod"]
         path = event["path"]
         body = b""
         more_body = False
-
-        # TODO
         # body = event.get("body", b"")
         # more_body = False
         # if body and event.get("isBase64Encoded"):
         #     body = base64.standard_b64decode(body)
-
-        scope = {
-            "type": "http",
-            "http_version": "1.1",
-            "server": server,
-            "client": client,
-            "scheme": scheme,
-            "method": method,
-            "root_path": "",
-            "path": path,
-            "query_string": query_string,
-            "headers": headers.items(),
-        }
-
+        scope.update(
+            {"type": "http", "http_version": "1.1", "method": method, "path": path}
+        )
         asgi_cycle = ASGIHTTPCycle(scope)
-        asgi_instance = app(asgi_cycle.scope)
-        asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": more_body}
         )
@@ -66,26 +60,17 @@ def asgi_handler(app, event, context):
         connection_id = request_context["connectionId"]
         # headers["Sec-WebSocket-Extensions"] # ["permessage-deflate; " "client_max_window_bits"]
         # headers["Sec-WebSocket-Key"] # ["XXXXX"],
-
-        scheme = "wss" if scheme == "https" else "ws"
-
-        scope = {
-            "type": "websocket",
-            "scheme": scheme,
-            "server": server,
-            "client": client,
-            "root_path": "",
-            "path": "",
-            "query_string": query_string,
-            "headers": headers.items(),
-            "subprotocols": subprotocols,
-        }
         # endpoint = f"{event['requestContext']['domainName']}/{event['requestContext']['stage']}"
-
+        subprotocols = None
+        scheme = "wss" if scheme == "https" else "ws"
+        scope.update(
+            {"type": "websocket", "scheme": scheme, "subprotocols": subprotocols}
+        )
         asgi_cycle = ASGIWebSocketCycle(scope)
-        asgi_instance = app(asgi_cycle.scope)
-        asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
         asgi_cycle.put_message({"type": "websocket.connect"})
 
+    asgi_instance = app(asgi_cycle.scope)
+    asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
     loop.run_until_complete(asgi_task)
+
     return asgi_cycle.response
