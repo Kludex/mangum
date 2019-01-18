@@ -68,17 +68,14 @@ class ASGIHTTPCycle:
 
 
 class ASGIWebSocketCycle:
-    def __init__(self, scope, connections_url, connection_id):
+    def __init__(self, scope: dict, callback_url: str, connection_id: str) -> None:
         self.scope = scope
         self.app_queue = asyncio.Queue()
-        self.state = ASGICycleState.REQUEST
-        self.connections_url = connections_url
+        self.callback_url = callback_url
         self.connection_id = connection_id
         self.response = {}
 
     def put_message(self, message) -> None:
-        if self.state is ASGICycleState.CLOSED:
-            return
         self.app_queue.put_nowait(message)
 
     async def receive(self) -> dict:
@@ -87,17 +84,11 @@ class ASGIWebSocketCycle:
 
     async def send(self, message) -> None:
         message_type = message["type"]
-        from pprint import pprint
-
-        pprint(message)
-
         if message_type == "websocket.accept":
-            # handle connections
+
             print("accept")
 
-            self.state = ASGICycleState.RESPONSE
-
-        elif message_type == "websocket.send":
+        if message_type == "websocket.send":
             # handle send
             print("send")
 
