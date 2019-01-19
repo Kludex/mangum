@@ -9,7 +9,7 @@ class ASGICycleState(enum.Enum):
 
 
 class ASGIHTTPCycle:
-    def __init__(self, scope):
+    def __init__(self, scope) -> None:
         self.scope = scope
         self.app_queue = asyncio.Queue()
         self.state = ASGICycleState.REQUEST

@@ -15,8 +15,9 @@ setup(
     url="https://github.com/erm/mangum",
     description="ASGI to AWS Lambda adapter",
     long_description=get_long_description(),
-    install_requires=[],
+    install_requires=["click", "boto3"],
     long_description_content_type="text/markdown",
+    entry_points={"console_scripts": ["mangum = mangum.cli:main"]},
     author="Jordan Eremieff",
     author_email="jordan@eremieff.com",
     classifiers=[

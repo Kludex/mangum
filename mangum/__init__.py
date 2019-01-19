@@ -1,5 +1,5 @@
 import logging
-from pprint import pprint, pformat
+from pprint import pformat
 
 from mangum.handlers import http_handler, websocket_handler
 

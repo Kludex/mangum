@@ -1,3 +1,6 @@
+import asyncio
+
+
 class ASGIWebSocketCycle:
     def __init__(self, scope: dict, callback_url: str, connection_id: str) -> None:
         self.scope = scope

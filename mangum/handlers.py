@@ -39,7 +39,6 @@ def get_scope(event: dict) -> dict:
 
 
 def http_handler(app, event: dict, context: dict) -> dict:
-
     scope = get_scope(event)
     scope.update(
         {
@@ -66,7 +65,6 @@ def http_handler(app, event: dict, context: dict) -> dict:
 
 
 def websocket_handler(app, event: dict, context: dict) -> dict:
-
     request_context = event["requestContext"]
     event_type = request_context["eventType"]
 
