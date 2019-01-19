@@ -1,8 +1,5 @@
-import asyncio
-
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
-
 from mangum import asgi_handler
 
 
@@ -101,6 +98,3 @@ def test_starlette_response() -> None:
         },
         "body": "Hello, world!",
     }
-
-
-# def test_streaming_response() -> None:

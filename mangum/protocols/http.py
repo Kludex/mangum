@@ -5,7 +5,6 @@ import enum
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
-    CLOSED = enum.auto()
 
 
 class ASGIHTTPCycle:
@@ -16,8 +15,6 @@ class ASGIHTTPCycle:
         self.response = {}
 
     def put_message(self, message) -> None:
-        if self.state is ASGICycleState.CLOSED:
-            return
         self.app_queue.put_nowait(message)
 
     async def receive(self) -> dict:
@@ -36,7 +33,7 @@ class ASGIHTTPCycle:
             status_code = message["status"]
             headers = message.get("headers", [])
 
-            self.response["statusCode"] = message["status"]
+            self.response["statusCode"] = status_code
             self.response["isBase64Encoded"] = False
             self.response["headers"] = {
                 k.decode("utf-8"): v.decode("utf-8") for k, v in headers
@@ -54,13 +51,4 @@ class ASGIHTTPCycle:
                 body = body.decode("utf-8")
             self.response["body"] = body
 
-            # TODO: Currently only handle sending a single body response, so this will
-            # always be closed.
-            # more_body = message.get("more_body")
-            # if not more_body:
-            #     self.state = ASGICycleState.CLOSED
-
-            self.state = ASGICycleState.CLOSED
-
-        if self.state is ASGICycleState.CLOSED:
             self.put_message({"type": "http.disconnect"})

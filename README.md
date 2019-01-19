@@ -2,7 +2,9 @@
 
 AWS Lambda/API Gateway support for ASGI applications.
 
-***Work in progress***, things are very unstable and still need to be thoroughly tested. Simple HTTP responses are working, but there is still quite a bit left to figure out.
+***Work in progress***
+
+Currently only supports HTTP responses, but there is an open issue [here](https://github.com/erm/mangum/issues/1) here for working out potential WebSocket support.
 
 ## Installation
 

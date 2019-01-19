@@ -1,9 +1,7 @@
 import datetime
 import operator
-
 import click
 import boto3
-
 from mangum.__version__ import __version__
 
 

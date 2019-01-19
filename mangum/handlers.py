@@ -1,8 +1,6 @@
 import asyncio
 import urllib.parse
-
 from mangum.protocols.http import ASGIHTTPCycle
-from mangum.protocols.websockets import ASGIWebSocketCycle
 
 
 def get_scope(event: dict) -> dict:
@@ -62,33 +60,3 @@ def http_handler(app, event: dict, context: dict) -> dict:
     loop.run_until_complete(asgi_task)
 
     return asgi_cycle.response
-
-
-def websocket_handler(app, event: dict, context: dict) -> dict:
-    request_context = event["requestContext"]
-    event_type = request_context["eventType"]
-
-    if event_type == "CONNECT":
-        # WebSocket CONNECT events in AWS need to be responded to before we can
-        # use the connection. Need to persist this information somehow...
-
-        scope = get_scope(event)
-
-        domain_name = request_context["domainName"]
-        stage = request_context["stage"]
-        path = stage  # double-check
-        connection_id = request_context["connectionId"]
-        callback_url = f"https://{domain_name}/{stage}/@connections/{connection_id}"
-
-        scheme = "wss" if scope["scheme"] == "https" else "ws"
-        scope.update({"type": "websocket", "scheme": scheme, "path": path})
-
-        return {"statusCode": 200, "body": "OK"}
-
-    if event_type == "MESSAGE":
-
-        # asgi_cycle = ASGIWebSocketCycle(
-        #     scope, callback_url=callback_url, connection_id=connection_id
-        # )
-        # asgi_cycle.put_message({"type": "websocket.connect"})
-        return {}
