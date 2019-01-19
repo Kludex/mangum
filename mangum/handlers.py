@@ -9,16 +9,18 @@ def get_scope(event: dict) -> dict:
     headers = event["headers"] or {}
     host = headers.get("Host")
     scheme = headers.get("X-Forwarded-Proto", "http")
+    x_forwarded_for = headers.get("X-Forwarded-For")
     x_forwarded_port = headers.get("X-Forwarded-Port")
-
-    if not any((host, x_forwarded_port)):
-        server = None
-    else:
-        server = (host, int(x_forwarded_port))
-
     client = None
-    query_string = ""
+    server = None
 
+    if x_forwarded_port and x_forwarded_for:
+        port = int(x_forwarded_port)
+        client = (x_forwarded_for, port)
+        if host:
+            server = (host, port)
+
+    query_string = ""
     if "queryStringParameters" in event:
         query_string_params = event["queryStringParameters"]
         if query_string_params:
@@ -37,6 +39,7 @@ def get_scope(event: dict) -> dict:
 
 
 def http_handler(app, event: dict, context: dict) -> dict:
+
     scope = get_scope(event)
     scope.update(
         {
@@ -63,6 +66,7 @@ def http_handler(app, event: dict, context: dict) -> dict:
 
 
 def websocket_handler(app, event: dict, context: dict) -> dict:
+
     request_context = event["requestContext"]
     event_type = request_context["eventType"]
 

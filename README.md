@@ -8,7 +8,7 @@ AWS Lambda/API Gateway support for ASGI applications.
 
 ```pip install mangum```
 
-**Note**: The package on PyPi may be significantly behind the active development, so you may want to clone the repo instead.
+**Note**: The package on PyPi may be significantly behind the active development, so you probably want to clone the repo instead.
 
 ## Examples
 
