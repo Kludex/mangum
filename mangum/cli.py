@@ -1,18 +1,10 @@
-import click
-import logging
-
-import boto3
-from pprint import pformat
 import datetime
 import operator
 
-from mangum.__version__ import __version__
+import click
+import boto3
 
-# LOG_LEVEL = logging.INFO
-# logging.basicConfig(format="%(levelname)s: %(message)s", level=LOG_LEVEL)
-# for name in logging.Logger.manager.loggerDict.keys():
-#     if ("boto" in name) or ("urllib3" in name):
-#         logging.getLogger(name).setLevel(logging.WARNING)
+from mangum.__version__ import __version__
 
 
 @click.group()
