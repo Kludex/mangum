@@ -8,11 +8,24 @@ class ASGICycleState(enum.Enum):
 
 
 class ASGICycle:
-    def __init__(self, scope: dict, loop: asyncio.BaseEventLoop) -> None:
+    def __init__(self, scope: dict, body: bytes = b"") -> None:
         self.scope = scope
-        self.app_queue = asyncio.Queue(loop=loop)
+        self.body = body
         self.state = ASGICycleState.REQUEST
+        self.app_queue = None
         self.response = {}
+
+    def __call__(self, app) -> dict:
+        loop = asyncio.new_event_loop()
+
+        self.app_queue = asyncio.Queue()
+        self.put_message({"type": "http.request", "body": self.body})
+
+        asgi_instance = app(self.scope)
+        asgi_task = loop.create_task(asgi_instance(self.receive, self.send))
+        loop.run_until_complete(asgi_task)
+
+        return self.response
 
     def put_message(self, message: dict) -> None:
         self.app_queue.put_nowait(message)
@@ -57,19 +70,3 @@ class ASGICycle:
 
     def on_response_body(self, body: str) -> None:
         raise NotImplementedError()  # pragma: no cover
-
-
-class ASGIHandler:
-    asgi_cycle_class = None
-
-    def __init__(self, scope: dict) -> None:
-        self.scope = scope
-
-    def __call__(self, app, message: dict) -> dict:
-        loop = asyncio.new_event_loop()
-        asgi_cycle = self.asgi_cycle_class(self.scope, loop=loop)
-        asgi_cycle.put_message(message)
-        asgi_instance = app(asgi_cycle.scope)
-        asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
-        loop.run_until_complete(asgi_task)
-        return asgi_cycle.response

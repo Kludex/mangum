@@ -1,5 +1,5 @@
 import urllib.parse
-from mangum.handlers.asgi import ASGIHandler, ASGICycle
+from mangum.handlers.asgi import ASGICycle
 
 
 class AWSLambdaCycle(ASGICycle):
@@ -10,10 +10,6 @@ class AWSLambdaCycle(ASGICycle):
 
     def on_response_body(self, body: str) -> None:
         self.response["body"] = body
-
-
-class AWSLambdaHandler(ASGIHandler):
-    asgi_cycle_class = AWSLambdaCycle
 
 
 def aws_handler(app, event: dict, context: dict) -> dict:
@@ -53,8 +49,5 @@ def aws_handler(app, event: dict, context: dict) -> dict:
     }
 
     body = b""
-    more_body = False
-    message = {"type": "http.request", "body": body, "more_body": more_body}
-    handler = AWSLambdaHandler(scope)
-
-    return handler(app, message)
+    handler = AWSLambdaCycle(scope, body=body)
+    return handler(app)

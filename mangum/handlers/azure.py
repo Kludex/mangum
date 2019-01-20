@@ -1,7 +1,7 @@
 import urllib.parse
 import cgi
 
-from mangum.handlers.asgi import ASGIHandler, ASGICycle
+from mangum.handlers.asgi import ASGICycle
 
 
 class AzureFunctionCycle(ASGICycle):
@@ -21,10 +21,6 @@ class AzureFunctionCycle(ASGICycle):
 
     def on_response_body(self, body: bytes) -> None:
         self.response["body"] = body
-
-
-class AzureFunctionHandler(ASGIHandler):
-    asgi_cycle_class = AzureFunctionCycle
 
 
 def azure_handler(app, req) -> dict:
@@ -55,8 +51,6 @@ def azure_handler(app, req) -> dict:
     }
 
     body = b""
-    more_body = False
-    message = {"type": "http.request", "body": body, "more_body": more_body}
-    handler = AzureFunctionHandler(scope)
 
-    return handler(app, message)
+    handler = AzureFunctionCycle(scope, body=body)
+    return handler(app)
