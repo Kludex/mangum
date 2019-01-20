@@ -1,4 +1,5 @@
 import urllib.parse
+
 from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
@@ -18,9 +19,11 @@ def azure_handler(app, req) -> dict:
     server = None
     client = None
     scheme = "https"
+    method = req.method
     headers = req.headers.items()
-    path = req.url
-
+    parsed = urllib.parse.urlparse(req.url)
+    scheme = parsed.scheme
+    path = parsed.path
     if req.params:
         query_string = urllib.parse.urlencode(req.params).encode("ascii")
     else:
@@ -30,7 +33,7 @@ def azure_handler(app, req) -> dict:
         "type": "http",
         "server": server,
         "client": client,
-        "method": req.method,
+        "method": method,
         "path": path,
         "scheme": scheme,
         "http_version": "1.1",

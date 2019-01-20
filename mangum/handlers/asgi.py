@@ -50,10 +50,10 @@ class ASGICycle:
             self.put_message({"type": "http.disconnect"})
 
     def on_response_start(self, headers: list, status_code: int) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def on_response_body(self, body: str) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class ASGIHandler:

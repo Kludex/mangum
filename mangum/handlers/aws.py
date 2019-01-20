@@ -19,13 +19,16 @@ class AWSLambdaHandler(ASGIHandler):
 
 
 def aws_handler(app, event: dict, context: dict) -> dict:
+    server = None
+    client = None
+    query_string = ""
+    method = event["httpMethod"]
     headers = event["headers"] or {}
+    path = event["path"]
     host = headers.get("Host")
     scheme = headers.get("X-Forwarded-Proto", "http")
     x_forwarded_for = headers.get("X-Forwarded-For")
     x_forwarded_port = headers.get("X-Forwarded-Port")
-    client = None
-    server = None
 
     if x_forwarded_port and x_forwarded_for:
         port = int(x_forwarded_port)
@@ -33,7 +36,6 @@ def aws_handler(app, event: dict, context: dict) -> dict:
         if host:
             server = (host, port)
 
-    query_string = ""
     if "queryStringParameters" in event:
         query_string_params = event["queryStringParameters"]
         if query_string_params:
@@ -48,8 +50,8 @@ def aws_handler(app, event: dict, context: dict) -> dict:
         "headers": headers.items(),
         "type": "http",
         "http_version": "1.1",
-        "method": event["httpMethod"],
-        "path": event["path"],
+        "method": method,
+        "path": path,
     }
 
     body = b""

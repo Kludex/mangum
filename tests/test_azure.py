@@ -43,7 +43,7 @@ def test_asgi_response() -> None:
         "GET",
         "/",
         headers={"content-type": "text/plain; charset=utf-8"},
-        params=None,
+        params={"name": "val"},
         route_params=None,
         body=None,
     )

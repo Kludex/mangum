@@ -1,6 +1,6 @@
 # Mangum
 
-Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters.
+Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters. ***Work in progress***
 
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
@@ -9,19 +9,20 @@ Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters.
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-***Work in progress***
+## Supported Platforms
 
-Currently supports AWS Lambda/API Gateway and Azure Functions. Experimental/unstable. 
+- AWS Lambda + API Gateway
+- Azure Functions
 
-**Requirements: Python 3.6+**
+**Requirements**: Python 3.6+
 
 ## Installation
 
 ```pip install mangum```
 
-**Note**: The package on PyPi may be significantly behind the active development, so you probably want to clone the repo instead.
+**Note**: This project is experimental/unstable and under active development.
 
-## Example
+## Examples
 
 
 ```python
