@@ -15,7 +15,7 @@ setup(
     url="https://github.com/erm/mangum",
     description="ASGI serverless adapters",
     long_description=get_long_description(),
-    install_requires=[],
+    extras_require={"full": ["azure-functions"]},
     long_description_content_type="text/markdown",
     author="Jordan Eremieff",
     author_email="jordan@eremieff.com",

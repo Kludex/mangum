@@ -1,6 +1,7 @@
 import typing
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
+
 from mangum.handlers.azure import azure_handler
 
 
@@ -56,13 +57,11 @@ def test_azure_response() -> None:
     )
     response = azure_handler(app, mock_request)
 
-    assert response == {
-        "status_code": 200,
-        "headers": {"content-type": "text/html; charset=utf-8"},
-        "body": "<html><h1>Hello, world!</h1></html>",
-        "charset": "utf-8",
-        "mimetype": "text/html",
-    }
+    assert response.status_code == 200
+    assert response.headers == {"content-type": "text/html; charset=utf-8"}
+    assert response.get_body() == b"<html><h1>Hello, world!</h1></html>"
+    assert response.charset == "utf-8"
+    assert response.mimetype == "text/html"
 
 
 def test_azure_response_with_body() -> None:
@@ -93,13 +92,11 @@ def test_azure_response_with_body() -> None:
 
     response = azure_handler(app, mock_request)
 
-    assert response == {
-        "status_code": 200,
-        "headers": {"content-type": "text/html; charset=utf-8"},
-        "body": "123",
-        "charset": "utf-8",
-        "mimetype": "text/html",
-    }
+    assert response.status_code == 200
+    assert response.headers == {"content-type": "text/html; charset=utf-8"}
+    assert response.get_body() == b"123"
+    assert response.charset == "utf-8"
+    assert response.mimetype == "text/html"
 
 
 def test_starlette_azure_response() -> None:
@@ -120,10 +117,11 @@ def test_starlette_azure_response() -> None:
 
     response = azure_handler(app, mock_request)
 
-    assert response == {
-        "status_code": 200,
-        "headers": {"content-type": "text/html; charset=utf-8", "content-length": "35"},
-        "body": "<html><h1>Hello, world!</h1></html>",
-        "charset": "utf-8",
-        "mimetype": "text/html",
+    assert response.status_code == 200
+    assert response.headers == {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "35",
     }
+    assert response.get_body() == b"<html><h1>Hello, world!</h1></html>"
+    assert response.charset == "utf-8"
+    assert response.mimetype == "text/html"

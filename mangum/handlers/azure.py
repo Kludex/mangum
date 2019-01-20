@@ -1,6 +1,6 @@
 import urllib.parse
 import cgi
-
+from azure.functions import HttpResponse
 from mangum.handlers.asgi import ASGICycle
 from mangum.utils import encode_query_string
 
@@ -22,6 +22,7 @@ class AzureFunctionCycle(ASGICycle):
 
 
 def azure_handler(app, req) -> dict:
+
     server = None
     client = None
     scheme = "https"
@@ -49,5 +50,13 @@ def azure_handler(app, req) -> dict:
     if not isinstance(body, bytes):
         body = body.encode("utf-8")
 
-    handler = AzureFunctionCycle(scope, body=body)
-    return handler(app)
+    asgi_cycle = AzureFunctionCycle(scope, body=body)
+    response = asgi_cycle(app)
+
+    return HttpResponse(
+        body=response["body"],
+        headers=response["headers"],
+        status_code=response["status_code"],
+        mimetype=response["mimetype"],
+        charset=response["charset"],
+    )
