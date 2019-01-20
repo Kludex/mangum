@@ -32,6 +32,7 @@ def azure_handler(app, req) -> dict:
     parsed = urllib.parse.urlparse(req.url)
     scheme = parsed.scheme
     path = parsed.path
+
     if req.params:
         query_string = urllib.parse.urlencode(req.params).encode("ascii")
     else:
@@ -50,7 +51,9 @@ def azure_handler(app, req) -> dict:
         "headers": headers,
     }
 
-    body = b""
+    body = req.get_body() or b""
+    if not isinstance(body, bytes):
+        body = body.encode("utf-8")
 
     handler = AzureFunctionCycle(scope, body=body)
     return handler(app)

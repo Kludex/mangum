@@ -21,13 +21,13 @@ class MockHttpRequest:
         self.route_params = route_params
         self.body = body
 
+    def get_body(self) -> str:
+        return self.body
+
 
 def test_azure_response() -> None:
-    class App:
-        def __init__(self, scope) -> None:
-            self.scope = scope
-
-        async def __call__(self, receive, send) -> None:
+    def app(scope):
+        async def asgi(receive, send):
             message = await receive()
             if message["type"] == "http.request":
                 await send(
@@ -44,6 +44,8 @@ def test_azure_response() -> None:
                     }
                 )
 
+        return asgi
+
     mock_request = MockHttpRequest(
         "GET",
         "/",
@@ -52,7 +54,7 @@ def test_azure_response() -> None:
         route_params=None,
         body=None,
     )
-    response = azure_handler(App, mock_request)
+    response = azure_handler(app, mock_request)
 
     assert response == {
         "status_code": 200,
@@ -63,8 +65,43 @@ def test_azure_response() -> None:
     }
 
 
-def test_starlette_azure_response() -> None:
+def test_azure_response_with_body() -> None:
+    def app(scope):
+        async def asgi(receive, send):
+            message = await receive()
+            body = message["body"]
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/html; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
 
+        return asgi
+
+    body = "123"
+    mock_request = MockHttpRequest(
+        "POST",
+        "/",
+        headers={"content-type": "text/html; charset=utf-8"},
+        params=None,
+        route_params=None,
+        body=body,
+    )
+    response = azure_handler(app, mock_request)
+
+    assert response == {
+        "status_code": 200,
+        "headers": {"content-type": "text/html; charset=utf-8"},
+        "body": "123",
+        "charset": "utf-8",
+        "mimetype": "text/html",
+    }
+
+
+def test_starlette_azure_response() -> None:
     app = Starlette()
 
     @app.route("/")
@@ -79,7 +116,6 @@ def test_starlette_azure_response() -> None:
         route_params=None,
         body=None,
     )
-
     response = azure_handler(app, mock_request)
 
     assert response == {
