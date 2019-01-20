@@ -1,0 +1,23 @@
+site_name: Mangum
+site_description: Serverless ASGI adapters.
+
+theme:
+    name: 'material'
+    palette:
+      primary: 'brown'
+      accent: 'orange'
+    logo:
+      icon: 'cloud'
+
+
+repo_name: erm/mangum
+repo_url: https://github.com/erm/mangum
+edit_uri: ""
+
+nav:
+    - Home: 'index.md'
+
+markdown_extensions:
+  - markdown.extensions.codehilite:
+      guess_lang: false
+
