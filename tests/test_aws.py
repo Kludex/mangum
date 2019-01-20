@@ -1,3 +1,4 @@
+import base64
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from mangum.handlers.aws import aws_handler
@@ -56,23 +57,20 @@ REQUEST_EVENT = {
 
 
 def test_aws_response() -> None:
-    class App:
-        def __init__(self, scope) -> None:
-            self.scope = scope
+    def app(scope):
+        async def asgi(receive, send):
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-        async def __call__(self, receive, send) -> None:
-            message = await receive()
-            if message["type"] == "http.request":
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 200,
-                        "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                    }
-                )
-                await send({"type": "http.response.body", "body": b"Hello, world!"})
+        return asgi
 
-    response = aws_handler(App, REQUEST_EVENT, {})
+    response = aws_handler(app, REQUEST_EVENT, {})
 
     assert response == {
         "statusCode": 200,
@@ -98,6 +96,8 @@ def test_aws_response_with_body() -> None:
 
         return asgi
 
+    body = "123"
+
     response = aws_handler(app, REQUEST_EVENT, {})
 
     assert response == {
@@ -105,6 +105,18 @@ def test_aws_response_with_body() -> None:
         "isBase64Encoded": False,
         "headers": {"content-type": "text/html; charset=utf-8"},
         "body": "123",
+    }
+
+    body_encoded = base64.standard_b64encode(body.encode("utf-8"))
+    REQUEST_EVENT["isBase64Encoded"] = True
+    REQUEST_EVENT["body"] = body_encoded
+    response = aws_handler(app, REQUEST_EVENT, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/html; charset=utf-8"},
+        "body": body,
     }
 
 
@@ -117,6 +129,7 @@ def test_starlette_aws_response() -> None:
         return PlainTextResponse("Hello, world!")
 
     response = aws_handler(app, REQUEST_EVENT, {})
+
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,

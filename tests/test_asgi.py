@@ -29,39 +29,35 @@ def mock_asgi_handler(app, event: dict) -> dict:
 
 
 def test_asgi_handler() -> None:
-    class App:
-        def __init__(self, scope) -> None:
-            self.scope = scope
+    def app(scope):
+        async def asgi(receive, send):
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-        async def __call__(self, receive, send) -> None:
-            message = await receive()
-            if message["type"] == "http.request":
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 200,
-                        "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                    }
-                )
-                await send({"type": "http.response.body", "body": b"Hello, world!"})
+        return asgi
 
     mock_request = {}
-    response = mock_asgi_handler(App, mock_request)
+    response = mock_asgi_handler(app, mock_request)
 
     assert response == {"status": 200, "body": "Hello, world!"}
 
 
 def test_asgi_request_state() -> None:
-    class App:
-        def __init__(self, scope) -> None:
-            self.scope = scope
-
-        async def __call__(self, receive, send) -> None:
+    def app(scope):
+        async def asgi(receive, send):
             await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+        return asgi
 
     mock_request = {}
     with pytest.raises(RuntimeError):
-        mock_asgi_handler(App, mock_request)
+        mock_asgi_handler(app, mock_request)
 
 
 def test_asgi_response_state() -> None:

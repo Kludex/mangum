@@ -90,6 +90,7 @@ def test_azure_response_with_body() -> None:
         route_params=None,
         body=body,
     )
+
     response = azure_handler(app, mock_request)
 
     assert response == {
@@ -116,6 +117,7 @@ def test_starlette_azure_response() -> None:
         route_params=None,
         body=None,
     )
+
     response = azure_handler(app, mock_request)
 
     assert response == {
