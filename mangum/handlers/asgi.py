@@ -8,9 +8,9 @@ class ASGICycleState(enum.Enum):
 
 
 class ASGICycle:
-    def __init__(self, scope) -> None:
+    def __init__(self, scope, loop) -> None:
         self.scope = scope
-        self.app_queue = asyncio.Queue()
+        self.app_queue = asyncio.Queue(loop=loop)
         self.state = ASGICycleState.REQUEST
         self.response = {}
 
@@ -65,7 +65,7 @@ class ASGIHandler:
 
     def __call__(self, app, message):
         loop = asyncio.new_event_loop()
-        asgi_cycle = self.asgi_cycle_class(self.scope)
+        asgi_cycle = self.asgi_cycle_class(self.scope, loop=loop)
         asgi_cycle.put_message(message)
         asgi_instance = app(asgi_cycle.scope)
         asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
