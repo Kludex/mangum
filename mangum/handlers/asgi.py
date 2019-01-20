@@ -18,7 +18,7 @@ class ASGICycle:
     def __call__(self, app) -> dict:
         loop = asyncio.new_event_loop()
 
-        self.app_queue = asyncio.Queue()
+        self.app_queue = asyncio.Queue(loop=loop)
         self.put_message({"type": "http.request", "body": self.body})
 
         asgi_instance = app(self.scope)
