@@ -6,6 +6,8 @@ Serverless response handlers for ASGI applications.
 
 Currently supports AWS Lambda/API Gateway and Azure Functions. Experimental/unstable. 
 
+**Requirements: Python 3.6+**
+
 ## Installation
 
 ```pip install mangum```

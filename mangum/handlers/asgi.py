@@ -64,7 +64,7 @@ class ASGIHandler:
         self.scope = scope
 
     def __call__(self, app, message):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         asgi_cycle = self.asgi_cycle_class(self.scope)
         asgi_cycle.put_message(message)
         asgi_instance = app(asgi_cycle.scope)
