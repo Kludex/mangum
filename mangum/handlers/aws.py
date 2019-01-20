@@ -1,9 +1,26 @@
-import asyncio
 import urllib.parse
-from mangum.protocols.http import ASGIHTTPCycle
+from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
-def get_scope(event: dict) -> dict:
+class AWSLambdaCycle(ASGICycle):
+    def on_response_start(self, headers, status_code):
+        self.response["statusCode"] = status_code
+        self.response["isBase64Encoded"] = False
+        self.response["headers"] = {
+            k.decode("utf-8"): v.decode("utf-8") for k, v in headers
+        }
+
+    def on_response_body(self, body):
+        self.response["body"] = body
+
+
+class AWSLambdaHandler(ASGIHandler):
+
+    asgi_cycle_class = AWSLambdaCycle
+
+
+def aws_handler(app, event: dict, context: dict) -> dict:
+
     headers = event["headers"] or {}
     host = headers.get("Host")
     scheme = headers.get("X-Forwarded-Proto", "http")
@@ -31,32 +48,14 @@ def get_scope(event: dict) -> dict:
         "root_path": "",
         "query_string": query_string,
         "headers": headers.items(),
+        "type": "http",
+        "http_version": "1.1",
+        "method": event["httpMethod"],
+        "path": event["path"],
     }
-
-    return scope
-
-
-def http_handler(app, event: dict, context: dict) -> dict:
-    scope = get_scope(event)
-    scope.update(
-        {
-            "type": "http",
-            "http_version": "1.1",
-            "method": event["httpMethod"],
-            "path": event["path"],
-        }
-    )
 
     body = b""
     more_body = False
-
-    loop = asyncio.get_event_loop()
-    asgi_cycle = ASGIHTTPCycle(scope)
-    asgi_cycle.put_message(
-        {"type": "http.request", "body": body, "more_body": more_body}
-    )
-    asgi_instance = app(asgi_cycle.scope)
-    asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
-    loop.run_until_complete(asgi_task)
-
-    return asgi_cycle.response
+    message = {"type": "http.request", "body": body, "more_body": more_body}
+    handler = AWSLambdaHandler(scope)
+    return handler(app, message)

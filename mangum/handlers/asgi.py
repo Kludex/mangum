@@ -7,7 +7,7 @@ class ASGICycleState(enum.Enum):
     RESPONSE = enum.auto()
 
 
-class ASGIHTTPCycle:
+class ASGICycle:
     def __init__(self, scope) -> None:
         self.scope = scope
         self.app_queue = asyncio.Queue()
@@ -33,11 +33,7 @@ class ASGIHTTPCycle:
             status_code = message["status"]
             headers = message.get("headers", [])
 
-            self.response["statusCode"] = status_code
-            self.response["isBase64Encoded"] = False
-            self.response["headers"] = {
-                k.decode("utf-8"): v.decode("utf-8") for k, v in headers
-            }
+            self.on_response_start(headers, status_code)
             self.state = ASGICycleState.RESPONSE
 
         elif self.state is ASGICycleState.RESPONSE:
@@ -49,6 +45,29 @@ class ASGIHTTPCycle:
             body = message["body"]
             if isinstance(body, bytes):
                 body = body.decode("utf-8")
-            self.response["body"] = body
 
+            self.on_response_body(body)
             self.put_message({"type": "http.disconnect"})
+
+    def on_response_start(self, headers, status_code):
+        raise NotImplementedError()
+
+    def on_response_body(self, body):
+        raise NotImplementedError()
+
+
+class ASGIHandler:
+
+    asgi_cycle_class = None
+
+    def __init__(self, scope):
+        self.scope = scope
+
+    def __call__(self, app, message):
+        loop = asyncio.get_event_loop()
+        asgi_cycle = self.asgi_cycle_class(self.scope)
+        asgi_cycle.put_message(message)
+        asgi_instance = app(asgi_cycle.scope)
+        asgi_task = loop.create_task(asgi_instance(asgi_cycle.receive, asgi_cycle.send))
+        loop.run_until_complete(asgi_task)
+        return asgi_cycle.response
