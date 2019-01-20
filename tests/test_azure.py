@@ -1,6 +1,6 @@
 import typing
 from starlette.applications import Starlette
-from starlette.responses import PlainTextResponse
+from starlette.responses import HTMLResponse
 from mangum.handlers.azure import azure_handler
 
 
@@ -22,7 +22,7 @@ class MockHttpRequest:
         self.body = body
 
 
-def test_asgi_response() -> None:
+def test_azure_response() -> None:
     class App:
         def __init__(self, scope) -> None:
             self.scope = scope
@@ -34,36 +34,47 @@ def test_asgi_response() -> None:
                     {
                         "type": "http.response.start",
                         "status": 200,
-                        "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                        "headers": [[b"content-type", b"text/html; charset=utf-8"]],
                     }
                 )
-                await send({"type": "http.response.body", "body": b"Hello, world!"})
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": b"<html><h1>Hello, world!</h1></html>",
+                    }
+                )
 
     mock_request = MockHttpRequest(
         "GET",
         "/",
-        headers={"content-type": "text/plain; charset=utf-8"},
+        headers={"content-type": "text/html; charset=utf-8"},
         params={"name": "val"},
         route_params=None,
         body=None,
     )
     response = azure_handler(App, mock_request)
 
-    assert response == {"status_code": 200, "body": "Hello, world!"}
+    assert response == {
+        "status_code": 200,
+        "headers": {"content-type": "text/html; charset=utf-8"},
+        "body": "<html><h1>Hello, world!</h1></html>",
+        "charset": "utf-8",
+        "mimetype": "text/html",
+    }
 
 
-def test_starlette_response() -> None:
+def test_starlette_azure_response() -> None:
 
     app = Starlette()
 
     @app.route("/")
     def homepage(request):
-        return PlainTextResponse("Hello, world!")
+        return HTMLResponse("<html><h1>Hello, world!</h1></html>")
 
     mock_request = MockHttpRequest(
         "GET",
         "/",
-        headers={"content-type": "text/plain; charset=utf-8"},
+        headers={"content-type": "text/html; charset=utf-8"},
         params=None,
         route_params=None,
         body=None,
@@ -71,4 +82,10 @@ def test_starlette_response() -> None:
 
     response = azure_handler(app, mock_request)
 
-    assert response == {"status_code": 200, "body": "Hello, world!"}
+    assert response == {
+        "status_code": 200,
+        "headers": {"content-type": "text/html; charset=utf-8", "content-length": "35"},
+        "body": "<html><h1>Hello, world!</h1></html>",
+        "charset": "utf-8",
+        "mimetype": "text/html",
+    }

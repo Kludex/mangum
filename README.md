@@ -64,6 +64,6 @@ import azure.functions as func
 
 def main(req):
     response = azure_handler(App, req)
-    return func.HttpResponse(response["body"], status_code=response["status_code"])
+    return func.HttpResponse(**response)
 
 ```

@@ -31,7 +31,10 @@ class ASGICycle:
                 )
 
             status_code = message["status"]
-            headers = message.get("headers", [])
+            headers = {
+                k.decode("utf-8"): v.decode("utf-8")
+                for k, v in message.get("headers", [])
+            }
 
             self.on_response_start(headers, status_code)
             self.state = ASGICycleState.RESPONSE

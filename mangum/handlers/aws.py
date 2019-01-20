@@ -3,12 +3,10 @@ from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
 class AWSLambdaCycle(ASGICycle):
-    def on_response_start(self, headers: list, status_code: int) -> None:
+    def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["statusCode"] = status_code
         self.response["isBase64Encoded"] = False
-        self.response["headers"] = {
-            k.decode("utf-8"): v.decode("utf-8") for k, v in headers
-        }
+        self.response["headers"] = headers
 
     def on_response_body(self, body: str) -> None:
         self.response["body"] = body

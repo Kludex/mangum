@@ -54,7 +54,7 @@ REQUEST_EVENT = {
 }
 
 
-def test_asgi_response() -> None:
+def test_aws_response() -> None:
     class App:
         def __init__(self, scope) -> None:
             self.scope = scope
@@ -81,7 +81,7 @@ def test_asgi_response() -> None:
     }
 
 
-def test_starlette_response() -> None:
+def test_starlette_aws_response() -> None:
 
     app = Starlette()
 

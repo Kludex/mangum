@@ -1,11 +1,23 @@
 import urllib.parse
+import cgi
 
 from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
 class AzureFunctionCycle(ASGICycle):
-    def on_response_start(self, headers: list, status_code: int) -> None:
+    def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["status_code"] = status_code
+        self.response["headers"] = headers
+
+        mimetype = None
+        charset = None
+
+        if "content-type" in headers:
+            mimetype, options = cgi.parse_header(headers["content-type"])
+            charset = options.get("charset", None)
+
+        self.response["mimetype"] = mimetype
+        self.response["charset"] = charset
 
     def on_response_body(self, body: bytes) -> None:
         self.response["body"] = body
