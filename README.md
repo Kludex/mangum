@@ -1,7 +1,5 @@
 # Mangum
 
-Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters. ***Work in progress***
-
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
@@ -9,21 +7,26 @@ Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters. ***Work in p
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
+Mangum is a library for adapting [ASGI](https://asgi.readthedocs.io/en/latest/) applications to use on FaaS platforms.
+
+**Important**: This project is under active development and in an experimental/unstable state.
+
 ## Supported Platforms
 
 - AWS Lambda + API Gateway
 - Azure Functions
 
-**Requirements**: Python 3.6+
+## Requirements
+
+Python 3.6+
 
 ## Installation
 
-```pip install mangum```
+```pip3 install mangum```
 
-**Note**: This project is experimental/unstable and under active development.
+## Example
 
-## Examples
-
+Below is a basic ASGI application example that can be used with handler methods:
 
 ```python
 class App:
@@ -41,20 +44,16 @@ class App:
                 }
             )
             await send({"type": "http.response.body", "body": b"Hello, world!"})
-
 ```
 
-### AWS Lambda/API Gateway
+### AWS Lambda + API Gateway
 
 ```python
 from mangum.handlers.aws import aws_handler
 
-
 def lambda_handler(event, context):
     return aws_handler(App, event, context)
-
 ```
-
 
 ### Azure Functions
 
@@ -64,6 +63,6 @@ import azure.functions as func
 
 def main(req):
     response = azure_handler(App, req)
-    return func.HttpResponse(**response)
+    return func.HttpResponse(response["body"], status_code=response["status_code"])
 
 ```

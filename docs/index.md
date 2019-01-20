@@ -4,7 +4,7 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-Mangum is a library for adapting [ASGI](https://asgi.readthedocs.io/en/latest/) applications for use in FaaS platforms.
+Mangum is a library for adapting [ASGI](https://asgi.readthedocs.io/en/latest/) applications to use on FaaS platforms.
 
 **Important**: This project is under active development and in an experimental/unstable state.
 
