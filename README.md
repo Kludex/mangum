@@ -1,10 +1,10 @@
-# mangum
+# Mangum
 
-AWS Lambda/API Gateway support for ASGI applications.
+Serverless response handlers for ASGI applications.
 
 ***Work in progress***
 
-Currently only supports HTTP responses, but there is an open issue [here](https://github.com/erm/mangum/issues/1) here for working out potential WebSocket support.
+Currently supports AWS Lambda/API Gateway and Azure Functions. Experimental/unstable. 
 
 ## Installation
 
@@ -12,14 +12,10 @@ Currently only supports HTTP responses, but there is an open issue [here](https:
 
 **Note**: The package on PyPi may be significantly behind the active development, so you probably want to clone the repo instead.
 
-## Examples
+## Example
 
-Below is a basic "hello world" ASGI application:
 
 ```python
-from mangum import asgi_handler
-
-
 class App:
     def __init__(self, scope) -> None:
         self.scope = scope
@@ -36,26 +32,28 @@ class App:
             )
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
+```
+
+### AWS Lambda/API Gateway
+
+```python
+from mangum.handlers.aws import aws_handler
+
 
 def lambda_handler(event, context):
-    return asgi_handler(App, event, context)
+    return aws_handler(App, event, context)
 
 ```
 
-Any ASGI framework should work as well, here is the above example using [Starlette](https://github.com/encode/starlette/):
+
+### Azure Functions
 
 ```python
-from mangum import asgi_handler
-from starlette.applications import Starlette
-from starlette.responses import PlainTextResponse
+from mangum.handlers.azure import azure_handler
+import azure.functions as func
 
-app = Starlette()
-
-@app.route("/")
-def homepage(request):
-    return PlainTextResponse("Hello, world!")
-
-def lambda_handler(event, context):
-    return asgi_handler(app, event, context)
+def main(req):
+    response = azure_handler(App, req)
+    return func.HttpResponse(response["body"], status_code=response["status_code"])
 
 ```
