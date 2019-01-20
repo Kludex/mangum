@@ -3,10 +3,10 @@ from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
 class AzureFunctionCycle(ASGICycle):
-    def on_response_start(self, headers, status_code):
+    def on_response_start(self, headers: list, status_code: int) -> None:
         self.response["status_code"] = status_code
 
-    def on_response_body(self, body):
+    def on_response_body(self, body: bytes) -> None:
         self.response["body"] = body
 
 
@@ -18,7 +18,6 @@ def azure_handler(app, req) -> dict:
     server = None
     client = None
     scheme = "https"
-
     headers = req.headers.items()
     path = req.url
 
@@ -42,8 +41,7 @@ def azure_handler(app, req) -> dict:
 
     body = b""
     more_body = False
-
     message = {"type": "http.request", "body": body, "more_body": more_body}
-
     handler = AzureFunctionHandler(scope)
+
     return handler(app, message)

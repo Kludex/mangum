@@ -8,20 +8,20 @@ class ASGICycleState(enum.Enum):
 
 
 class ASGICycle:
-    def __init__(self, scope, loop) -> None:
+    def __init__(self, scope: dict, loop: asyncio.BaseEventLoop) -> None:
         self.scope = scope
         self.app_queue = asyncio.Queue(loop=loop)
         self.state = ASGICycleState.REQUEST
         self.response = {}
 
-    def put_message(self, message) -> None:
+    def put_message(self, message: dict) -> None:
         self.app_queue.put_nowait(message)
 
     async def receive(self) -> dict:
         message = await self.app_queue.get()
         return message
 
-    async def send(self, message) -> None:
+    async def send(self, message: dict) -> None:
         message_type = message["type"]
 
         if self.state is ASGICycleState.REQUEST:
@@ -49,21 +49,20 @@ class ASGICycle:
             self.on_response_body(body)
             self.put_message({"type": "http.disconnect"})
 
-    def on_response_start(self, headers, status_code):
+    def on_response_start(self, headers: list, status_code: int) -> None:
         raise NotImplementedError()
 
-    def on_response_body(self, body):
+    def on_response_body(self, body: str) -> None:
         raise NotImplementedError()
 
 
 class ASGIHandler:
-
     asgi_cycle_class = None
 
-    def __init__(self, scope):
+    def __init__(self, scope: dict) -> None:
         self.scope = scope
 
-    def __call__(self, app, message):
+    def __call__(self, app, message: dict) -> dict:
         loop = asyncio.new_event_loop()
         asgi_cycle = self.asgi_cycle_class(self.scope, loop=loop)
         asgi_cycle.put_message(message)

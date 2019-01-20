@@ -3,24 +3,22 @@ from mangum.handlers.asgi import ASGIHandler, ASGICycle
 
 
 class AWSLambdaCycle(ASGICycle):
-    def on_response_start(self, headers, status_code):
+    def on_response_start(self, headers: list, status_code: int) -> None:
         self.response["statusCode"] = status_code
         self.response["isBase64Encoded"] = False
         self.response["headers"] = {
             k.decode("utf-8"): v.decode("utf-8") for k, v in headers
         }
 
-    def on_response_body(self, body):
+    def on_response_body(self, body: str) -> None:
         self.response["body"] = body
 
 
 class AWSLambdaHandler(ASGIHandler):
-
     asgi_cycle_class = AWSLambdaCycle
 
 
 def aws_handler(app, event: dict, context: dict) -> dict:
-
     headers = event["headers"] or {}
     host = headers.get("Host")
     scheme = headers.get("X-Forwarded-Proto", "http")
@@ -58,4 +56,5 @@ def aws_handler(app, event: dict, context: dict) -> dict:
     more_body = False
     message = {"type": "http.request", "body": body, "more_body": more_body}
     handler = AWSLambdaHandler(scope)
+
     return handler(app, message)
