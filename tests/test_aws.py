@@ -5,6 +5,7 @@ from mangum.handlers.aws import aws_handler
 
 REQUEST_EVENT = {
     "path": "/test/hello",
+    "body": "123",
     "headers": {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
@@ -78,6 +79,32 @@ def test_aws_response() -> None:
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
         "body": "Hello, world!",
+    }
+
+
+def test_aws_response_with_body() -> None:
+    def app(scope):
+        async def asgi(receive, send):
+            message = await receive()
+            body = message["body"]
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/html; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
+
+        return asgi
+
+    response = aws_handler(app, REQUEST_EVENT, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/html; charset=utf-8"},
+        "body": "123",
     }
 
 

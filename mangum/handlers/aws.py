@@ -1,5 +1,6 @@
-import urllib.parse
+import base64
 from mangum.handlers.asgi import ASGICycle
+from mangum.utils import encode_query_string
 
 
 class AWSLambdaCycle(ASGICycle):
@@ -15,7 +16,6 @@ class AWSLambdaCycle(ASGICycle):
 def aws_handler(app, event: dict, context: dict) -> dict:
     server = None
     client = None
-    query_string = ""
     method = event["httpMethod"]
     headers = event["headers"] or {}
     path = event["path"]
@@ -30,10 +30,10 @@ def aws_handler(app, event: dict, context: dict) -> dict:
         if host:
             server = (host, port)
 
-    if "queryStringParameters" in event:
-        query_string_params = event["queryStringParameters"]
-        if query_string_params:
-            query_string = urllib.parse.urlencode(query_string_params).encode("ascii")
+    query_string_params = event["queryStringParameters"]
+    query_string = (
+        encode_query_string(query_string_params) if query_string_params else ""
+    )
 
     scope = {
         "server": server,
@@ -48,6 +48,9 @@ def aws_handler(app, event: dict, context: dict) -> dict:
         "path": path,
     }
 
-    body = b""
+    body = event["body"] or b""
+    if body and event.get("isBase64Encoded"):
+        body = base64.standard_b64decode(body)
+
     handler = AWSLambdaCycle(scope, body=body)
     return handler(app)
