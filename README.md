@@ -1,6 +1,13 @@
 # Mangum
 
-Serverless response handlers for ASGI applications.
+Serverless [ASGI](https://asgi.readthedocs.io/en/latest/) adapters.
+
+<a href="https://pypi.org/project/mangum/">
+    <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
+</a>
+<a href="https://travis-ci.org/erm/mangum">
+    <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
+</a>
 
 ***Work in progress***
 
