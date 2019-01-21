@@ -1,8 +1,8 @@
 # How to deploy an ASGI app to Azure
 
-This guide will explain how to deploy a basic ASGI application to Azure Functions. There is also an [official guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python) that explains much of the same information in this guide.
+This guide will explain how to deploy a basic ASGI application to Azure Functions. There is also an [official guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python) that explains much of the same information.
 
-A complete example of the project in this guide is available [here](https://github.com/erm/azure-functions-python-asgi-example).
+The complete example project is available [here](https://github.com/erm/azure-functions-python-asgi-example).
 
 ## Requirements 
 
@@ -15,7 +15,7 @@ A complete example of the project in this guide is available [here](https://gith
 
 In the Azure portal, click **Create a Resource** to display the app marketplace, then select **Serverless Function App** to begin.
 
-<img src="images/step1-azure-howto.png" alt="step-1" class="inline"/>
+<img src="https://raw.githubusercontent.com/erm/mangum/master/images/step-1-azure-howto.png" alt="step-1" class="inline"/>
 
 Enter a name for the app function, this should automatically populate a few other inputs as well. The important fields for the purposes of this guide are listed below:
 
@@ -24,7 +24,7 @@ Enter a name for the app function, this should automatically populate a few othe
 - Runtime Stack: **Python**
 - Hosting Plan: **Consumption Plan**
 
-<img src="images/step2-azure-howto.png" alt="step-2" class="inline"/>
+<img src="https://raw.githubusercontent.com/erm/mangum/master/images/step-2-azure-howto.png" alt="step-2" class="inline"/>
 
 After the form is submitted the deployment process will begin. A successful deployment notification should appear in the Azure portal once complete. The rest of the guide will be in the command-line.
 
