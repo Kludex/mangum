@@ -15,7 +15,9 @@ repo_url: https://github.com/erm/mangum
 edit_uri: ""
 
 nav:
-    - Home: 'index.md'
+    - Introduction: 'index.md'
+    - Guides: 
+      - 'azure-how-to.md'
 
 markdown_extensions:
   - markdown.extensions.codehilite:
