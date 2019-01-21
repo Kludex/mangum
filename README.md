@@ -10,7 +10,8 @@
 </a>
 
 
-Mangum is a library for adapting [ASGI](https://asgi.readthedocs.io/en/latest/) applications to use on FaaS platforms.
+Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with FaaS platforms.
+
 
 **Important**: This project is under active development and in an experimental/unstable state.
 

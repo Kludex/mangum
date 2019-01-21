@@ -141,11 +141,11 @@ This is a basic ASGI app example that uses the `azure_handler` that executes the
 func start
 ```
 
-If all worked correctly, then it `Hello!` should appear at the browser endpoint.
+If all worked correctly, then `Hello!` should appear at the browser endpoint.
 
 ## Step 5 - Deploy the ASGI app function
 
-Before deploying, one more thing needs to be done, include `mangum` in the `requirements.txt` file and save. This will be necessary to install the requirement in app function, e.g.:
+Before deploying, one more thing needs to be done, include `mangum` in the `requirements.txt` file and save. This will be necessary to install the requirement in the app deployment.
 
 Next run the following command using the app name defined in the app creation form to publish the local Python project, e.g. for a project named "mangum":
 
