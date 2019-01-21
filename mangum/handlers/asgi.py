@@ -1,6 +1,8 @@
 import asyncio
 import enum
 
+import cgi
+
 
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
@@ -8,19 +10,19 @@ class ASGICycleState(enum.Enum):
 
 
 class ASGICycle:
-    def __init__(self, scope: dict, body: bytes = b"") -> None:
+    def __init__(self, scope: dict, body: bytes = b"", **kwargs) -> None:
         self.scope = scope
         self.body = body
         self.state = ASGICycleState.REQUEST
         self.app_queue = None
         self.response = {}
+        self.charset = None
+        self.mimetype = None
 
     def __call__(self, app) -> dict:
         loop = asyncio.new_event_loop()
-
         self.app_queue = asyncio.Queue(loop=loop)
         self.put_message({"type": "http.request", "body": self.body})
-
         asgi_instance = app(self.scope)
         asgi_task = loop.create_task(asgi_instance(self.receive, self.send))
         loop.run_until_complete(asgi_task)
@@ -49,6 +51,12 @@ class ASGICycle:
                 for k, v in message.get("headers", [])
             }
 
+            if "content-type" in headers:
+                mimetype, options = cgi.parse_header(headers["content-type"])
+                charset = options.get("charset", None)
+                self.mimetype = mimetype
+                self.charset = charset
+
             self.on_response_start(headers, status_code)
             self.state = ASGICycleState.RESPONSE
 
@@ -59,8 +67,8 @@ class ASGICycle:
                 )
 
             body = message["body"]
-            if isinstance(body, bytes):
-                body = body.decode("utf-8")
+            if not isinstance(body, bytes):
+                body.encode("utf-8")
 
             self.on_response_body(body)
             self.put_message({"type": "http.disconnect"})

@@ -4,12 +4,21 @@ from mangum.utils import encode_query_string
 
 
 class AWSLambdaCycle(ASGICycle):
+    def __init__(self, *args, **kwargs) -> None:
+        self.binary = kwargs.pop("binary", False)
+        super().__init__(*args, **kwargs)
+
     def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["statusCode"] = status_code
-        self.response["isBase64Encoded"] = False
+        self.response["isBase64Encoded"] = self.binary
         self.response["headers"] = headers
 
-    def on_response_body(self, body: str) -> None:
+    def on_response_body(self, body: bytes) -> None:
+        if self.binary:
+            body = base64.b64encode(body)
+        else:
+            body = body.decode("ascii")
+
         self.response["body"] = body
 
 
@@ -48,9 +57,16 @@ def aws_handler(app, event: dict, context: dict) -> dict:
         "path": path,
     }
 
-    body = event["body"] or b""
-    if body and event.get("isBase64Encoded"):
-        body = base64.standard_b64decode(body)
+    binary = event.get("isBase64Encoded", False)
 
-    handler = AWSLambdaCycle(scope, body=body)
+    if binary:
+        encoded = event["body"]
+        body = base64.b64decode(encoded)
+    else:
+        body = event["body"]
+
+    if not isinstance(body, bytes):
+        body = body.encode("utf-8")
+
+    handler = AWSLambdaCycle(scope, body=body, binary=binary)
     return handler(app)

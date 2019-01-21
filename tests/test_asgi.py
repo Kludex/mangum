@@ -1,5 +1,6 @@
 import pytest
 from mangum.handlers.asgi import ASGICycle
+from starlette.responses import PlainTextResponse
 
 
 class MockASGICycle(ASGICycle):
@@ -31,56 +32,33 @@ def mock_asgi_handler(app, event: dict) -> dict:
 def test_asgi_handler() -> None:
     def app(scope):
         async def asgi(receive, send):
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
+            res = PlainTextResponse("Hello, world!")
+            await res(receive, send)
 
         return asgi
 
     mock_request = {}
     response = mock_asgi_handler(app, mock_request)
 
-    assert response == {"status": 200, "body": "Hello, world!"}
+    assert response == {"status": 200, "body": b"Hello, world!"}
 
 
-def test_asgi_request_state() -> None:
+def test_asgi_cycle_state() -> None:
     def app(scope):
         async def asgi(receive, send):
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
         return asgi
 
-    mock_request = {}
     with pytest.raises(RuntimeError):
-        mock_asgi_handler(app, mock_request)
+        mock_asgi_handler(app, {})
 
+    def app(scope):
+        async def asgi(receive, send):
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.start", "status": 200, "headers": []})
 
-def test_asgi_response_state() -> None:
-    class App:
-        def __init__(self, scope) -> None:
-            self.scope = scope
+        return asgi
 
-        async def __call__(self, receive, send) -> None:
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-
-    mock_request = {}
     with pytest.raises(RuntimeError):
-        mock_asgi_handler(App, mock_request)
+        mock_asgi_handler(app, {})

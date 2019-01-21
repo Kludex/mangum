@@ -1,5 +1,5 @@
 import urllib.parse
-import cgi
+
 from azure.functions import HttpResponse
 from mangum.handlers.asgi import ASGICycle
 from mangum.utils import encode_query_string
@@ -9,13 +9,8 @@ class AzureFunctionCycle(ASGICycle):
     def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["status_code"] = status_code
         self.response["headers"] = headers
-        mimetype = None
-        charset = None
-        if "content-type" in headers:
-            mimetype, options = cgi.parse_header(headers["content-type"])
-            charset = options.get("charset", None)
-        self.response["mimetype"] = mimetype
-        self.response["charset"] = charset
+        self.response["mimetype"] = self.mimetype
+        self.response["charset"] = self.charset
 
     def on_response_body(self, body: bytes) -> None:
         self.response["body"] = body
@@ -47,8 +42,6 @@ def azure_handler(app, req) -> dict:
     }
 
     body = req.get_body() or b""
-    if not isinstance(body, bytes):
-        body = body.encode("utf-8")
 
     asgi_cycle = AzureFunctionCycle(scope, body=body)
     response = asgi_cycle(app)
