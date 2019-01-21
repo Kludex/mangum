@@ -34,6 +34,10 @@ Currently the only optional dependency is:
 
 - [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for `azure_handler`.
 
+This can be installed with:
+
+```pip3 install mangum[full]```
+
 ## Example
 
 Below is a basic ASGI application example that can be used with handler methods:
@@ -56,7 +60,7 @@ class App:
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 ```
 
-### AWS Lambda + API Gateway
+**AWS Lambda + API Gateway**
 
 ```python
 from mangum.handlers.aws import aws_handler
@@ -65,7 +69,7 @@ def asgi_handler(event, context):
     return aws_handler(App, event, context)
 ```
 
-### Azure Functions
+**Azure Functions**
 
 ```python
 from mangum.handlers.azure import azure_handler
