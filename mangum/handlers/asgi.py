@@ -67,8 +67,6 @@ class ASGICycle:
                 )
 
             body = message["body"]
-            if not isinstance(body, bytes):
-                body.encode("utf-8")
 
             self.on_response_body(body)
             self.put_message({"type": "http.disconnect"})
