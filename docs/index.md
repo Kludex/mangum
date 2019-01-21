@@ -10,6 +10,7 @@
 
 Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with FaaS platforms.
 
+
 **Important**: This project is under active development and in an experimental/unstable state.
 
 ## Supported Platforms
@@ -30,6 +31,10 @@ Python 3.6+
 Currently the only optional dependency is:
 
 - [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for `azure_handler`.
+
+This can be installed with:
+
+```pip3 install mangum[full]```
 
 ## Example
 
@@ -53,7 +58,7 @@ class App:
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 ```
 
-### AWS Lambda + API Gateway
+**AWS Lambda + API Gateway**
 
 ```python
 from mangum.handlers.aws import aws_handler
@@ -62,11 +67,12 @@ def asgi_handler(event, context):
     return aws_handler(App, event, context)
 ```
 
-### Azure Functions
+**Azure Functions**
 
 ```python
 from mangum.handlers.azure import azure_handler
 
 def asgi_handler(req):
     return azure_handler(App, req)
+
 ```
