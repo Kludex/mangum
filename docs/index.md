@@ -34,7 +34,7 @@ This can be installed with:
 
 ## Supported Platforms
 
-Only two platforms are currently support.
+Only two platforms are currently supported, but if you'd like to see others, please open an issue.
 
 ### AWS Lambda / API Gateway
 
@@ -66,6 +66,8 @@ def lambda_handler(event, context):
 ```
 
 #### Mangum CLI (experimental)
+
+Experimental AWS packaging/deployment support. It generally works, but needs to be tested:
 
 **Requirements**:
 
@@ -111,6 +113,21 @@ After packaging, you then can deploy:
 
 ```shell
 mangum deploy
+```
+
+Full output example:
+
+```
+(venv37) [erm@iserlohn aws-test]$ ls
+README.md   hello_asgi  settings.json
+(venv37) [erm@iserlohn aws-test]$ mangum package
+Packaging...
+Successfully packaged. Run 'mangum deploy' to deploy it now.
+(venv37) [erm@iserlohn aws-test]$ mangum deploy
+Deploying! This may take some time...
+API endpoints available at:
+* https://1234abcd.execute-api.ap-southeast-1.amazonaws.com/Prod
+* https://1234abcd.execute-api.ap-southeast-1.amazonaws.com/Stage
 ```
 
 ### Azure Functions

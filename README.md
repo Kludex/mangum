@@ -34,7 +34,7 @@ This can be installed with:
 
 ## Supported Platforms
 
-Only two platforms are currently support.
+Only two platforms are currently supported, but if you'd like to see others, please open an issue.
 
 ### AWS Lambda / API Gateway
 
