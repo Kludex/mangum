@@ -117,7 +117,7 @@ The application generation and deployment tools included in Mangum are mainly in
 
 * As of this writing, only simple application examples have been tested with the adapters (work-in-progress).
 
-* AWS SAM templates are only means of handling the deployment and configuration, it was chosen here because it offered the path of least resistance to getting an app generated and deployed with all the necessary permissions/resources/roles/etc. included.
+* AWS SAM templates are not the only way to handle deployment and configuration, it was chosen here because it offered the path of least resistance to getting an app generated and deployed with all the necessary permissions/resources/roles/etc. included.
 
 * You will need to manually edit the generated AWS SAM template to extend the functionality of the stack and leverage additional AWS services.
 
