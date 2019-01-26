@@ -86,6 +86,8 @@ The available commands are briefly outlined below, but there is also a quickstar
 
 * `mangum tail` - Tail the last 10 minutes of CloudWatch for a particular function.
 
+* `mangum describe` - Retrieve the API endpoints for the function.
+
 ### Azure Functions
 
 #### Example

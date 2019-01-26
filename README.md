@@ -87,7 +87,9 @@ The available commands are briefly outlined below, but there is also a quickstar
 
 * `mangum deploy` - Deploy the packaged application to AWS.
 
-* `mangum tail` - Tail the last 10 minutes of CloudWatch for a particular function.
+* `mangum tail` - Tail the last 10 minutes of CloudWatch for the function.
+
+* `mangum describe` - Retrieve the API endpoints for the function.
 
 ### Azure Functions
 

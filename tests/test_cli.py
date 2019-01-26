@@ -118,19 +118,19 @@ A boilerplate ASGI application for AWS Lambda + API Gateway.
 Mangum wraps a few AWS-CLI commands to use the generated settings and template file:
 
 ```shell
-mangum package
+$ mangum package
 ```
 
 Then run to deploy:
 
 ```shell
-managum deploy
+$ managum deploy
 ```
 
 You may also run:
 
 ```shell
-mangum describe
+$ mangum describe
 ```
 
 to echo the API endpoints to the console.
