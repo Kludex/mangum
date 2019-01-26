@@ -67,7 +67,7 @@ def lambda_handler(event, context):
 
 #### Mangum CLI (experimental)
 
-Experimental AWS packaging/deployment support. It generally works, but needs to be tested:
+Experimental AWS packaging/deployment support.
 
 **Requirements**:
 
