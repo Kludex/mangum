@@ -33,7 +33,7 @@ Currently there are two optional dependencies.
 This can be installed with:
 
 ```shell
-pip3 install mangum[full]
+$ pip3 install mangum[full]
 ```
 
 ## Supported Platforms
