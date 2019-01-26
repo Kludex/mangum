@@ -1,13 +1,11 @@
 import os
 import subprocess
 import json
+import sys
 import uuid
 from typing import Union
 from jinja2 import Environment, FileSystemLoader
-
 import boto3
-
-# from pip._internal import main as pipmain  # pragma: no cover
 
 
 class AWSConfig:
@@ -75,6 +73,21 @@ class AWSConfig:
         return f"{endpoint}Prod\n\n{endpoint}Stage"
 
     def cli_package(self) -> bool:  # pragma: no cover
+        install_cmd = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            "requirements.txt",
+            "--upgrade",
+            "-t",
+            os.path.join(".", self.package_dir, "dist"),
+        ]
+        installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
+        if not installed.returncode == 0:
+            return False
+
         cmd = [
             "aws",
             "cloudformation",
@@ -150,6 +163,7 @@ class AWSConfig:
                 CreateBucketConfiguration={"LocationConstraint": self.region_name},
             )
         os.mkdir(self.package_dir)
+        os.mkdir(os.path.join(self.package_dir, "dist"))
 
         template_map = self.get_template_map()
         for dest_name, dest_info in template_map.items():
@@ -158,3 +172,6 @@ class AWSConfig:
 
         with open(os.path.join(self.config_dir, "settings.json"), "w") as f:
             f.write(json.dumps(self.get_build_context()))
+
+        with open(os.path.join(self.config_dir, "requirements.txt"), "w") as f:
+            f.write("mangum\n")
