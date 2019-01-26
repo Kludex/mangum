@@ -19,18 +19,22 @@ Python 3.6+
 
 ## Installation
 
-```pip3 install mangum```
+```shell
+$ pip3 install mangum
+```
 
 ## Dependencies
 
 Currently there are two optional dependencies.
 
-- [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for `azure_handler`.
-- [boto3](https://github.com/boto/boto3) - Required for the `mangum` CLI commands.
+- [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for Azure.
+- [boto3](https://github.com/boto/boto3) - Required for the `mangum` AWS CLI commands.
 
 This can be installed with:
 
-```pip3 install mangum[full]```
+```shell
+pip3 install mangum[full]
+```
 
 ## Supported Platforms
 
