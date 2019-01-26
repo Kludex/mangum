@@ -62,57 +62,28 @@ class App:
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 def lambda_handler(event, context):
-    return aws_handler(App, event, context)
+    return run_asgi(App, event, context)
 ```
 
 #### Mangum CLI (experimental)
 
-Experimental AWS packaging/deployment support to generate, package, and deploy an application. The generated application and template only provide basic functionality.
-
-**Requirements**:
-
-- AWS CLI & credentials
-- Python 3
-
-To quickly generate an app via the command-line, you may use the following command:
+Experimental AWS packaging/deployment support to generate, package, and deploy an application. This requires installation of the optional dependencies for AWS:
 
 ```shell
-mangum init
+$ pip install mangum[full]
 ```
 
-This generates the following:
+It also requires the AWS CLI and AWS credentials.
 
-* A boilerplate ASGI app with the `mangum` package installed for deployment to AWS.
-    
-* A `settings.json` file with the generated AWS resource information.
+The available commands are briefly outlined below, but there is also a quickstart guide [here](https://erm.github.io/mangum/aws-how-to/):
 
-* An S3 bucket to be used with the app.
+* `mangum init` - Create a new application and deployment configuration.
 
-* A `template.yaml` [SAM template](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html).
+* `mangum package` - Package the local project to prepare for deployment.
 
-Once generated you'll have an app structure that looks like this:
+* `mangum deploy` - Deploy the packaged application to AWS.
 
-```shell
-├── README.md
-├── hello_asgi
-│   ├── app.py
-│   ├── mangum/
-│   ├── requirements.txt
-│   └── template.yaml
-└── settings.json
-```
-
-You will then be prompted to enter the following commands, these are simply wrappers around the AWS-CLI commands with the `settings.json` values generated previously as arguments.
-
-```shell
-magnum package
-```
-
-After packaging, you then can deploy:
-
-```shell
-mangum deploy
-```
+* `mangum tail` - Tail the last 10 minutes of CloudWatch for a particular function.
 
 ### Azure Functions
 
