@@ -1,7 +1,5 @@
 # Mangum
 
-**Documentation**: https://erm.github.io/mangum/
-
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
@@ -33,7 +31,7 @@ Currently there are two optional dependencies.
 This can be installed with:
 
 ```shell
-pip3 install mangum[full]
+$ pip3 install mangum[full]
 ```
 
 ## Supported Platforms
@@ -44,7 +42,7 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 
 #### Example
 
-Below is a basic ASGI application example that can be used with the handler methods:
+Below is a basic ASGI application example using the AWS run method:
 
 ```python
 from mangum.adapters.aws import run_asgi
@@ -92,7 +90,8 @@ The available commands are briefly outlined below, but there is also a quickstar
 ### Azure Functions
 
 #### Example
-The same example application above may be used with Azure Functions:
+
+The same example application as above may be used with the Azure run method:
 
 ```python
 from mangum.adapters.azure import run_asgi
