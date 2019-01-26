@@ -1,13 +1,11 @@
 import click  # pragma: no cover
-import boto3  # pragma: no cover
-import os
-
-from mangum.platforms.aws.helpers import (
+import os  # pragma: no cover
+from mangum.platforms.aws.helpers import (  # pragma: no cover
     get_default_resource_name,
     get_default_region_name,
     get_log_events,
 )
-from mangum.platforms.aws.config import AWSConfig
+from mangum.platforms.aws.config import AWSConfig  # pragma: no cover
 
 
 @click.group()  # pragma: no cover

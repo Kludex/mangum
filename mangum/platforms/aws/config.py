@@ -45,7 +45,7 @@ class AWSConfig:
         )
 
     @classmethod
-    def get_config_from_file(cls):
+    def get_config_from_file(cls):  # pragma: no cover
         cwd = os.getcwd()
         with open(os.path.join(cwd, "settings.json"), "r") as f:
             json_data = f.read()
@@ -196,7 +196,7 @@ Outputs:
         }
         return template_map
 
-    def write_files(self) -> None:
+    def write_files(self) -> None:  # pragma: no cover
         template_map = self.get_template_map()
 
         for dest_name, dest_info in template_map.items():
@@ -216,7 +216,7 @@ Outputs:
         ) as f:
             f.write("mangum\n")
 
-    def build(self) -> None:
+    def build(self) -> None:  # pragma: no cover
         if self.generate_s3:
             self.s3_bucket_name = f"{self.resource_name.lower()}-{uuid.uuid4()}"
             s3 = boto3.resource("s3")

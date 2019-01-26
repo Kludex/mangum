@@ -3,7 +3,7 @@ import operator
 import boto3
 
 
-def get_default_region_name() -> str:
+def get_default_region_name() -> str:  # pragma: no cover
     session = boto3.session.Session()
     return session.region_name
 
