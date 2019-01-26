@@ -179,4 +179,4 @@ def build_project(settings: dict) -> None:  # pragma: no cover
         json_data = json.dumps(settings)
         f.write(json_data)
 
-    pipmain(["install", "mangum[full]", "-t", PROJECT_DIR, "--ignore-installed", "-q"])
+    pipmain(["install", "mangum", "-t", PROJECT_DIR, "--ignore-installed", "-q"])
