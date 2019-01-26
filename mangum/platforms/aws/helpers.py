@@ -3,6 +3,11 @@ import operator
 import boto3
 
 
+def get_default_region_name() -> str:
+    session = boto3.session.Session()
+    return session.region_name
+
+
 def get_default_resource_name(project_name: str) -> str:
     if "_" in project_name:
         name_parts = project_name.split("_")

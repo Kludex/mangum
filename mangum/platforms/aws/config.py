@@ -2,7 +2,7 @@ import os
 import subprocess
 import json
 import uuid
-from typing import Tuple
+from typing import Union
 from jinja2 import Environment, FileSystemLoader
 
 import boto3
@@ -54,7 +54,7 @@ class AWSConfig:
         config = cls(**settings)
         return config
 
-    def cli_describe(self) -> Tuple[str, str]:  # pragma: no cover
+    def cli_describe(self) -> Union[str, None]:  # pragma: no cover
         cmd = [
             "aws",
             "cloudformation",
@@ -65,12 +65,14 @@ class AWSConfig:
             "Stacks[].Outputs",
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if res.returncode != 0:
+            return None
         data = json.loads(res.stdout)
         for i in data:
             for j in i:
                 if j["OutputKey"] == f"{self.resource_name}Api":
                     endpoint = j["OutputValue"]
-        return f"{endpoint}Prod", f"{endpoint}Stage"
+        return f"{endpoint}Prod\n\n{endpoint}Stage"
 
     def cli_package(self) -> bool:  # pragma: no cover
         cmd = [
@@ -108,6 +110,7 @@ class AWSConfig:
             "package_dir": self.package_dir,
             "project_name": self.project_name,
             "description": self.description,
+            "region_name": self.region_name,
             "runtime_version": self.runtime_version,
             "resource_name": self.resource_name,
             "url_root": self.url_root,

@@ -1,9 +1,11 @@
-import uuid  # pragma: no cover
 import click  # pragma: no cover
 import boto3  # pragma: no cover
 import os
 
-from mangum.platforms.aws.helpers import get_default_resource_name
+from mangum.platforms.aws.helpers import (
+    get_default_resource_name,
+    get_default_region_name,
+)
 from mangum.platforms.aws.config import AWSConfig
 
 
@@ -38,15 +40,10 @@ def mangum(command: str) -> None:
         timeout = click.prompt(
             "What should the timeout be (in seconds, max=300)?", type=int, default=300
         )
-
-        # Retrieve the default region name.
-        session = boto3.session.Session()
-        current_region = session.region_name
+        default_region_name = get_default_region_name()
         region_name = click.prompt(
-            "What region should be used?", default=current_region
+            "What region should be used?", default=default_region_name
         )
-
-        # Generate an S3 bucket for the project or use an existing one.
         s3_bucket_name = click.prompt(
             "An S3 bucket is required. \n\nEnter the name of an existing bucket or "
             f"one will be generated.",
@@ -72,13 +69,14 @@ def mangum(command: str) -> None:
         )
         click.echo("Creating your local project...")
         config.build()
-        click.echo("Your app has been generated!")
-        click.echo("Run 'mangum package' to begin packaging for deployment.")
+        click.echo(
+            "Your app has been generated!\n"
+            "Run 'mangum package' to begin packaging for deployment."
+        )
 
     elif command == "package":
         click.echo("Packaging your application...")
-        config = AWSConfig.get_config_from_file()
-        packaged = config.cli_package()
+        packaged = AWSConfig.get_config_from_file().cli_package()
         if not packaged:
             click.echo("There was an error...")
         else:
@@ -86,23 +84,21 @@ def mangum(command: str) -> None:
 
     elif command == "deploy":
         click.echo("Deploying! This may take some time...")
-        config = AWSConfig.get_config_from_file()
-        deployed = config.cli_deploy()
+        deployed = AWSConfig.get_config_from_file().cli_deploy()
         if not deployed:
             click.echo("There was an error...")
         else:
-            config = AWSConfig.get_config_from_file()
-            prod, stage = config.cli_describe()
-            click.echo(f"Deployment successful! API endpoints available at:")
-            click.echo(f"* {prod}")
-            click.echo(f"* {stage}")
+            endpoints = AWSConfig.get_config_from_file().cli_describe()
+            click.echo(
+                f"Deployment successful! API endpoints available at:\n\n{endpoints}"
+            )
 
     elif command == "describe":
-        config = AWSConfig.get_config_from_file()
-        prod, stage = config.cli_describe()
-        click.echo(f"API endpoints available at:")
-        click.echo(f"* {prod}")
-        click.echo(f"* {stage}")
+        endpoints = AWSConfig.get_config_from_file().cli_describe()
+        if not endpoints:
+            click.echo("Error! Could not retrieve endpoints.")
+        else:
+            click.echo(f"API endpoints available at:\n\n{endpoints}")
 
     # elif command == "tail":
     #     settings = get_settings()
