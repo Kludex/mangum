@@ -104,7 +104,7 @@ def lambda_handler(event, context):
 You would also have to include Starlette as a dependency in the package:
 
 ```
-pip3 install . -t starlette
+$ pip3 install . -t starlette
 ```
 
 And re-run the `mangum package` and `mangum deploy` commands to update the function.

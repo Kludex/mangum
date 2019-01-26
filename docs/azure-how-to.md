@@ -1,4 +1,4 @@
-# How to deploy an ASGI app to Azure
+# How to deploy an ASGI app to Azure Functions
 
 This guide will explain how to deploy a basic [ASGI](https://asgi.readthedocs.io/en/latest/) application to Azure Functions. There is also an [official guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python) that explains much of the same information.
 

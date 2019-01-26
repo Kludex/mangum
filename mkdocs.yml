@@ -16,9 +16,8 @@ edit_uri: ""
 
 nav:
     - Introduction: 'index.md'
-    - Guides: 
-      - 'azure-how-to.md'
-      - 'aws-how-to.md'
+    - 'azure-how-to.md'
+    - 'aws-how-to.md'
 
 markdown_extensions:
   - markdown.extensions.codehilite:
