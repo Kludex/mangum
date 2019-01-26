@@ -110,7 +110,7 @@ Replace this completely with the following and save:
 ```python
 import logging
 import azure.functions as func
-from mangum.handlers.azure import azure_handler
+from mangum.adapters.azure import run_asgi
 
 
 class App:
@@ -132,10 +132,10 @@ class App:
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Python HTTP trigger function processed a request.")
-    return azure_handler(App, req)
+    return run_asgi(App, req)
 ```
 
-This is a basic ASGI app example that uses the `azure_handler` that executes the ASGI HTTP request-response cycle. Run the app again with the following command to see the new output:
+This is a basic ASGI app example that uses the `run_asgi` method to execute the ASGI HTTP request-response cycle. Run the app again with the following command to see the new output:
 
 ```
 func start
