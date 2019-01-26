@@ -96,8 +96,7 @@ Once generated you'll have an app structure that looks like this:
 ├── README.md
 ├── hello_asgi
 │   ├── app.py
-│   ├── mangum
-│   ├── mangum-0.3.0-py3.7.egg-info
+│   ├── mangum/
 │   ├── requirements.txt
 │   └── template.yaml
 └── settings.json
@@ -114,9 +113,6 @@ After packaging, you then can deploy:
 ```shell
 mangum deploy
 ```
-
-To add additional requiremets, 
-
 
 ### Azure Functions
 
