@@ -58,15 +58,13 @@ def run_asgi(app, event: dict, context: dict) -> dict:
     }
 
     binary = event.get("isBase64Encoded", False)
+    body = event["body"]
 
-    if binary:
-        encoded = event["body"]
-        body = base64.b64decode(encoded)
-    else:
-        body = event["body"]
-
-    if not isinstance(body, bytes):
-        body = body.encode("utf-8")
+    if body:
+        if binary:
+            body = base64.b64decode(body)
+        elif not isinstance(body, bytes):
+            body = body.encode("utf-8")
 
     handler = AWSLambdaCycle(scope, body=body, binary=binary)
     return handler(app)
