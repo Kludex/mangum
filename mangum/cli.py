@@ -3,9 +3,11 @@ import uuid
 import subprocess
 import shlex
 import json
+from typing import Tuple
+from pip._internal import main as pipmain
+
 import boto3
 import click
-from pip._internal import main as pipmain
 
 
 def get_settings() -> dict:
@@ -16,15 +18,17 @@ def get_settings() -> dict:
     return settings
 
 
-def get_endpoints(stack_name: str, resource_name: str) -> str:
-
-    describe_command = (
-        "aws cloudformation describe-stacks "
-        f"--stack-name {stack_name} "
-        "--query 'Stacks[].Outputs'"
-    )
-    describe_cmd = shlex.split(describe_command)
-    res = subprocess.run(describe_cmd, stdout=subprocess.PIPE)
+def get_endpoints(stack_name: str, resource_name: str) -> Tuple[str, str]:
+    cmd = [
+        "aws",
+        "cloudformation",
+        "describe-stacks",
+        "--stack-name",
+        stack_name,
+        "--query",
+        "Stacks[].Outputs",
+    ]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE)
     data = json.loads(res.stdout)
     for i in data:
         for j in i:
@@ -240,24 +244,22 @@ def mangum(command: str) -> None:
         click.echo("Your app has been generated!")
         click.echo("Run 'mangum package' to begin packaging for deployment.")
 
-    # TODO: Replace these CLI calls somehow, ran into some issues.
+    # TODO: Look into replacing the AWS-CLI wrappers with boto3
     elif command == "package":
-
-        click.echo("Packaging...")
-
+        click.echo("Packaging your application...")
         settings = get_settings()
-
         project_name = settings["project_name"]
         s3_bucket_name = settings["s3_bucket_name"]
-
-        command = (
-            "aws cloudformation package "
-            f"--template-file {project_name}/template.yaml "
-            f"--output-template-file {project_name}/packaged.yaml "
-            f"--s3-bucket {s3_bucket_name}"
-        )
-        package_cmd = shlex.split(command)
-        res = subprocess.run(package_cmd, stdout=subprocess.PIPE)
+        cmd = [
+            "aws",
+            "cloudformation",
+            "package",
+            "--template-file",
+            f"{project_name}/template.yaml",
+            f"--output-template-file {project_name}/packaged.yaml",
+            f"--s3-bucket {s3_bucket_name}",
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE)
         if res.returncode != 0:
             click.echo("There was an error...")
         else:
@@ -270,15 +272,15 @@ def mangum(command: str) -> None:
         project_name = settings["project_name"]
         stack_name = settings["stack_name"]
         resource_name = settings["resource_name"]
-
-        command = (
-            "aws cloudformation deploy "
-            f"--template-file {project_name}/packaged.yaml "
-            f"--stack-name {stack_name} "
-            "--capabilities CAPABILITY_IAM"
-        )
-        deploy_cmd = shlex.split(command)
-        res = subprocess.run(deploy_cmd, stdout=subprocess.PIPE)
+        cmd = [
+            "aws",
+            "cloudformation",
+            "deploy",
+            "--template-file",
+            f"{project_name}/packaged.yaml",
+            f"--stack-name {stack_name}" "--capabilities CAPABILITY_IAM",
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE)
         if res.returncode != 0:
             click.echo("There was an error...")
         else:
