@@ -6,6 +6,7 @@ import uuid
 from typing import Union
 from jinja2 import Environment, FileSystemLoader
 import boto3
+import shutil
 
 
 class AWSConfig:
@@ -73,6 +74,12 @@ class AWSConfig:
         return f"{endpoint}Prod\n\n{endpoint}Stage"
 
     def cli_package(self) -> bool:  # pragma: no cover
+        build_dir = os.path.join(self.package_dir, "build")
+        if not os.path.isdir(build_dir):
+            os.mkdir(build_dir)
+        shutil.copyfile(
+            os.path.join(self.package_dir, "app.py"), os.path.join(build_dir, "app.py")
+        )
         install_cmd = [
             sys.executable,
             "-m",
@@ -82,7 +89,7 @@ class AWSConfig:
             "requirements.txt",
             "--upgrade",
             "-t",
-            os.path.join(".", self.package_dir, "dist"),
+            os.path.join(".", build_dir),
         ]
         installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
         if not installed.returncode == 0:
@@ -146,7 +153,7 @@ Resources:
         Type: AWS::Serverless::Function
         Properties:
             FunctionName: {self.resource_name}Function
-            CodeUri: .
+            CodeUri: ./build
             Handler: app.lambda_handler
             Runtime: python{self.runtime_version}
             # Environment:
@@ -218,8 +225,7 @@ Outputs:
                 CreateBucketConfiguration={"LocationConstraint": self.region_name},
             )
         os.mkdir(self.package_dir)
-        os.mkdir(os.path.join(self.package_dir, "dist"))
         self.write_files()
 
-    def rebuild(self) -> None:
-        self.write_files()
+    # def rebuild(self) -> None:
+    #     self.write_files()

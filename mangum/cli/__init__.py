@@ -5,6 +5,7 @@ import os
 from mangum.platforms.aws.helpers import (
     get_default_resource_name,
     get_default_region_name,
+    get_log_events,
 )
 from mangum.platforms.aws.config import AWSConfig
 
@@ -100,25 +101,29 @@ def mangum(command: str) -> None:
         else:
             click.echo(f"API endpoints available at:\n\n{endpoints}")
 
-    elif command == "rebuild":
-        click.echo("Re-building the local app files.")
-        AWSConfig.get_config_from_file().rebuild()
-    # elif command == "tail":
-    #     settings = get_settings()
-    #     # Display the CloudWatch logs for the last 10 minutes.
-    #     # TODO: Make this configurable.
-    #     log_events = get_log_events(
-    #         f"/aws/lambda/{settings['resource_name']}Function", minutes=10
-    #     )
-    #     log_output = []
-    #     for log in log_events:
-    #         message = log["message"].rstrip()
-    #         if not any(
-    #             i in message
-    #             for i in ("START RequestId", "REPORT RequestId", "END RequestId")
-    #         ):
-    #             timestamp = log["timestamp"]
-    #             s = f"[{timestamp}] {message}"
-    #             log_output.append(s)
+    # elif command == "rebuild":
+    #     if click.confirm(
+    #         "Warning! This will rebuild all the local files. Do you want to continue?"
+    #     ):
+    #         AWSConfig.get_config_from_file().rebuild()
+    #         click.echo("Project files rebuilt!")
 
-    #     click.echo("\n".join(log_output))
+    elif command == "tail":
+        settings = AWSConfig.get_config_from_file()
+        # Display the CloudWatch logs for the last 10 minutes.
+        # TODO: Make this configurable.
+        log_events = get_log_events(
+            f"/aws/lambda/{settings.resource_name}Function", minutes=10
+        )
+        log_output = []
+        for log in log_events:
+            message = log["message"].rstrip()
+            if not any(
+                i in message
+                for i in ("START RequestId", "REPORT RequestId", "END RequestId")
+            ):
+                timestamp = log["timestamp"]
+                s = f"[{timestamp}] {message}"
+                log_output.append(s)
+
+        click.echo("\n".join(log_output))

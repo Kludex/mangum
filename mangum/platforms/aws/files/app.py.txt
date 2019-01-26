@@ -1,4 +1,4 @@
-from dist.mangum.adapters.aws import run_asgi
+from mangum.adapters.aws import run_asgi
 
 
 class App:
