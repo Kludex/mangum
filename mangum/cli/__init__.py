@@ -100,6 +100,9 @@ def mangum(command: str) -> None:
         else:
             click.echo(f"API endpoints available at:\n\n{endpoints}")
 
+    elif command == "rebuild":
+        click.echo("Re-building the local app files.")
+        AWSConfig.get_config_from_file().rebuild()
     # elif command == "tail":
     #     settings = get_settings()
     #     # Display the CloudWatch logs for the last 10 minutes.

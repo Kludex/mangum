@@ -132,14 +132,49 @@ class AWSConfig:
             "stack_name": self.stack_name,
         }
 
+    def get_sam_template(self) -> str:
+        return f"""AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    {self.project_name}
+    {self.description}
+Globals:
+    Function:
+        Timeout: {self.timeout}
+Resources:
+    {self.resource_name}Function:
+        Type: AWS::Serverless::Function
+        Properties:
+            FunctionName: {self.resource_name}Function
+            CodeUri: .
+            Handler: app.lambda_handler
+            Runtime: python{self.runtime_version}
+            # Environment:
+            #     Variables:
+            #         PARAM1: VALUE
+            Events:
+                {self.resource_name}:
+                    Type: Api
+                    Properties:
+                        Path: {self.url_root}
+                        Method: get
+Outputs:
+    {self.resource_name}Api:
+      Description: "API Gateway endpoint URL for {self.resource_name} function"
+      Value: !Sub "https://${{ServerlessRestApi}}.execute-api.${{AWS::Region}}.amazonaws.com{self.url_root}"
+    {self.resource_name}Function:
+      Description: "{self.resource_name} Lambda Function ARN"
+      Value: !GetAtt {self.resource_name}Function.Arn
+    {self.resource_name}FunctionIamRole:
+      Description: "Implicit IAM Role created for {self.resource_name} function"
+      Value: !GetAtt {self.resource_name}FunctionRole.Arn"""
+
     def get_template_map(self) -> dict:
         build_context = self.get_build_context()
         template_map = {
             "template.yaml": {
                 "directory": self.package_dir,
-                "content": self.env.get_template("template.yaml.txt").render(
-                    context=build_context
-                ),
+                "content": self.get_sam_template(),
             },
             "app.py": {
                 "directory": self.package_dir,
@@ -154,6 +189,26 @@ class AWSConfig:
         }
         return template_map
 
+    def write_files(self) -> None:
+        template_map = self.get_template_map()
+
+        for dest_name, dest_info in template_map.items():
+            with open(
+                os.path.join(dest_info["directory"], dest_name), "w", encoding="utf-8"
+            ) as f:
+                content = dest_info["content"]
+                f.write(content)
+
+        with open(
+            os.path.join(self.config_dir, "settings.json"), "w", encoding="utf-8"
+        ) as f:
+            f.write(json.dumps(self.get_build_context()))
+
+        with open(
+            os.path.join(self.config_dir, "requirements.txt"), "w", encoding="utf-8"
+        ) as f:
+            f.write("mangum\n")
+
     def build(self) -> None:
         if self.generate_s3:
             self.s3_bucket_name = f"{self.resource_name.lower()}-{uuid.uuid4()}"
@@ -164,14 +219,7 @@ class AWSConfig:
             )
         os.mkdir(self.package_dir)
         os.mkdir(os.path.join(self.package_dir, "dist"))
+        self.write_files()
 
-        template_map = self.get_template_map()
-        for dest_name, dest_info in template_map.items():
-            with open(os.path.join(dest_info["directory"], dest_name), "w") as f:
-                f.write(dest_info["content"])
-
-        with open(os.path.join(self.config_dir, "settings.json"), "w") as f:
-            f.write(json.dumps(self.get_build_context()))
-
-        with open(os.path.join(self.config_dir, "requirements.txt"), "w") as f:
-            f.write("mangum\n")
+    def rebuild(self) -> None:
+        self.write_files()
