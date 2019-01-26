@@ -3,7 +3,6 @@ import json
 import operator
 import datetime
 import boto3
-from pip._internal import main as pipmain
 
 
 def get_settings() -> dict:  # pragma: no cover
@@ -154,6 +153,8 @@ def get_default_resource_name(project_name: str) -> str:
 
 
 def build_project(settings: dict) -> None:  # pragma: no cover
+    from pip._internal import main as pipmain
+
     CURRENT_DIR = os.getcwd()
     PROJECT_DIR = os.path.join(CURRENT_DIR, settings["project_name"])
     os.mkdir(PROJECT_DIR)
