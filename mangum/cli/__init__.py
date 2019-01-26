@@ -49,10 +49,10 @@ def mangum(command: str) -> None:
 
         # Generate an S3 bucket for the project or use an existing one.
         existing_s3_bucket_name = click.prompt(
-            "If you have an existing S3 bucket you would like to use, enter it now "
-            f", otherwise one will be generated at s3://bucket/{s3_bucket_name}",
+            "An S3 bucket is required. \n\nEnter the name of an existing bucket, or "
+            f"one will be generated at:\n\ns3://bucket/{s3_bucket_name}",
             type=str,
-            default=None,
+            default="",
         )
         if not existing_s3_bucket_name:
             click.echo("Creating S3 bucket...")

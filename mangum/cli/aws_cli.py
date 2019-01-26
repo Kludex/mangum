@@ -22,19 +22,6 @@ def aws_describe(settings: dict) -> Tuple[str, str]:  # pragma: no cover
     return f"{endpoint}Prod", f"{endpoint}Stage"
 
 
-def aws_deploy(settings: dict) -> bool:  # pragma: no cover
-    cmd = [
-        "aws",
-        "cloudformation",
-        "deploy",
-        "--template-file",
-        f"{settings['project_name']}/packaged.yaml",
-        f"--stack-name {settings['stack_name']}" "--capabilities CAPABILITY_IAM",
-    ]
-    res = subprocess.run(cmd, stdout=subprocess.PIPE)
-    return res.returncode == 0
-
-
 def aws_package(settings: dict) -> bool:  # pragma: no cover
     cmd = [
         "aws",
@@ -42,8 +29,26 @@ def aws_package(settings: dict) -> bool:  # pragma: no cover
         "package",
         "--template-file",
         f"{settings['project_name']}/template.yaml",
-        f"--output-template-file {settings['project_name']}/packaged.yaml",
-        f"--s3-bucket {settings['s3_bucket_name']}",
+        "--output-template-file",
+        f"{settings['project_name']}/packaged.yaml",
+        "--s3-bucket",
+        f"{settings['s3_bucket_name']}",
+    ]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE)
+    return res.returncode == 0
+
+
+def aws_deploy(settings: dict) -> bool:  # pragma: no cover
+    cmd = [
+        "aws",
+        "cloudformation",
+        "deploy",
+        "--template-file",
+        f"{settings['project_name']}/packaged.yaml",
+        "--stack-name",
+        f"{settings['stack_name']}",
+        "--capabilities",
+        "CAPABILITY_IAM",
     ]
     res = subprocess.run(cmd, stdout=subprocess.PIPE)
     return res.returncode == 0
