@@ -96,7 +96,7 @@ This will tail the last 10 minutes of logs activity for the function.
 The generated "hello world" application is a raw example, but you can easily use any ASGI framework with the adapter. For example, you could replace the content of the `app.py` generated previously with a Starlette application to achieve a similar result:
 
 ```python
-from mangum.adapters.aws import run_asgi
+from mangum.platforms.aws.adapter import run_asgi
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse

@@ -2,7 +2,7 @@ import typing
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
 
-from mangum.adapters.azure import run_asgi
+from mangum.platforms.azure.adapter import run_asgi
 
 
 class MockHttpRequest:

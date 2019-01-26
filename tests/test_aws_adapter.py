@@ -2,7 +2,7 @@ import base64
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
-from mangum.adapters.aws import run_asgi
+from mangum.platforms.aws.adapter import run_asgi
 
 
 def test_aws_response(mock_data) -> None:

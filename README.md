@@ -47,7 +47,7 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 Below is a basic ASGI application example using the AWS run method:
 
 ```python
-from mangum.adapters.aws import run_asgi
+from mangum.platforms.aws.adapter import run_asgi
 
 class App:
     def __init__(self, scope) -> None:
@@ -98,7 +98,7 @@ The available commands are briefly outlined below, but there is also a quickstar
 The same example application as above may be used with the Azure run method:
 
 ```python
-from mangum.adapters.azure import run_asgi
+from mangum.platforms.aws.adapter import run_asgi
 
 
 class App:
