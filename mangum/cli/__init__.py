@@ -1,13 +1,11 @@
-import uuid  # pragma: no cover
 import click  # pragma: no cover
-import boto3  # pragma: no cover
-from mangum.cli.aws_cli import aws_deploy, aws_describe, aws_package  # pragma: no cover
-from mangum.cli.helpers import (  # pragma: no cover
-    get_settings,
+import os  # pragma: no cover
+from mangum.platforms.aws.helpers import (  # pragma: no cover
     get_default_resource_name,
-    build_project,
+    get_default_region_name,
     get_log_events,
 )
+from mangum.platforms.aws.config import AWSConfig  # pragma: no cover
 
 
 @click.group()  # pragma: no cover
@@ -32,7 +30,7 @@ def mangum(command: str) -> None:
             type=str,
             default=get_default_resource_name(project_name),
         )
-        root_path = click.prompt(
+        url_root = click.prompt(
             "What should be the root URL path?", type=str, default="/"
         )
         runtime_version = click.prompt(
@@ -41,55 +39,43 @@ def mangum(command: str) -> None:
         timeout = click.prompt(
             "What should the timeout be (in seconds, max=300)?", type=int, default=300
         )
-
-        # Retrieve the default region name.
-        session = boto3.session.Session()
-        current_region = session.region_name
+        default_region_name = get_default_region_name()
         region_name = click.prompt(
-            "What region should be used?", default=current_region
+            "What region should be used?", default=default_region_name
         )
-
-        s3_bucket_name = f"{resource_name.lower()}-{uuid.uuid4()}"
-
-        # Generate an S3 bucket for the project or use an existing one.
-        existing_s3_bucket_name = click.prompt(
-            "An S3 bucket is required. \n\nEnter the name of an existing bucket, or "
-            f"one will be generated at:\n\ns3://bucket/{s3_bucket_name}",
+        s3_bucket_name = click.prompt(
+            "An S3 bucket is required. \n\nEnter the name of an existing bucket or "
+            f"one will be generated.",
             type=str,
             default="",
         )
-        if not existing_s3_bucket_name:
-            click.echo("Creating S3 bucket...")
-            s3 = boto3.resource("s3")
-            s3.create_bucket(
-                Bucket=s3_bucket_name,
-                CreateBucketConfiguration={"LocationConstraint": region_name},
-            )
-        else:
-            s3_bucket_name = existing_s3_bucket_name
-
-        # Build the app settings and templates.
-        settings = {
-            "project_name": project_name,
-            "description": description,
-            "s3_bucket_name": s3_bucket_name,
-            "stack_name": resource_name.lower(),
-            "resource_name": resource_name,
-            "root_path": root_path,
-            "runtime_version": runtime_version,
-            "region_name": region_name,
-            "timeout": timeout,
-        }
-
+        generate_s3 = s3_bucket_name == ""
+        config_dir = os.getcwd()
+        package_dir = os.path.join(config_dir, project_name)
+        config = AWSConfig(
+            config_dir=config_dir,
+            package_dir=package_dir,
+            project_name=project_name,
+            description=description,
+            s3_bucket_name=s3_bucket_name,
+            resource_name=resource_name,
+            stack_name=resource_name.lower(),
+            url_root=url_root,
+            runtime_version=runtime_version,
+            region_name=region_name,
+            timeout=timeout,
+            generate_s3=generate_s3,
+        )
         click.echo("Creating your local project...")
-        build_project(settings)
-        click.echo("Your app has been generated!")
-        click.echo("Run 'mangum package' to begin packaging for deployment.")
+        config.build()
+        click.echo(
+            "Your app has been generated!\n"
+            "Run 'mangum package' to begin packaging for deployment."
+        )
 
     elif command == "package":
         click.echo("Packaging your application...")
-        settings = get_settings()
-        packaged = aws_package(settings)
+        packaged = AWSConfig.get_config_from_file().cli_package()
         if not packaged:
             click.echo("There was an error...")
         else:
@@ -97,29 +83,35 @@ def mangum(command: str) -> None:
 
     elif command == "deploy":
         click.echo("Deploying! This may take some time...")
-        settings = get_settings()
-        deployed = aws_deploy(settings)
+        deployed = AWSConfig.get_config_from_file().cli_deploy()
         if not deployed:
             click.echo("There was an error...")
         else:
-            prod, stage = aws_describe(settings)
-            click.echo(f"Deployment successful! API endpoints available at:")
-            click.echo(f"* {prod}")
-            click.echo(f"* {stage}")
+            endpoints = AWSConfig.get_config_from_file().cli_describe()
+            click.echo(
+                f"Deployment successful! API endpoints available at:\n\n{endpoints}"
+            )
 
     elif command == "describe":
-        settings = get_settings()
-        prod, stage = aws_describe(settings)
-        click.echo(f"API endpoints available at:")
-        click.echo(f"* {prod}")
-        click.echo(f"* {stage}")
+        endpoints = AWSConfig.get_config_from_file().cli_describe()
+        if not endpoints:
+            click.echo("Error! Could not retrieve endpoints.")
+        else:
+            click.echo(f"API endpoints available at:\n\n{endpoints}")
+
+    # elif command == "rebuild":
+    #     if click.confirm(
+    #         "Warning! This will rebuild all the local files. Do you want to continue?"
+    #     ):
+    #         AWSConfig.get_config_from_file().rebuild()
+    #         click.echo("Project files rebuilt!")
 
     elif command == "tail":
-        settings = get_settings()
+        settings = AWSConfig.get_config_from_file()
         # Display the CloudWatch logs for the last 10 minutes.
         # TODO: Make this configurable.
         log_events = get_log_events(
-            f"/aws/lambda/{settings['resource_name']}Function", minutes=10
+            f"/aws/lambda/{settings.resource_name}Function", minutes=10
         )
         log_output = []
         for log in log_events:

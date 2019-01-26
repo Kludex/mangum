@@ -38,21 +38,33 @@ After answering a series of questions, the following will be generated in the cu
 Once the initial configuration step is complete, you should have an app structure that looks like this:
 
 ```shell
-├── README.md
-├── my_project
+├── hello_world_project
+│   ├── README.md
 │   ├── app.py
-│   ├── mangum/
-│   ├── requirements.txt
+│   ├── build
 │   └── template.yaml
+├── requirements.txt
 └── settings.json
 ```
 
 ### Step 2 - Packaging and deployment
 
-You will then be prompted to enter the following commands, these are simply wrappers around the AWS-CLI commands using the `settings.json` values generated previously as arguments.
+You will then be prompted to enter the package and deploy commands, the `settings.json` file is used to inform the parameters used with the methods that wrap the AWS CLI commands.
+
+The package command also populates the `build/` directory by installing the packages in the `requirements.txt`, by default the `mangum` package will appear.
 
 ```shell
 $ mangum package
+```
+
+After running the package command the build directory should look like this:
+
+```
+│   ├── build
+│   │   ├── app.py
+│   │   ├── bin
+│   │   ├── mangum
+│   │   └── mangum-x.x.x-pyx.x.egg-info
 ```
 
 After packaging, you then can deploy:
@@ -101,11 +113,7 @@ def lambda_handler(event, context):
     return run_asgi(app, event, context)
 ```
 
-You would also have to include Starlette as a dependency in the package:
-
-```
-$ pip3 install . -t starlette
-```
+You would also have to include Starlette as a dependency in the package by adding it to the `requirements.txt`.
 
 And re-run the `mangum package` and `mangum deploy` commands to update the function.
 
