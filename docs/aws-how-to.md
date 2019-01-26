@@ -52,7 +52,7 @@ Once the initial configuration step is complete, you should have an app structur
 You will then be prompted to enter the following commands, these are simply wrappers around the AWS-CLI commands using the `settings.json` values generated previously as arguments.
 
 ```shell
-$ magnum package
+$ mangum package
 ```
 
 After packaging, you then can deploy:
