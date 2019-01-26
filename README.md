@@ -43,7 +43,7 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 Below is a basic ASGI application example that can be used with the handler methods:
 
 ```python
-from mangum.handlers.aws import aws_handler
+from mangum.adapters.aws import run_asgi
 
 class App:
     def __init__(self, scope) -> None:
@@ -136,7 +136,7 @@ API endpoints available at:
 The same example application above may be used with Azure Functions:
 
 ```python
-from mangum.handlers.azure import azure_handler
+from mangum.adapters.azure import run_asgi
 
 
 class App:
@@ -156,7 +156,7 @@ class App:
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 def lambda_handler(req):
-    return azure_handler(App, req)
+    return run_asgi(App, req)
 ```
 
 The command-line tools for Azure Functions can do pretty much everything you need. A basic quickstart guide for using it with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).

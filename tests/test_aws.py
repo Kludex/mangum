@@ -2,7 +2,7 @@ import base64
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
-from mangum.handlers.aws import aws_handler
+from mangum.adapters.aws import run_asgi
 
 
 def test_aws_response(mock_data) -> None:
@@ -14,7 +14,7 @@ def test_aws_response(mock_data) -> None:
         return asgi
 
     mock_event = mock_data.get_aws_event()
-    response = aws_handler(app, mock_event, {})
+    response = run_asgi(app, mock_event, {})
 
     assert response == {
         "statusCode": 200,
@@ -38,7 +38,7 @@ def test_aws_response_with_body(mock_data) -> None:
         return asgi
 
     mock_event = mock_data.get_aws_event()
-    response = aws_handler(app, mock_event, {})
+    response = run_asgi(app, mock_event, {})
 
     assert response == {
         "statusCode": 200,
@@ -63,7 +63,7 @@ def test_aws_binary_response_with_body(mock_data) -> None:
     body_encoded = base64.b64encode(body)
     mock_event["body"] = body_encoded
     mock_event["isBase64Encoded"] = True
-    response = aws_handler(app, mock_event, {})
+    response = run_asgi(app, mock_event, {})
 
     assert response == {
         "statusCode": 200,
@@ -83,7 +83,7 @@ def test_starlette_aws_response(mock_data) -> None:
     def homepage(request):
         return PlainTextResponse("Hello, world!")
 
-    response = aws_handler(app, mock_event, {})
+    response = run_asgi(app, mock_event, {})
 
     assert response == {
         "statusCode": 200,

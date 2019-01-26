@@ -1,5 +1,5 @@
 import base64
-from mangum.handlers.asgi import ASGICycle
+from mangum.asgi import ASGICycle
 from mangum.utils import encode_query_string
 
 
@@ -22,7 +22,7 @@ class AWSLambdaCycle(ASGICycle):
         self.response["body"] = body
 
 
-def aws_handler(app, event: dict, context: dict) -> dict:
+def run_asgi(app, event: dict, context: dict) -> dict:
     server = None
     client = None
     method = event["httpMethod"]
