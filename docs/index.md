@@ -1,4 +1,5 @@
 # Mangum
+
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
@@ -44,7 +45,7 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 Below is a basic ASGI application example using the AWS run method:
 
 ```python
-from mangum.adapters.aws import run_asgi
+from mangum.platforms.aws.adapter import run_asgi
 
 class App:
     def __init__(self, scope) -> None:
@@ -84,7 +85,7 @@ The available commands are briefly outlined below, but there is also a quickstar
 
 * `mangum deploy` - Deploy the packaged application to AWS.
 
-* `mangum tail` - Tail the last 10 minutes of CloudWatch for a particular function.
+* `mangum tail` - Tail the last 10 minutes of CloudWatch for the function.
 
 * `mangum describe` - Retrieve the API endpoints for the function.
 
@@ -95,7 +96,7 @@ The available commands are briefly outlined below, but there is also a quickstar
 The same example application as above may be used with the Azure run method:
 
 ```python
-from mangum.adapters.azure import run_asgi
+from mangum.platforms.azure.adapter import run_asgi
 
 
 class App:

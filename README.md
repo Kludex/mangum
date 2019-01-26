@@ -98,7 +98,7 @@ The available commands are briefly outlined below, but there is also a quickstar
 The same example application as above may be used with the Azure run method:
 
 ```python
-from mangum.platforms.aws.adapter import run_asgi
+from mangum.platforms.azure.adapter import run_asgi
 
 
 class App:
