@@ -14,7 +14,7 @@ class AWSConfig:
     def __init__(
         self,
         *,
-        base_dir: str,
+        config_dir: str,
         package_dir: str,
         project_name: str,
         description: str,
@@ -27,7 +27,7 @@ class AWSConfig:
         stack_name: str,
         generate_s3: bool = False,
     ) -> None:
-        self.base_dir = base_dir
+        self.config_dir = config_dir
         self.package_dir = package_dir
         self.project_name = project_name
         self.description = description
@@ -106,7 +106,7 @@ class AWSConfig:
 
     def get_build_context(self) -> dict:
         return {
-            "base_dir": self.base_dir,
+            "config_dir": self.config_dir,
             "package_dir": self.package_dir,
             "project_name": self.project_name,
             "description": self.description,
@@ -119,6 +119,28 @@ class AWSConfig:
             "stack_name": self.stack_name,
         }
 
+    def get_template_map(self) -> dict:
+        build_context = self.get_build_context()
+        template_map = {
+            "template.yaml": {
+                "directory": self.package_dir,
+                "content": self.env.get_template("template.yaml.txt").render(
+                    context=build_context
+                ),
+            },
+            "app.py": {
+                "directory": self.package_dir,
+                "content": self.env.get_template("app.py.txt").render(),
+            },
+            "README.md": {
+                "directory": self.package_dir,
+                "content": self.env.get_template("README.md.txt").render(
+                    context=build_context
+                ),
+            },
+        }
+        return template_map
+
     def build(self) -> None:
         if self.generate_s3:
             self.s3_bucket_name = f"{self.resource_name.lower()}-{uuid.uuid4()}"
@@ -127,34 +149,12 @@ class AWSConfig:
                 Bucket=self.s3_bucket_name,
                 CreateBucketConfiguration={"LocationConstraint": self.region_name},
             )
-
         os.mkdir(self.package_dir)
-        template_map = {
-            "template.yaml.txt": {
-                "name": "template.yaml",
-                "directory": self.package_dir,
-                "context": self.get_build_context(),
-            },
-            "app.py.txt": {
-                "name": "app.py",
-                "context": {},
-                "directory": self.package_dir,
-            },
-            "README.md.txt": {
-                "name": "README.md",
-                "context": {},
-                "directory": self.package_dir,
-            },
-        }
-        for src_template, dest_info in template_map.items():
-            with open(
-                os.path.join(dest_info["directory"], dest_info["name"]), "w"
-            ) as f:
-                template = self.env.get_template(src_template)
-                rendered = template.render(context=dest_info["context"])
-                f.write(rendered)
 
-        with open(os.path.join(self.base_dir, "settings.json"), "w") as f:
+        template_map = self.get_template_map()
+        for dest_name, dest_info in template_map.items():
+            with open(os.path.join(dest_info["directory"], dest_name), "w") as f:
+                f.write(dest_info["content"])
+
+        with open(os.path.join(self.config_dir, "settings.json"), "w") as f:
             f.write(json.dumps(self.get_build_context()))
-
-        # pipmain(["install", "mangum", "-t", package_dir, "--ignore-installed", "-q"])

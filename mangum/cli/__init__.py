@@ -51,10 +51,10 @@ def mangum(command: str) -> None:
             default="",
         )
         generate_s3 = s3_bucket_name == ""
-        base_dir = os.getcwd()
-        package_dir = os.path.join(base_dir, project_name)
+        config_dir = os.getcwd()
+        package_dir = os.path.join(config_dir, project_name)
         config = AWSConfig(
-            base_dir=base_dir,
+            config_dir=config_dir,
             package_dir=package_dir,
             project_name=project_name,
             description=description,
