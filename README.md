@@ -67,7 +67,7 @@ def lambda_handler(event, context):
 
 #### Mangum CLI (experimental)
 
-Experimental AWS packaging/deployment support.
+Experimental AWS packaging/deployment support to generate, package, and deploy an application. The generated application and template only provide basic functionality.
 
 **Requirements**:
 
@@ -115,20 +115,8 @@ After packaging, you then can deploy:
 mangum deploy
 ```
 
-Full output example:
+To add additional requiremets, 
 
-```
-(venv37) [erm@iserlohn aws-test]$ ls
-README.md   hello_asgi  settings.json
-(venv37) [erm@iserlohn aws-test]$ mangum package
-Packaging...
-Successfully packaged. Run 'mangum deploy' to deploy it now.
-(venv37) [erm@iserlohn aws-test]$ mangum deploy
-Deploying! This may take some time...
-API endpoints available at:
-* https://1234abcd.execute-api.ap-southeast-1.amazonaws.com/Prod
-* https://1234abcd.execute-api.ap-southeast-1.amazonaws.com/Stage
-```
 
 ### Azure Functions
 

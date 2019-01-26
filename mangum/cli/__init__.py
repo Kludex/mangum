@@ -2,11 +2,11 @@ import uuid  # pragma: no cover
 import click  # pragma: no cover
 import boto3  # pragma: no cover
 from mangum.cli.aws_cli import aws_deploy, aws_describe, aws_package  # pragma: no cover
-from mangum.cli.helpers import (
+from mangum.cli.helpers import (  # pragma: no cover
     get_settings,
     get_default_resource_name,
     build_project,
-)  # pragma: no cover
+)
 
 
 @click.group()  # pragma: no cover
