@@ -1,5 +1,4 @@
 import urllib.parse
-
 from azure.functions import HttpRequest, HttpResponse
 from mangum.asgi import ASGICycle
 from mangum.utils import encode_query_string
