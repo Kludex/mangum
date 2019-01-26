@@ -38,6 +38,9 @@ def mangum(command: str) -> None:
         runtime_version = click.prompt(
             "What version of Python are you using?", type=str, default="3.7"
         )
+        timeout = click.prompt(
+            "What should the timeout be (in seconds, max=300)?", type=int, default=300
+        )
 
         # Retrieve the default region name.
         session = boto3.session.Session()
@@ -75,6 +78,7 @@ def mangum(command: str) -> None:
             "root_path": root_path,
             "runtime_version": runtime_version,
             "region_name": region_name,
+            "timeout": timeout,
         }
 
         click.echo("Creating your local project...")
@@ -115,7 +119,7 @@ def mangum(command: str) -> None:
         # Display the CloudWatch logs for the last 10 minutes.
         # TODO: Make this configurable.
         log_events = get_log_events(
-            f"/aws/lambda/{settings['resource_name']}", minutes=10
+            f"/aws/lambda/{settings['resource_name']}Function", minutes=10
         )
         log_output = []
         for log in log_events:

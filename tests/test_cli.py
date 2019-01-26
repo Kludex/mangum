@@ -14,6 +14,7 @@ TEST_SETTINGS = {
     "s3_bucket_name": "helloasgi-xxxxx",
     "stack_name": "helloasgi",
     "resource_name": "HelloAsgi",
+    "timeout": 300,
 }
 
 
@@ -38,13 +39,14 @@ Description: >
 
 Globals:
     Function:
-        Timeout: 5
+        Timeout: 300
 
 Resources:
     HelloAsgiFunction:
 
         Type: AWS::Serverless::Function
         Properties:
+            FunctionName: HelloAsgiFunction
             CodeUri: .
             Handler: app.lambda_handler
             Runtime: python3.7

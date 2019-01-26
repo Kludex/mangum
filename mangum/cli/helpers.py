@@ -53,13 +53,14 @@ Description: >
 
 Globals:
     Function:
-        Timeout: 5
+        Timeout: {settings['timeout']}
 
 Resources:
     {settings['resource_name']}Function:
 
         Type: AWS::Serverless::Function
         Properties:
+            FunctionName: {settings['resource_name']}Function
             CodeUri: .
             Handler: app.lambda_handler
             Runtime: python{settings['runtime_version']}
