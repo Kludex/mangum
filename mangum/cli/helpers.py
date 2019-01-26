@@ -1,5 +1,8 @@
 import os
 import json
+import operator
+import datetime
+import boto3
 from pip._internal import main as pipmain
 
 
@@ -9,6 +12,34 @@ def get_settings() -> dict:  # pragma: no cover
         json_data = f.read()
         settings = json.loads(json_data)
     return settings
+
+
+def get_log_events(group_name: str, minutes: int) -> list:  # pragma: no cover
+    end_dt = datetime.datetime.now()
+    start_dt = end_dt - datetime.timedelta(minutes=minutes)
+    start_time = int(start_dt.timestamp()) * 1000
+    end_time = int(end_dt.timestamp()) * 1000
+
+    kwargs = {
+        "logGroupName": group_name,
+        "startTime": start_time,
+        "endTime": end_time,
+        "limit": 10000,
+    }
+
+    all_events = []
+    client = boto3.client("logs")
+
+    while True:
+        res = client.filter_log_events(**kwargs)
+        all_events += res["events"]
+
+        try:
+            kwargs["nextToken"] = res["nextToken"]
+        except KeyError:
+            break
+
+    return sorted(all_events, key=operator.itemgetter("timestamp"), reverse=False)
 
 
 def get_sam_template(settings: dict) -> str:

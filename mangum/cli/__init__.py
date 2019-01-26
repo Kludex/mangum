@@ -6,6 +6,7 @@ from mangum.cli.helpers import (  # pragma: no cover
     get_settings,
     get_default_resource_name,
     build_project,
+    get_log_events,
 )
 
 
@@ -108,3 +109,23 @@ def mangum(command: str) -> None:
         click.echo(f"API endpoints available at:")
         click.echo(f"* {prod}")
         click.echo(f"* {stage}")
+
+    elif command == "tail":
+        settings = get_settings()
+        # Display the CloudWatch logs for the last 10 minutes.
+        # TODO: Make this configurable.
+        log_events = get_log_events(
+            f"/aws/lambda/{settings['resource_name']}", minutes=10
+        )
+        log_output = []
+        for log in log_events:
+            message = log["message"].rstrip()
+            if not any(
+                i in message
+                for i in ("START RequestId", "REPORT RequestId", "END RequestId")
+            ):
+                timestamp = log["timestamp"]
+                s = f"[{timestamp}] {message}"
+                log_output.append(s)
+
+        click.echo("\n".join(log_output))
