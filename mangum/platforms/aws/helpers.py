@@ -7,7 +7,7 @@ from mangum.platforms.aws.config import AWSConfig
 from mangum.utils import get_file_content
 
 
-def get_config() -> Tuple[Union[AWSConfig, None], Union[None, str]]:
+def get_config() -> Tuple[Union[AWSConfig, None], Union[None, str]]:  # pragma: no cover
     current_dir = os.getcwd()
     try:
         settings = get_file_content(
@@ -29,7 +29,7 @@ def get_default_resource_name(project_name: str) -> str:
         name_parts = project_name.split("_")
         resource_name = "".join([s.title() for s in name_parts])
     else:
-        resource_name = project_name.title()  # pragma: no cover
+        resource_name = project_name.title()
     return resource_name
 
 

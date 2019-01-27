@@ -3,12 +3,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from mangum.platforms.aws.adapter import run_asgi
-import boto3
-
-import placebo
-
-session = boto3.Session()
-pill = placebo.attach(session, data_path="/data")
+from mangum.platforms.aws.middleware import AWSLambdaMiddleware
 
 
 def test_aws_response(mock_data) -> None:
@@ -46,6 +41,14 @@ def test_aws_response_with_body(mock_data) -> None:
     mock_event = mock_data.get_aws_event()
     response = run_asgi(app, mock_event, {})
 
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-length": "3", "content-type": "text/plain; charset=utf-8"},
+        "body": "123",
+    }
+
+    response = AWSLambdaMiddleware(app)(mock_event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,

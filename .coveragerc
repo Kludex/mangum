@@ -3,3 +3,5 @@ source =
     mangum
 omit =
     */templates/*
+    */commands.py
+    mangum/cli/__init__.py

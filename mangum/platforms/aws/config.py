@@ -45,7 +45,7 @@ class AWSConfig:
         build_path = os.path.join(self.config_dir, "build")
         return build_path
 
-    def init(self) -> None:
+    def init(self) -> None:  # pragma: no cover
         """
         Write the configuration files used by the CLI. These will be used later to
         inform the AWS CLI wrappers.
@@ -77,7 +77,7 @@ class AWSConfig:
             os.path.join(os.path.join(self.config_dir), "asgi.py"),
         )
 
-    def build(self) -> None:
+    def build(self) -> None:  # pragma: no cover
         """
         Copy all the files in the project directory to the build directory, then install
         the requirements.
@@ -89,14 +89,6 @@ class AWSConfig:
             self.project_dir,
             os.path.join(self.build_dir, os.path.basename(self.project_dir)),
         )
-
-        # project_files = os.listdir(self.project_dir)
-
-        # for filename in project_files:
-        #     filepath = os.path.join(self.project_dir, filename)
-        #     if os.path.isfile(filepath):
-        #         new_filepath = os.path.join(self.build_dir, filename)
-        #         shutil.copyfile(filepath, new_filepath)
 
         for config_file in ("template.yaml", "asgi.py"):
             shutil.copyfile(
@@ -121,7 +113,7 @@ class AWSConfig:
         if installed.returncode != 0:
             raise RuntimeError("Build failed, could not install requirements.")
 
-    def validate(self) -> Union[None, str]:
+    def validate(self) -> Union[None, str]:  # pragma: no cover
         with open(os.path.join(self.config_dir, "template.yaml")) as f:
             template_body = f.read()
         client = boto3.client("cloudformation")

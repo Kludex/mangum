@@ -71,6 +71,44 @@ class MockData:
         }
         return settings
 
+    @staticmethod
+    def get_mock_SAM_template() -> str:
+        return """AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    TestProject
+    ASGI application
+Globals:
+    Function:
+        Timeout: 300
+Resources:
+    TestprojectFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+            FunctionName: TestprojectFunction
+            CodeUri: ./build
+            Handler: asgi.lambda_handler
+            Runtime: python3.7
+            # Environment:
+            #     Variables:
+            #         PARAM1: VALUE
+            Events:
+                Testproject:
+                    Type: Api
+                    Properties:
+                        Path: /
+                        Method: get
+Outputs:
+    TestprojectApi:
+      Description: "API Gateway endpoint URL for Testproject function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+    TestprojectFunction:
+      Description: "Testproject Lambda Function ARN"
+      Value: !GetAtt TestprojectFunction.Arn
+    TestprojectFunctionIamRole:
+      Description: "Implicit IAM Role created for Testproject function"
+      Value: !GetAtt TestprojectFunctionRole.Arn"""
+
 
 @pytest.fixture
 def mock_data():

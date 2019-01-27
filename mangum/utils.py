@@ -7,7 +7,9 @@ def encode_query_string(query_string_params: dict) -> str:
     return urllib.parse.urlencode(query_string_params).encode("ascii")
 
 
-def get_file_content(*, filename: str, directory: str, as_json: bool = False) -> str:
+def get_file_content(
+    *, filename: str, directory: str, as_json: bool = False
+) -> str:  # pragma: no cover
     if not os.path.isdir(directory):
         raise IOError(f"Directory not found: '{directory}' does not exist.")
     filepath = os.path.join(directory, filename)
@@ -25,7 +27,7 @@ def get_file_content(*, filename: str, directory: str, as_json: bool = False) ->
 
 def write_file_content(
     *, content: str, filename: str, directory: str, as_json: bool = False
-) -> None:
+) -> None:  # pragma: no cover
     if not os.path.isdir(directory):
         raise IOError(f"Directory not found: '{directory}' does not exist.")
     filepath = os.path.join(directory, filename)
