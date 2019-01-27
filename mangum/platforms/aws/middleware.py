@@ -2,7 +2,7 @@ from mangum.platforms.aws.adapter import run_asgi
 
 
 class AWSLambdaMiddleware:
-    def __init__(self, app) -> None:
+    def __init__(self, app, event, context) -> None:
         self.app = app
 
     def __call__(self, event, context):

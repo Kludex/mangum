@@ -1,4 +1,3 @@
-import logging
 import click
 import uuid
 import boto3
@@ -10,8 +9,6 @@ from mangum.platforms.aws.helpers import (
     get_config,
 )
 from mangum.platforms.aws.config import AWSConfig
-
-logger = logging.getLogger("mangum.cli")
 
 
 class AWSGroup(click.Group):
@@ -176,6 +173,19 @@ def describe() -> None:
             click.echo("Error! Could not retrieve endpoints.")
         else:
             click.echo(f"API endpoints available at:\n\n{endpoints}")
+
+
+@aws.command()
+def validate() -> None:
+    config, error = get_config()
+    if error is not None:
+        click.echo(error)
+    else:
+        error = config.validate()
+        if not error:
+            click.echo("Template file validated successfully!")
+        else:
+            click.echo(error)
 
 
 @aws.command()

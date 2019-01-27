@@ -121,12 +121,14 @@ class AWSConfig:
         if installed.returncode != 0:
             raise RuntimeError("Build failed, could not install requirements.")
 
-    # def validate(self) -> str:
-    #     with open(os.path.join(self.config_dir, "template.yaml")) as f:
-    #         template_body = f.read()
-    #     client = boto3.client("cloudformation")
-    #     client.validate_template(template_body)
-    #     print(client)
+    def validate(self) -> Union[None, str]:
+        with open(os.path.join(self.config_dir, "template.yaml")) as f:
+            template_body = f.read()
+        client = boto3.client("cloudformation")
+        try:
+            client.validate_template(TemplateBody=template_body)
+        except Exception as exc:
+            return str(exc)
 
     def cli_describe(self) -> Union[str, None]:  # pragma: no cover
         cmd = [
