@@ -116,20 +116,6 @@ def build() -> None:
 
 
 @aws.command()
-def validate() -> None:
-    """
-    Validate the 'template.yaml' file.
-    """
-    config, error = get_config()
-    if error is not None:
-        click.echo(error)
-    else:
-        click.echo("Validating SAM template file...")
-        config.validate()
-        click.echo("Validating..")
-
-
-@aws.command()
 def package() -> None:
     config, error = get_config()
     if error is not None:
