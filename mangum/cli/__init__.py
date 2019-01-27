@@ -50,11 +50,7 @@ def mangum(command: str) -> None:
             default="",
         )
         generate_s3 = s3_bucket_name == ""
-        config_dir = os.getcwd()
-        package_dir = os.path.join(config_dir, project_name)
         config = AWSConfig(
-            config_dir=config_dir,
-            package_dir=package_dir,
             project_name=project_name,
             description=description,
             s3_bucket_name=s3_bucket_name,
@@ -98,13 +94,6 @@ def mangum(command: str) -> None:
             click.echo("Error! Could not retrieve endpoints.")
         else:
             click.echo(f"API endpoints available at:\n\n{endpoints}")
-
-    # elif command == "rebuild":
-    #     if click.confirm(
-    #         "Warning! This will rebuild all the local files. Do you want to continue?"
-    #     ):
-    #         AWSConfig.get_config_from_file().rebuild()
-    #         click.echo("Project files rebuilt!")
 
     elif command == "tail":
         settings = AWSConfig.get_config_from_file()

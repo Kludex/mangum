@@ -59,8 +59,6 @@ class MockData:
     @staticmethod
     def get_aws_config_settings() -> dict:
         settings = {
-            "config_dir": "atest/",
-            "package_dir": "atest/test_project",
             "project_name": "TestProject",
             "description": "ASGI application",
             "s3_bucket_name": "testproject-04a427ce-3267-4cbf-91c9-44fb986cddfd",

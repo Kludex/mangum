@@ -13,8 +13,6 @@ class AWSConfig:
     def __init__(
         self,
         *,
-        config_dir: str,
-        package_dir: str,
         project_name: str,
         description: str,
         region_name: str,
@@ -26,8 +24,6 @@ class AWSConfig:
         stack_name: str,
         generate_s3: bool = False,
     ) -> None:
-        self.config_dir = config_dir
-        self.package_dir = package_dir
         self.project_name = project_name
         self.description = description
         self.region_name = region_name
@@ -38,9 +34,11 @@ class AWSConfig:
         self.timeout = timeout
         self.stack_name = stack_name
         self.generate_s3 = generate_s3
+        self.config_dir = os.getcwd()
+        self.package_dir = os.path.join(self.config_dir, self.project_name)
         self.env = Environment(
             loader=FileSystemLoader(
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), "files")
+                os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
             )
         )
 
@@ -126,8 +124,6 @@ class AWSConfig:
 
     def get_build_context(self) -> dict:
         return {
-            "config_dir": self.config_dir,
-            "package_dir": self.package_dir,
             "project_name": self.project_name,
             "description": self.description,
             "region_name": self.region_name,
@@ -193,28 +189,23 @@ Outputs:
                     context=build_context
                 ),
             },
+            "settings.json": {
+                "directory": self.config_dir,
+                "content": json.dumps(self.get_build_context()),
+            },
+            "requirements.txt": {"directory": self.config_dir, "content": "mangum\n"},
         }
+
         return template_map
 
     def write_files(self) -> None:  # pragma: no cover
         template_map = self.get_template_map()
-
         for dest_name, dest_info in template_map.items():
             with open(
                 os.path.join(dest_info["directory"], dest_name), "w", encoding="utf-8"
             ) as f:
                 content = dest_info["content"]
                 f.write(content)
-
-        with open(
-            os.path.join(self.config_dir, "settings.json"), "w", encoding="utf-8"
-        ) as f:
-            f.write(json.dumps(self.get_build_context()))
-
-        with open(
-            os.path.join(self.config_dir, "requirements.txt"), "w", encoding="utf-8"
-        ) as f:
-            f.write("mangum\n")
 
     def build(self) -> None:  # pragma: no cover
         if self.generate_s3:
@@ -224,8 +215,6 @@ Outputs:
                 Bucket=self.s3_bucket_name,
                 CreateBucketConfiguration={"LocationConstraint": self.region_name},
             )
-        os.mkdir(self.package_dir)
+        if not os.path.isdir(self.package_dir):
+            os.mkdir(self.package_dir)
         self.write_files()
-
-    # def rebuild(self) -> None:
-    #     self.write_files()

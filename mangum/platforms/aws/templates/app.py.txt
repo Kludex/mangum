@@ -8,7 +8,6 @@ class App:
     async def __call__(self, receive, send) -> None:
         message = await receive()
         if message["type"] == "http.request":
-            {% raw %}
             await send(
                 {
                     "type": "http.response.start",
@@ -17,7 +16,7 @@ class App:
                 }
             )
             await send({"type": "http.response.body", "body": b"Hello, world!"})
-            {% endraw %}
+
 
 def lambda_handler(event, context):
     return run_asgi(App, event, context)

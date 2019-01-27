@@ -2,8 +2,6 @@
 
 This guide will explain how to deploy a basic [ASGI](https://asgi.readthedocs.io/en/latest/) application to Azure Functions. There is also an [official guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python) that explains much of the same information.
 
-The complete example project is available [here](https://github.com/erm/azure-functions-python-asgi-example).
-
 ## Requirements 
 
 - Python 3.6
@@ -69,9 +67,12 @@ then visit the URL displayed in the terminal, e.g. http://localhost:7071/api/Htt
 ## Step 4 - Implement a basic ASGI application
 
 
-Install Mangum from pip:
+Install Mangum from pip, the full installation is required for Azure Functions support:
 
-`pip install mangum`
+```shell
+$ pip install mangum[full]
+```
+
 
 This will provide a handler method that adapts the Azure Function request events into requests that an ASGI app can understand.
 
@@ -110,7 +111,7 @@ Replace this completely with the following and save:
 ```python
 import logging
 import azure.functions as func
-from mangum.adapters.azure import run_asgi
+from mangum.platforms.azure.adapter import run_asgi
 
 
 class App:

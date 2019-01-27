@@ -14,9 +14,7 @@ def test_aws_config(mock_data) -> None:
     config = AWSConfig(**settings)
     build_context = config.get_build_context()
     assert build_context == {
-        "config_dir": "atest/",
         "description": "ASGI application",
-        "package_dir": "atest/test_project",
         "project_name": "TestProject",
         "region_name": "ap-southeast-1",
         "resource_name": "Testproject",
