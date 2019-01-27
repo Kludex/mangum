@@ -166,5 +166,3 @@ Functions in mangum:
 ```
 
 Then visiting the invoke url should display the same `Hello!` response that appeared in the local test.
-
-**Reminder**: Mangum is a new project and in an unstable/experimental state and may change a lot for the time being.
