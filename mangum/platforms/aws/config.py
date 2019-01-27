@@ -2,11 +2,10 @@ import os
 import subprocess
 import json
 import sys
-import uuid
 from typing import Union
-from jinja2 import Environment, FileSystemLoader
 import boto3
 import shutil
+from mangum.utils import write_file_content
 
 
 class AWSConfig:
@@ -22,7 +21,6 @@ class AWSConfig:
         resource_name: str,
         timeout: int,
         stack_name: str,
-        generate_s3: bool = False,
     ) -> None:
         self.project_name = project_name
         self.description = description
@@ -33,23 +31,102 @@ class AWSConfig:
         self.resource_name = resource_name
         self.timeout = timeout
         self.stack_name = stack_name
-        self.generate_s3 = generate_s3
-        self.config_dir = os.getcwd()
-        self.package_dir = os.path.join(self.config_dir, self.project_name)
-        self.env = Environment(
-            loader=FileSystemLoader(
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
+
+    @property
+    def config_dir(self):
+        return os.getcwd()
+
+    @property
+    def project_dir(self):
+        return os.path.join(self.config_dir, self.project_name)
+
+    @property
+    def build_dir(self):
+        build_path = os.path.join(self.config_dir, "build")
+        return build_path
+
+    def init(self) -> None:
+        """
+        Write the configuration files used by the CLI. These will be used later to
+        inform the AWS CLI wrappers.
+        """
+        config_files = {
+            "template.yaml": {
+                "directory": self.config_dir,
+                "content": self.get_SAM_template(),
+            },
+            "settings.json": {
+                "directory": self.config_dir,
+                "content": json.dumps(self.get_build_context()),
+                "as_json": True,
+            },
+            "requirements.txt": {"directory": self.config_dir, "content": "mangum\n"},
+        }
+        for name, info in config_files.items():
+            write_file_content(
+                content=info["content"],
+                filename=name,
+                directory=info["directory"],
+                as_json=info.get("as_json", False),
             )
+
+        shutil.copyfile(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "templates", "asgi.py"
+            ),
+            os.path.join(os.path.join(self.config_dir), "asgi.py"),
         )
 
-    @classmethod
-    def get_config_from_file(cls):  # pragma: no cover
-        cwd = os.getcwd()
-        with open(os.path.join(cwd, "settings.json"), "r") as f:
-            json_data = f.read()
-            settings = json.loads(json_data)
-        config = cls(**settings)
-        return config
+    def build(self) -> None:
+        """
+        Copy all the files in the project directory to the build directory, then install
+        the requirements.
+        """
+        if os.path.exists(self.build_dir):
+            shutil.rmtree(self.build_dir)
+
+        shutil.copytree(
+            self.project_dir,
+            os.path.join(self.build_dir, os.path.basename(self.project_dir)),
+        )
+
+        # project_files = os.listdir(self.project_dir)
+
+        # for filename in project_files:
+        #     filepath = os.path.join(self.project_dir, filename)
+        #     if os.path.isfile(filepath):
+        #         new_filepath = os.path.join(self.build_dir, filename)
+        #         shutil.copyfile(filepath, new_filepath)
+
+        for config_file in ("template.yaml", "asgi.py"):
+            shutil.copyfile(
+                os.path.join(self.config_dir, config_file),
+                os.path.join(self.build_dir, config_file),
+            )
+
+        if not os.path.exists(os.path.join(self.config_dir, "requirements.txt")):
+            raise IOError(f"File not found: 'requirements.txt' does not exist.")
+
+        install_cmd = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            "requirements.txt",
+            "-t",
+            os.path.join(".", self.build_dir),
+        ]
+        installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
+        if installed.returncode != 0:
+            raise RuntimeError("Build failed, could not install requirements.")
+
+    # def validate(self) -> str:
+    #     with open(os.path.join(self.config_dir, "template.yaml")) as f:
+    #         template_body = f.read()
+    #     client = boto3.client("cloudformation")
+    #     client.validate_template(template_body)
+    #     print(client)
 
     def cli_describe(self) -> Union[str, None]:  # pragma: no cover
         cmd = [
@@ -72,35 +149,15 @@ class AWSConfig:
         return f"{endpoint}Prod\n\n{endpoint}Stage"
 
     def cli_package(self) -> bool:  # pragma: no cover
-        build_dir = os.path.join(self.package_dir, "build")
-        if not os.path.isdir(build_dir):
-            os.mkdir(build_dir)
-        shutil.copyfile(
-            os.path.join(self.package_dir, "app.py"), os.path.join(build_dir, "app.py")
-        )
-        install_cmd = [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            "requirements.txt",
-            "--upgrade",
-            "-t",
-            os.path.join(".", build_dir),
-        ]
-        installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
-        if not installed.returncode == 0:
-            return False
 
         cmd = [
             "aws",
             "cloudformation",
             "package",
             "--template-file",
-            f"{self.project_name}/template.yaml",
+            "template.yaml",
             "--output-template-file",
-            f"{self.project_name}/packaged.yaml",
+            "packaged.yaml",
             "--s3-bucket",
             f"{self.s3_bucket_name}",
         ]
@@ -113,7 +170,7 @@ class AWSConfig:
             "cloudformation",
             "deploy",
             "--template-file",
-            f"{self.project_name}/packaged.yaml",
+            "packaged.yaml",
             "--stack-name",
             f"{self.stack_name}",
             "--capabilities",
@@ -135,7 +192,7 @@ class AWSConfig:
             "stack_name": self.stack_name,
         }
 
-    def get_sam_template(self) -> str:
+    def get_SAM_template(self) -> str:
         return f"""AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
@@ -150,7 +207,7 @@ Resources:
         Properties:
             FunctionName: {self.resource_name}Function
             CodeUri: ./build
-            Handler: app.lambda_handler
+            Handler: asgi.lambda_handler
             Runtime: python{self.runtime_version}
             # Environment:
             #     Variables:
@@ -171,50 +228,3 @@ Outputs:
     {self.resource_name}FunctionIamRole:
       Description: "Implicit IAM Role created for {self.resource_name} function"
       Value: !GetAtt {self.resource_name}FunctionRole.Arn"""
-
-    def get_template_map(self) -> dict:
-        build_context = self.get_build_context()
-        template_map = {
-            "template.yaml": {
-                "directory": self.package_dir,
-                "content": self.get_sam_template(),
-            },
-            "app.py": {
-                "directory": self.package_dir,
-                "content": self.env.get_template("app.py.txt").render(),
-            },
-            "README.md": {
-                "directory": self.package_dir,
-                "content": self.env.get_template("README.md.txt").render(
-                    context=build_context
-                ),
-            },
-            "settings.json": {
-                "directory": self.config_dir,
-                "content": json.dumps(self.get_build_context()),
-            },
-            "requirements.txt": {"directory": self.config_dir, "content": "mangum\n"},
-        }
-
-        return template_map
-
-    def write_files(self) -> None:  # pragma: no cover
-        template_map = self.get_template_map()
-        for dest_name, dest_info in template_map.items():
-            with open(
-                os.path.join(dest_info["directory"], dest_name), "w", encoding="utf-8"
-            ) as f:
-                content = dest_info["content"]
-                f.write(content)
-
-    def build(self) -> None:  # pragma: no cover
-        if self.generate_s3:
-            self.s3_bucket_name = f"{self.resource_name.lower()}-{uuid.uuid4()}"
-            s3 = boto3.resource("s3")
-            s3.create_bucket(
-                Bucket=self.s3_bucket_name,
-                CreateBucketConfiguration={"LocationConstraint": self.region_name},
-            )
-        if not os.path.isdir(self.package_dir):
-            os.mkdir(self.package_dir)
-        self.write_files()

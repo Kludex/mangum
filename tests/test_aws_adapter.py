@@ -3,6 +3,12 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from mangum.platforms.aws.adapter import run_asgi
+import boto3
+
+import placebo
+
+session = boto3.Session()
+pill = placebo.attach(session, data_path="/data")
 
 
 def test_aws_response(mock_data) -> None:
