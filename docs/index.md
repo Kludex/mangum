@@ -11,8 +11,6 @@
 
 Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with FaaS platforms.
 
-**Important**: This project is under active development and in an experimental/unstable state.
-
 ## Requirements
 
 Python 3.6+
@@ -25,12 +23,21 @@ $ pip3 install mangum
 
 ## Dependencies
 
-Currently there are two optional dependencies.
+There are required/optional dependencies depending on the platform being used, but the base install does not have any hard requirements (but will only work for AWS, without the CLI support):
 
-- [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for Azure.
-- [boto3](https://github.com/boto/boto3) - Required for the AWS CLI commands.
+`azure-functions` - required for Azure Function support. Can be installed using:
 
-These can be installed with:
+```shell
+$ pip3 install mangum[azure]
+```
+
+`boto3`, `click`, `jinja2` - required for the AWS-specific tools:
+
+```shell
+$ pip3 install mangum[aws]
+```
+
+Everything can be installed with:
 
 ```shell
 $ pip3 install mangum[full]
@@ -113,7 +120,7 @@ The available commands are briefly outlined below, but there is also a quickstar
 
 #### Example
 
-The same example application as above may be used with the Azure run method:
+The following is an example of using the Azure Function adapter method:
 
 ```python
 from mangum.platforms.azure.adapter import run_asgi
