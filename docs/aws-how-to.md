@@ -1,8 +1,8 @@
 # How to deploy an ASGI app to AWS Lambda & API Gateway
 
-This guide will explain how to deploy a basic [ASGI](https://asgi.readthedocs.io/en/latest/) application to AWS Lambda & API Gateway. Mangum includes tools to assist with generating an example ASGI application using a [AWS SAM (Serverless Application Model)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) template.
+This guide will explain how to generate a basic AWS Lambda deployment configuration suitable for [ASGI](https://asgi.readthedocs.io/en/latest/) applications. Mangum includes tools to assist with generating [AWS SAM (Serverless Application Model)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) templates and handling packaging/deployment.
 
-**Note**: These commands-much like most of the project currently-are being actively developed and may be buggy.
+**Note**: These commands-much like most of the project currently-are being actively developed and may be buggy. Any bug reports would be greatly appreciated.
 
 ## Requirements
 
@@ -19,55 +19,74 @@ $ pip3 install mangum[full]
 ```
 
 
-Begin the process of generating a project:
+Begin the process of generating a project. You should initiate this in a directory above your application:
 
 ```shell
 $ mangum init
 ```
 
-After answering a series of questions, the following will be generated in the current directory:
+After answering a series of questions, a few boilerplate configuration files will be generated in the current directory:
 
-* A boilerplate ASGI app with the latest version of `mangum` installed from PyPi for deployment to AWS.
-    
-* A `settings.json` file with the generated AWS resource information.
+* `settings.json`
 
-* An S3 bucket to be used with the app.
+The file with all the AWS resource details, needed to inform the AWS CLI wrapper methods with the correct parameters. This should not be modified directly.
 
-* A `template.yaml` containing the AWS SAM template.
+* `template.yaml`
 
-Once the initial configuration step is complete, you should have an app structure that looks like this:
+The AWS SAM template used to define the resources/stack. This may be modified as needed to specify additional configuration according to the SAM spec.
 
-```shell
-├── hello_world_project
-│   ├── README.md
-│   ├── app.py
-│   ├── build
-│   └── template.yaml
-├── requirements.txt
-└── settings.json
+* `requirements.txt`
+
+All that Python packages that should be installed in the build directory. It contains only `mangum` by default as it is the only requirement for the ASGI adapter.
+
+* `asgi.py`
+
+This is the module that is specified in the generated SAM template. It contains the following:
+
+```python
+from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+
+# from <yourapp> import app
+
+
+def lambda_handler(event, context):
+    return AWSLambdaMiddleware(app)(event, context)
+
 ```
 
-### Step 2 - Packaging and deployment
+You will need to modify the `asgi.py` file to import your application to be run by the middleware. Alternatively, you may update the `template.yaml` to point directly to a different handler location - the `asgi.py` is included for convenience.
 
-You will then be prompted to enter the package and deploy commands, the `settings.json` file is used to inform the parameters used with the methods that wrap the AWS CLI commands.
+After generating the configuration, the file structure should look something like this:
 
-The package command also populates the `build/` directory by installing the packages in the `requirements.txt`, by default the `mangum` package will appear.
+```shell
+├── YourProject
+│   ├── YourApp/
+│   ├── asgi.py
+│   ├── packaged.yaml
+│   ├── requirements.txt
+│   ├── settings.json
+│   └── template.yaml
+```
+
+### Step 2 - Build the application
+
+Next you will be prompted to run:
+
+```shell
+$ mangum aws build
+```
+
+This will install all the packages listed in `requirements.txt` and copy over your application to the `build/` directory to be packaged.
+
+### Step 3 - Packaging for deployment
+
+Next run the package command to prepare the application build for deployment:
 
 ```shell
 $ mangum package
 ```
 
-After running the package command the build directory should look like this:
-
-```
-│   ├── build
-│   │   ├── app.py
-│   │   ├── bin
-│   │   ├── mangum
-│   │   └── mangum-x.x.x-pyx.x.egg-info
-```
-
-After packaging, you then can deploy:
+After the packaging completes, you may then deploy:
 
 ```shell
 $ mangum deploy
@@ -83,52 +102,10 @@ Deployment successful! API endpoints available at:
 * https://xxxxx.execute-api.ap-southeast-1.amazonaws.com/Stage
 ```
 
-Visiting the endpoint should then produce a simple "Hello World" response. If you run into any issues, you can lookup the function logs in CloudWatch or enter the following command:
+If you run into any issues, you can lookup the function logs in CloudWatch or enter the following command:
 
 ```shell
 $ mangum tail
 ```
 
 This will tail the last 10 minutes of logs activity for the function.
-
-### Using ASGI frameworks
-
-The generated "hello world" application is a raw example, but you can easily use any ASGI framework with the adapter. For example, you could replace the content of the `app.py` generated previously with a Starlette application to achieve a similar result:
-
-```python
-from mangum.platforms.aws.adapter import run_asgi
-
-from starlette.applications import Starlette
-from starlette.responses import JSONResponse
-
-app = Starlette()
-
-
-@app.route("/")
-async def homepage(request):
-    return JSONResponse({"hello": "world"})
-
-
-def lambda_handler(event, context):
-    return run_asgi(app, event, context)
-```
-
-You would also have to include Starlette as a dependency in the package by adding it to the `requirements.txt`.
-
-And re-run the `mangum package` and `mangum deploy` commands to update the function.
-
-### Additional considerations
-
-The application generation and deployment tools included in Mangum are mainly intended to quickly produce and deploy a very basic boilerplate application.
-
-**Keep in mind:**
-
-* As of this writing, only simple application examples have been tested with the adapters (work-in-progress).
-
-* AWS SAM templates are not the only way to handle deployment and configuration, it was chosen here because it offered the path of least resistance to getting an app generated and deployed with all the necessary permissions/resources/roles/etc. included.
-
-* You will need to manually edit the generated AWS SAM template to extend the functionality of the stack and leverage additional AWS services.
-
-At some point it would be nice to improve the CLI tool to be more comprehensive with some validation/safety features and possibly a way to eliminate the AWS-CLI as a requirement for deployment/packaging. 
-
-There is an open issue for doing so [here](https://github.com/erm/mangum/issues/10).

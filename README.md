@@ -69,33 +69,51 @@ def lambda_handler(event, context):
     return run_asgi(App, event, context)
 ```
 
+#### As a middleware
+
+The same application above can be run using the `AWSLambdaMiddleware`. Currently it just implements a class that returns the `run_asgi` response.
+
+```python
+from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+
+def lambda_handler(event, context):
+    return AWSLambdaMiddleware(app)
+```
+
 #### Mangum CLI (experimental)
 
-Experimental AWS packaging/deployment support to generate, package, and deploy an application. This requires installation of the optional dependencies for AWS:
+Experimental AWS packaging/deployment support. This requires installation of the optional dependencies for AWS:
 
 ```shell
 $ pip install mangum[full]
 ```
 
-It also requires the AWS CLI and AWS credentials.
+It also requires:
+
+- AWS CLI
+- AWS credentials.
 
 The available commands are briefly outlined below, but there is also a quickstart guide [here](https://erm.github.io/mangum/aws-how-to/):
 
-* `mangum init` - Create a new application and deployment configuration.
+* `mangum aws init` - Create a new configuration template for an application.
 
-* `mangum package` - Package the local project to prepare for deployment.
+* `mangum aws build` - Install the requirements and copy the application files into the build directory.
 
-* `mangum deploy` - Deploy the packaged application to AWS.
+* `mangum aws package` - Package the local project to prepare for deployment.
 
-* `mangum tail` - Tail the last 10 minutes of CloudWatch for the function.
+* `mangum aws deploy` - Deploy the packaged application to AWS.
 
-* `mangum describe` - Retrieve the API endpoints for the function.
+* `mangum aws tail` - Tail the last 10 minutes of CloudWatch for the function.
+
+* `mangum aws describe` - Retrieve the API endpoints for the function.
+
+* `mangum aws validate` - Validate the SAM template in the current configuration.
 
 ### Azure Functions
 
 #### Example
 
-The same example application as above may be used with the Azure run method:
+The following is an example of using the Azure Function adapter method:
 
 ```python
 from mangum.platforms.azure.adapter import run_asgi

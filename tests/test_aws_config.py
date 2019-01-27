@@ -1,3 +1,4 @@
+import os
 from mangum.platforms.aws.config import AWSConfig
 from mangum.platforms.aws.helpers import get_default_resource_name
 
@@ -25,11 +26,11 @@ def test_aws_config(mock_data) -> None:
         "url_root": "/",
     }
 
+    SAM_template = config.get_SAM_template().strip()
+    assert mock_data.get_mock_SAM_template() == SAM_template.strip()
 
-def test_get_template_map(mock_data) -> None:
-    settings = mock_data.get_aws_config_settings()
-    config = AWSConfig(**settings)
-    template_map = config.get_template_map()
-    assert len(template_map["README.md"]["content"]) > 0
-    assert len(template_map["template.yaml"]["content"]) > 0
-    assert len(template_map["app.py"]["content"]) > 0
+    config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    assert config.config_dir == config_dir
+    assert config.build_dir == os.path.join(config_dir, "build")
+    assert config.project_dir == os.path.join(config_dir, "TestProject")
