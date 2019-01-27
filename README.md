@@ -117,7 +117,7 @@ class App:
             )
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-def lambda_handler(req):
+def main(req):
     return run_asgi(App, req)
 ```
 
