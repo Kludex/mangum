@@ -1,8 +1,8 @@
 # How to deploy an ASGI app to AWS Lambda & API Gateway
 
-This guide will explain how to generate a basic AWS Lambda deployment configuration suitable for [ASGI](https://asgi.readthedocs.io/en/latest/) applications. Mangum includes tools to assist with generating [AWS SAM (Serverless Application Model)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) templates and handling packaging/deployment.
+This guide will explain how to generate a basic AWS Lambda deployment configuration suitable for [ASGI](https://asgi.readthedocs.io/en/latest/) applications. Mangum includes tools to assist with generating [AWS SAM (Serverless Application Model)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) templates and handling packaging/deployment. 
 
-**Note**: These commands-much like most of the project currently-are being actively developed and may be buggy. Any bug reports would be greatly appreciated.
+**Note**: The AWS configuration generation methods are currently experimental (may change).
 
 ## Requirements
 
