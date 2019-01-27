@@ -30,7 +30,7 @@ Currently there are two optional dependencies.
 - [azure-functions](https://github.com/Azure/azure-functions-python-library) - Required for Azure.
 - [boto3](https://github.com/boto/boto3) - Required for the AWS CLI commands.
 
-This can be installed with:
+These can be installed with:
 
 ```shell
 $ pip3 install mangum[full]
@@ -77,7 +77,7 @@ The same application above can be run using the `AWSLambdaMiddleware`. Currently
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
 
 def lambda_handler(event, context):
-    return AWSLambdaMiddleware(app)
+    return AWSLambdaMiddleware(app)(event, context)
 ```
 
 #### Mangum CLI (experimental)
