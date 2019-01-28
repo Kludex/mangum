@@ -1,7 +1,7 @@
 import typing
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
-
+from quart import Quart
 from mangum.platforms.azure.adapter import AzureFunctionAdapter
 
 
@@ -114,6 +114,31 @@ def test_starlette_azure_response() -> None:
         route_params=None,
         body=None,
     )
+
+    handler = AzureFunctionAdapter(app)
+    response = handler(mock_request)
+
+    assert response.status_code == 200
+    assert response.get_body() == b"<html><h1>Hello, world!</h1></html>"
+    assert response.charset == "utf-8"
+    assert response.mimetype == "text/html"
+
+
+def test_quart_azure_response(mock_data) -> None:
+
+    mock_request = MockHttpRequest(
+        "GET",
+        "/",
+        headers={"content-type": "text/html; charset=utf-8"},
+        params=None,
+        route_params=None,
+        body=None,
+    )
+    app = Quart(__name__)
+
+    @app.route("/")
+    async def hello():
+        return "<html><h1>Hello, world!</h1></html>"
 
     handler = AzureFunctionAdapter(app)
     response = handler(mock_request)
