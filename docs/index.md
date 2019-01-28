@@ -21,28 +21,6 @@ Python 3.6+
 $ pip3 install mangum
 ```
 
-## Dependencies
-
-There are required/optional dependencies for specific platforms being used, but the base install does not have any hard requirements:
-
-`azure-functions` - *required* for Azure Function support. Can be installed using:
-
-```shell
-$ pip3 install mangum[azure]
-```
-
-`boto3`, `click` - *required* for the AWS-specific CLI tools (this is NOT required in deployments):
-
-```shell
-$ pip3 install mangum[aws]
-```
-
-Everything can be installed with:
-
-```shell
-$ pip3 install mangum[full]
-```
-
 ## Supported Platforms
 
 Only two platforms are currently supported, but if you'd like to see others, please open an issue.
@@ -75,6 +53,28 @@ handler = AzureFunctionMiddleware(app)
 ```
 
 A basic quickstart guide for using Azure Functions with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).
+
+## Dependencies
+
+There are required/optional dependencies for specific platforms being used, but the base install does not have any hard requirements:
+
+`azure-functions` - *required* for Azure Function support. Can be installed using:
+
+```shell
+$ pip3 install mangum[azure]
+```
+
+`boto3`, `click` - *required* for the AWS-specific CLI tools (this is NOT required in deployments):
+
+```shell
+$ pip3 install mangum[aws]
+```
+
+Everything can be installed with:
+
+```shell
+$ pip3 install mangum[full]
+```
 
 ### Mangum CLI (experimental)
 
