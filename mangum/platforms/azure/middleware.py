@@ -9,10 +9,8 @@ class AzureFunctionCycle(ASGICycle):
     def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["status_code"] = status_code
         self.response["headers"] = headers
-        if self.mimetype:
-            self.response["mimetype"] = self.mimetype
-        if self.charset:
-            self.response["charset"] = self.charset
+        self.response["mimetype"] = self.mimetype
+        self.response["charset"] = self.charset
 
     def on_response_body(self, body: bytes) -> None:
         self.response["body"] = body

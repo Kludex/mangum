@@ -52,8 +52,10 @@ class ASGICycle:
             if "content-type" in headers:
                 mimetype, options = cgi.parse_header(headers["content-type"])
                 charset = options.get("charset", None)
-                self.mimetype = mimetype
-                self.charset = charset
+                if charset:
+                    self.charset = charset
+                if mimetype:
+                    self.mimetype = mimetype
 
             self.on_response_start(headers, status_code)
             self.state = ASGICycleState.RESPONSE

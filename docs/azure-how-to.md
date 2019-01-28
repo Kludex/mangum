@@ -67,12 +67,11 @@ then visit the URL displayed in the terminal, e.g. http://localhost:7071/api/Htt
 ## Step 4 - Implement a basic ASGI application
 
 
-Install Mangum from pip, the full installation is required for Azure Functions support:
+Install Mangum from pip, the `azure` extras packages are required:
 
 ```shell
-$ pip install mangum[full]
+$ pip install mangum[azure]
 ```
-
 
 This will provide a handler method that adapts the Azure Function request events into requests that an ASGI app can understand.
 
@@ -111,7 +110,7 @@ Replace this completely with the following and save:
 ```python
 import logging
 import azure.functions as func
-from mangum.platforms.azure.adapter import run_asgi
+from mangum.platforms.azure.middleware import AzureFunctionMiddleware
 
 
 class App:
@@ -133,10 +132,13 @@ class App:
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Python HTTP trigger function processed a request.")
-    return run_asgi(App, req)
+    handler = AzureFunctionMiddleware(App)
+    return handler(req)
 ```
 
-This is a basic ASGI app example that uses the `run_asgi` method to execute the ASGI HTTP request-response cycle. Run the app again with the following command to see the new output:
+This is a basic ASGI app example that uses the `AzureFunctionMiddleware` to execute the ASGI HTTP request-response cycle and return a valid response for Azure Functions. 
+
+Run the app again to see the new output:
 
 ```
 func start
