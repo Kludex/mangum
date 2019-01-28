@@ -30,6 +30,8 @@ class MockServerlessMiddleware(ServerlessMiddleware):
         handler = MockASGICycle(scope, body=body)
         return handler(self.app)
 
+
+class MockServerlessMiddlewareWithOptions(MockServerlessMiddleware):
     def _debug(self, content: str, status_code: int = 500) -> dict:
         return {"body": content, "status_code": status_code}
 
@@ -81,6 +83,18 @@ def test_serverless_middleware_not_implemented() -> None:
     with pytest.raises(NotImplementedError):
         ServerlessMiddleware(app)(mock_request)
 
+    def app(scope):
+        async def asgi(receive, send):
+            res = PlainTextResponse("Hello, world!")
+            raise Exception("Not implemented.")
+            await res(receive, send)
+
+        return asgi
+
+    mock_request = {}
+    with pytest.raises(NotImplementedError):
+        MockServerlessMiddleware(app, debug=True)(mock_request)
+
 
 def test_serverless_middleware_debug() -> None:
     def app(scope):
@@ -92,5 +106,5 @@ def test_serverless_middleware_debug() -> None:
         return asgi
 
     mock_request = {}
-    response = MockServerlessMiddleware(app, debug=True)(mock_request)
+    response = MockServerlessMiddlewareWithOptions(app, debug=True)(mock_request)
     assert response == {"body": "There was an error!", "status_code": 500}

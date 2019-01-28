@@ -7,17 +7,16 @@ from mangum.asgi.middleware import ServerlessMiddleware
 class AWSLambdaASGICycle(ASGICycle):
     """
     An adapter that handles the HTTP request-response cycle for an ASGI application and
-    formats the response for AWS.
+    builds a valid response to return to AWS Lambda & API Gateway.
 
     The response is a Python dictionary with the following structure:
 
-        response = {
+        {
             "statusCode": int,
             "isBase64Encoded": bool,
             "headers": dict,
             "body": str,
         }
-
     """
 
     def __init__(self, *args, **kwargs) -> None:
@@ -40,7 +39,10 @@ class AWSLambdaASGICycle(ASGICycle):
 class AWSLambdaMiddleware(ServerlessMiddleware):
     """
     A middleware that wraps an ASGI application and handles transforming an incoming
-    AWS request into the ASGI connection scope.
+    AWS Lambda & API Gateway request into the ASGI connection scope.
+
+    After building the connection scope, it runs the ASGI application cycle and returns
+    the response.
     """
 
     def asgi(self, event: dict, context: dict) -> dict:
@@ -53,13 +55,11 @@ class AWSLambdaMiddleware(ServerlessMiddleware):
         scheme = headers.get("X-Forwarded-Proto", "http")
         x_forwarded_for = headers.get("X-Forwarded-For")
         x_forwarded_port = headers.get("X-Forwarded-Port")
-
         if x_forwarded_port and x_forwarded_for:
             port = int(x_forwarded_port)
             client = (x_forwarded_for, port)
             if host:
                 server = (host, port)
-
         query_string_params = event["queryStringParameters"]
         query_string = (
             encode_query_string(query_string_params) if query_string_params else ""
@@ -80,7 +80,6 @@ class AWSLambdaMiddleware(ServerlessMiddleware):
 
         binary = event.get("isBase64Encoded", False)
         body = event["body"]
-
         if body:
             if binary:
                 body = base64.b64decode(body)
