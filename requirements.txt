@@ -1,6 +1,5 @@
 # Optional
 azure-functions
-boto3
 
 # Testing
 pytest
