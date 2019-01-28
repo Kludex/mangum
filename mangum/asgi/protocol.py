@@ -7,7 +7,6 @@ from mangum.utils import maybe_encode
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
-    CLOSED = enum.auto()
 
 
 class ASGICycle:
