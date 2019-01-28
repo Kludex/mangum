@@ -57,13 +57,12 @@ class ASGICycle:
                 )
 
             status_code = message["status"]
-            headers = {
-                k.decode("utf-8"): v.decode("utf-8")
-                for k, v in message.get("headers", [])
-            }
+            headers = {k: v for k, v in message.get("headers", [])}
 
-            if "content-type" in headers:
-                mimetype, options = cgi.parse_header(headers["content-type"])
+            if b"content-type" in headers:
+                mimetype, options = cgi.parse_header(
+                    headers[b"content-type"].decode("utf-8")
+                )
                 charset = options.get("charset", None)
                 if charset:
                     self.charset = charset

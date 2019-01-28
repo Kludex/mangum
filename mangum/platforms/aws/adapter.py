@@ -26,7 +26,7 @@ class AWSLambdaASGICycle(ASGICycle):
     def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["statusCode"] = status_code
         self.response["isBase64Encoded"] = self.binary
-        self.response["headers"] = headers
+        self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
 
     def on_response_body(self, body: bytes) -> None:
         if self.binary:

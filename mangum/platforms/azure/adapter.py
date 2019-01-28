@@ -23,7 +23,7 @@ class AzureFunctionCycle(ASGICycle):
 
     def on_response_start(self, headers: dict, status_code: int) -> None:
         self.response["status_code"] = status_code
-        self.response["headers"] = headers
+        self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
         self.response["mimetype"] = self.mimetype
         self.response["charset"] = self.charset
 

@@ -59,7 +59,6 @@ def test_azure_response() -> None:
     response = handler(mock_request)
 
     assert response.status_code == 200
-    assert response.headers == {"content-type": "text/html; charset=utf-8"}
     assert response.get_body() == b"<html><h1>Hello, world!</h1></html>"
     assert response.charset == "utf-8"
     assert response.mimetype == "text/html"
@@ -95,7 +94,6 @@ def test_azure_response_with_body() -> None:
     response = handler(mock_request)
 
     assert response.status_code == 200
-    assert response.headers == {"content-type": "text/html; charset=utf-8"}
     assert response.get_body() == b"123"
     assert response.charset == "utf-8"
     assert response.mimetype == "text/html"
@@ -121,10 +119,6 @@ def test_starlette_azure_response() -> None:
     response = handler(mock_request)
 
     assert response.status_code == 200
-    assert response.headers == {
-        "content-type": "text/html; charset=utf-8",
-        "content-length": "35",
-    }
     assert response.get_body() == b"<html><h1>Hello, world!</h1></html>"
     assert response.charset == "utf-8"
     assert response.mimetype == "text/html"
