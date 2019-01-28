@@ -1,7 +1,5 @@
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from yourapp.app import app
 
-# from <yourapp> import app
 
-
-def lambda_handler(event, context):
-    return AWSLambdaMiddleware(app)(event, context)
+handler = AWSLambdaMiddleware(app)  # optionally set debug=True

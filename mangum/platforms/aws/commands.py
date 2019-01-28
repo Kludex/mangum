@@ -116,6 +116,20 @@ def build() -> None:
 
 
 @aws.command()
+def update() -> None:
+    """
+    Update the application files only.
+    """
+    config, error = get_config()
+    if error is not None:
+        click.echo(error)
+    else:
+        click.echo("Updating the application build.")
+        config.build(update=True)
+        click.echo("Update complete!")
+
+
+@aws.command()
 def package() -> None:
     config, error = get_config()
     if error is not None:

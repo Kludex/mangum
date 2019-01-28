@@ -2,7 +2,7 @@ import typing
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
 
-from mangum.platforms.azure.adapter import run_asgi
+from mangum.platforms.azure.middleware import AzureFunctionMiddleware
 
 
 class MockHttpRequest:
@@ -55,7 +55,8 @@ def test_azure_response() -> None:
         route_params=None,
         body=None,
     )
-    response = run_asgi(app, mock_request)
+    handler = AzureFunctionMiddleware(app)
+    response = handler(mock_request)
 
     assert response.status_code == 200
     assert response.headers == {"content-type": "text/html; charset=utf-8"}
@@ -90,7 +91,8 @@ def test_azure_response_with_body() -> None:
         body=body,
     )
 
-    response = run_asgi(app, mock_request)
+    handler = AzureFunctionMiddleware(app)
+    response = handler(mock_request)
 
     assert response.status_code == 200
     assert response.headers == {"content-type": "text/html; charset=utf-8"}
@@ -115,7 +117,8 @@ def test_starlette_azure_response() -> None:
         body=None,
     )
 
-    response = run_asgi(app, mock_request)
+    handler = AzureFunctionMiddleware(app)
+    response = handler(mock_request)
 
     assert response.status_code == 200
     assert response.headers == {

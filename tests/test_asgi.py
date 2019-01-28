@@ -1,5 +1,5 @@
 import pytest
-from mangum.asgi import ASGICycle
+from mangum.asgi.protocol import ASGICycle
 from starlette.responses import PlainTextResponse
 
 
