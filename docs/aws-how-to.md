@@ -15,7 +15,7 @@ This guide will explain how to generate a basic AWS Lambda deployment configurat
 First, install Mangum with all the optional dependencies (needed for AWS):
 
 ```shell
-$ pip3 install mangum[full]
+$ pip3 install mangum[aws]
 ```
 
 
@@ -45,13 +45,10 @@ This is the module that is specified in the generated SAM template. It contains 
 
 ```python
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from YourApp.app import app
 
-# from <yourapp> import app
 
-
-def lambda_handler(event, context):
-    return AWSLambdaMiddleware(app)(event, context)
-
+handler = AWSLambdaMiddleware(app)  # optionally set debug=True
 ```
 
 You will need to modify the `asgi.py` file to import your application to be run by the middleware. Alternatively, you may update the `template.yaml` to point directly to a different handler location - the `asgi.py` is included for convenience.

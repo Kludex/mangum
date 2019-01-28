@@ -25,7 +25,6 @@ class ASGICycle:
         asgi_instance = app(self.scope)
         asgi_task = loop.create_task(asgi_instance(self.receive, self.send))
         loop.run_until_complete(asgi_task)
-
         return self.response
 
     def put_message(self, message: dict) -> None:

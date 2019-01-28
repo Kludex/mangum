@@ -77,41 +77,50 @@ class AWSConfig:
             os.path.join(os.path.join(self.config_dir), "asgi.py"),
         )
 
-    def build(self) -> None:  # pragma: no cover
+    def build(self, update: bool = False) -> None:  # pragma: no cover
         """
         Copy all the files in the project directory to the build directory, then install
         the requirements.
         """
-        if os.path.exists(self.build_dir):
-            shutil.rmtree(self.build_dir)
-
-        shutil.copytree(
-            self.project_dir,
-            os.path.join(self.build_dir, os.path.basename(self.project_dir)),
+        project_build_dir = os.path.join(
+            self.build_dir, os.path.basename(self.project_dir)
         )
 
-        for config_file in ("template.yaml", "asgi.py"):
-            shutil.copyfile(
-                os.path.join(self.config_dir, config_file),
-                os.path.join(self.build_dir, config_file),
-            )
+        if update:
+            print(project_build_dir)
+            if os.path.exists(project_build_dir):
+                shutil.rmtree(project_build_dir)
+                print("RM")
+            shutil.copytree(self.project_dir, project_build_dir)
+        else:
 
-        if not os.path.exists(os.path.join(self.config_dir, "requirements.txt")):
-            raise IOError(f"File not found: 'requirements.txt' does not exist.")
+            if os.path.exists(self.build_dir):
+                shutil.rmtree(self.build_dir)
 
-        install_cmd = [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            "requirements.txt",
-            "-t",
-            os.path.join(".", self.build_dir),
-        ]
-        installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
-        if installed.returncode != 0:
-            raise RuntimeError("Build failed, could not install requirements.")
+            shutil.copytree(self.project_dir, project_build_dir)
+
+            for config_file in ("template.yaml", "asgi.py"):
+                shutil.copyfile(
+                    os.path.join(self.config_dir, config_file),
+                    os.path.join(self.build_dir, config_file),
+                )
+
+            if not os.path.exists(os.path.join(self.config_dir, "requirements.txt")):
+                raise IOError(f"File not found: 'requirements.txt' does not exist.")
+
+            install_cmd = [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                "requirements.txt",
+                "-t",
+                os.path.join(".", self.build_dir),
+            ]
+            installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
+            if installed.returncode != 0:
+                raise RuntimeError("Build failed, could not install requirements.")
 
     def validate(self) -> Union[None, str]:  # pragma: no cover
         with open(os.path.join(self.config_dir, "template.yaml")) as f:

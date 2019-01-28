@@ -23,15 +23,15 @@ $ pip3 install mangum
 
 ## Dependencies
 
-There are required/optional dependencies depending on the platform being used, but the base install does not have any hard requirements (but will only work for AWS, without the CLI support):
+There are required/optional dependencies for specific platforms being used, but the base install does not have any hard requirements:
 
-`azure-functions` - required for Azure Function support. Can be installed using:
+`azure-functions` - *required* for Azure Function support. Can be installed using:
 
 ```shell
 $ pip3 install mangum[azure]
 ```
 
-`boto3`, `click`, `jinja2` - required for the AWS-specific tools:
+`boto3`, `click` - *required* for the AWS-specific CLI tools (this is NOT required in deployments):
 
 ```shell
 $ pip3 install mangum[aws]
@@ -49,45 +49,36 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 
 ### AWS Lambda / API Gateway
 
-#### Example
-
-Below is a basic ASGI application example using the AWS run method:
+To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaMiddleware`:
 
 ```python
-from mangum.platforms.aws.adapter import run_asgi
+# asgi.py
 
-class App:
-    def __init__(self, scope) -> None:
-        self.scope = scope
-
-    async def __call__(self, receive, send) -> None:
-        message = await receive()
-        if message["type"] == "http.request":
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-def lambda_handler(event, context):
-    return run_asgi(App, event, context)
-```
-
-#### As a middleware
-
-The same application above can be run using the `AWSLambdaMiddleware`. Currently it just implements a class that returns the `run_asgi` response.
-
-```python
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from yourapp.app import app
 
-def lambda_handler(event, context):
-    return AWSLambdaMiddleware(app)(event, context)
+
+handler = AWSLambdaMiddleware(app)  # optionally set debug=True
 ```
 
-#### Mangum CLI (experimental)
+For this example, you would need to specify your lambda event handler as `asgi.handler`. 
+
+**Note**: This platform middleware can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
+
+### Azure Functions
+
+Similarly as above, wrap the application using the `AzureFunctionMiddleware`:
+
+```python
+from mangum.platforms.azure.middleware import AzureFunctionMiddleware
+from yourapp.app import app
+
+handler = AzureFunctionMiddleware(app)
+```
+
+A basic quickstart guide for using Azure Functions with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).
+
+### Mangum CLI (experimental)
 
 Experimental AWS packaging/deployment support. This requires installation of the optional dependencies for AWS:
 
@@ -115,35 +106,3 @@ The available commands are briefly outlined below, but there is also a quickstar
 * `mangum aws describe` - Retrieve the API endpoints for the function.
 
 * `mangum aws validate` - Validate the SAM template in the current configuration.
-
-### Azure Functions
-
-#### Example
-
-The following is an example of using the Azure Function adapter method:
-
-```python
-from mangum.platforms.azure.adapter import run_asgi
-
-
-class App:
-    def __init__(self, scope) -> None:
-        self.scope = scope
-
-    async def __call__(self, receive, send) -> None:
-        message = await receive()
-        if message["type"] == "http.request":
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-def main(req):
-    return run_asgi(App, req)
-```
-
-The command-line tools for Azure Functions can do pretty much everything you need. A basic quickstart guide for using it with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).
