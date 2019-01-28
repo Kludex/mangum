@@ -49,7 +49,7 @@ class AzureFunctionAdapter(ServerlessAdapter):
         parsed = urllib.parse.urlparse(event.url)
         scheme = parsed.scheme
         path = parsed.path
-        query_string = encode_query_string(event.params) if event.params else ""
+        query_string = encode_query_string(event.params) if event.params else b""
 
         scope = {
             "type": "http",
@@ -61,7 +61,7 @@ class AzureFunctionAdapter(ServerlessAdapter):
             "http_version": "1.1",
             "root_path": "",
             "query_string": query_string,
-            "headers": headers,
+            "headers": [[k.encode(), v.encode()] for k, v in headers],
         }
 
         body = event.get_body() or b""

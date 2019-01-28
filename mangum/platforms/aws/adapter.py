@@ -62,7 +62,7 @@ class AWSLambdaAdapter(ServerlessAdapter):
                 server = (host, port)
         query_string_params = event["queryStringParameters"]
         query_string = (
-            encode_query_string(query_string_params) if query_string_params else ""
+            encode_query_string(query_string_params) if query_string_params else b""
         )
 
         scope = {
@@ -71,7 +71,7 @@ class AWSLambdaAdapter(ServerlessAdapter):
             "scheme": scheme,
             "root_path": "",
             "query_string": query_string,
-            "headers": headers.items(),
+            "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
             "type": "http",
             "http_version": "1.1",
             "method": method,
