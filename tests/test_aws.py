@@ -141,24 +141,3 @@ def test_quart_aws_response(mock_data) -> None:
         "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
         "body": "hello world!",
     }
-
-
-def test_quart_aws_response_with_body(mock_data) -> None:
-
-    mock_event = mock_data.get_aws_event()
-
-    app = Quart(__name__)
-
-    @app.route(mock_event["path"])
-    async def hello():
-        return "hello world!"
-
-    handler = AWSLambdaAdapter(app)
-    response = handler(mock_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
-        "body": "hello world!",
-    }

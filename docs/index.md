@@ -1,7 +1,5 @@
 # Mangum
 
-**Documentation**: https://erm.github.io/mangum/
-
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
