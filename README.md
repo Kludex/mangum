@@ -27,7 +27,7 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 
 ### AWS Lambda / API Gateway
 
-To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaAdapter`:
+To make an ASGI application compatible with AWS Lambda & API Gateway, wrap it with the `AWSLambdaAdapter`:
 
 ```python
 from mangum.platforms.aws.adapter import AWSLambdaAdapter
@@ -43,11 +43,12 @@ You would then need to specify `<path>.handler` in your AWS Lambda configuration
 
 ### Azure Functions
 
-Similarly as above, wrap the application using the `AzureFunctionAdapter`:
+Similarly as above, wrap the application with the `AzureFunctionAdapter`:
 
 ```python
 from mangum.platforms.azure.adapter import AzureFunctionAdapter
 from yourapp.app import app
+
 
 handler = AzureFunctionAdapter(app)
 ```
@@ -81,7 +82,7 @@ $ pip3 install mangum[full]
 Experimental AWS packaging/deployment support. This requires installation of the optional dependencies for AWS:
 
 ```shell
-$ pip install mangum[full]
+$ pip install mangum[aws]
 ```
 
 It also requires:
