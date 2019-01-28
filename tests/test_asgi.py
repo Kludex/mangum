@@ -8,8 +8,8 @@ class MockASGICycle(ASGICycle):
     def on_response_start(self, headers: list, status_code: int) -> None:
         self.response["status"] = status_code
 
-    def on_response_body(self, body: str) -> None:
-        self.response["body"] = body
+    def on_response_close(self) -> None:
+        self.response["body"] = self.body
 
 
 class MockServerlessAdapter(ServerlessAdapter):

@@ -2,7 +2,7 @@ import urllib.parse
 from azure.functions import HttpRequest, HttpResponse
 from mangum.asgi.protocol import ASGICycle
 from mangum.asgi.adapter import ServerlessAdapter
-from mangum.utils import encode_query_string
+from mangum.utils import encode_query_string, maybe_encode
 
 
 class AzureFunctionCycle(ASGICycle):
@@ -27,8 +27,8 @@ class AzureFunctionCycle(ASGICycle):
         self.response["mimetype"] = self.mimetype
         self.response["charset"] = self.charset
 
-    def on_response_body(self, body: bytes) -> None:
-        self.response["body"] = body
+    def on_response_close(self) -> None:
+        self.response["body"] = self.body
 
 
 class AzureFunctionAdapter(ServerlessAdapter):
@@ -61,12 +61,12 @@ class AzureFunctionAdapter(ServerlessAdapter):
             "http_version": "1.1",
             "root_path": "",
             "query_string": query_string,
-            "headers": [[k.encode(), v.encode()] for k, v in headers],
+            "headers": [[maybe_encode(k), maybe_encode(v)] for k, v in headers],
         }
 
         body = event.get_body() or b""
+        response = AzureFunctionCycle(scope)(self.app, body=body)
 
-        response = AzureFunctionCycle(scope, body=body)(self.app)
         return HttpResponse(
             body=response["body"],
             headers=response["headers"],

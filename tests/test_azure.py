@@ -80,7 +80,7 @@ def test_azure_response_with_body() -> None:
 
         return asgi
 
-    body = "123"
+    body = b"123"
     mock_request = MockHttpRequest(
         "POST",
         "/",

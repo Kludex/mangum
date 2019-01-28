@@ -1,5 +1,5 @@
 import base64
-from mangum.utils import encode_query_string
+from mangum.utils import encode_query_string, maybe_encode
 from mangum.asgi.protocol import ASGICycle
 from mangum.asgi.adapter import ServerlessAdapter
 
@@ -28,11 +28,11 @@ class AWSLambdaASGICycle(ASGICycle):
         self.response["isBase64Encoded"] = self.binary
         self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
 
-    def on_response_body(self, body: bytes) -> None:
+    def on_response_close(self) -> None:
         if self.binary:
-            body = base64.b64encode(body)
+            body = base64.b64encode(self.body)
         else:
-            body = body.decode("ascii")
+            body = self.body.decode()
         self.response["body"] = body
 
 
@@ -71,7 +71,7 @@ class AWSLambdaAdapter(ServerlessAdapter):
             "scheme": scheme,
             "root_path": "",
             "query_string": query_string,
-            "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
+            "headers": [[maybe_encode(k), maybe_encode(v)] for k, v in headers.items()],
             "type": "http",
             "http_version": "1.1",
             "method": method,
@@ -83,10 +83,13 @@ class AWSLambdaAdapter(ServerlessAdapter):
         if body:
             if binary:
                 body = base64.b64decode(body)
-            elif not isinstance(body, bytes):
-                body = body.encode("utf-8")
 
-        response = AWSLambdaASGICycle(scope, body=body, binary=binary)(self.app)
+            else:
+                body = maybe_encode(body)
+        else:
+            body = b""
+
+        response = AWSLambdaASGICycle(scope, binary=binary)(self.app, body=body)
         return response
 
     def _debug(self, content: str, status_code: int = 500) -> None:

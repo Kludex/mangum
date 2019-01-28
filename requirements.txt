@@ -8,6 +8,7 @@ codecov
 pytest-cov
 black
 starlette
+quart
 
 # Docs
 mkdocs

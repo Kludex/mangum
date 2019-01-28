@@ -2,6 +2,7 @@ import base64
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+from quart import Quart
 from mangum.platforms.aws.adapter import AWSLambdaAdapter
 
 
@@ -107,6 +108,7 @@ def test_starlette_aws_response(mock_data) -> None:
         return PlainTextResponse("Hello, world!")
 
     handler = AWSLambdaAdapter(app)
+    mock_event["body"] = None
     response = handler(mock_event, {})
 
     assert response == {
@@ -117,4 +119,25 @@ def test_starlette_aws_response(mock_data) -> None:
             "content-type": "text/plain; charset=utf-8",
         },
         "body": "Hello, world!",
+    }
+
+
+def test_quart_aws_response(mock_data) -> None:
+
+    mock_event = mock_data.get_aws_event()
+
+    app = Quart(__name__)
+
+    @app.route(mock_event["path"])
+    async def hello():
+        return "hello world!"
+
+    handler = AWSLambdaAdapter(app)
+    response = handler(mock_event, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
+        "body": "hello world!",
     }

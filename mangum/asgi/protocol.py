@@ -1,34 +1,36 @@
 import asyncio
 import enum
 import cgi
+from mangum.utils import maybe_encode
 
 
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
+    CLOSED = enum.auto()
 
 
 class ASGICycle:
-    def __init__(self, scope: dict, body: bytes = b"", **kwargs) -> None:
+    def __init__(self, scope: dict, **kwargs) -> None:
         """
         Base for implementing the ASGI application request-response cycle for a
         particular FaaS platform.
         """
         self.scope = scope
-        self.body = body
+        self.body = b""
         self.state = ASGICycleState.REQUEST
         self.app_queue = None
         self.response = {}
         self.charset = None
         self.mimetype = None
 
-    def __call__(self, app) -> dict:
+    def __call__(self, app, body: bytes = b"") -> dict:
         """
         Run the event loop and instantiate the ASGI application for the current request.
         """
         loop = asyncio.new_event_loop()
         self.app_queue = asyncio.Queue(loop=loop)
-        self.put_message({"type": "http.request", "body": self.body})
+        self.put_message({"type": "http.request", "body": body, "more_body": False})
         asgi_instance = app(self.scope)
         asgi_task = loop.create_task(asgi_instance(self.receive, self.send))
         loop.run_until_complete(asgi_task)
@@ -60,9 +62,7 @@ class ASGICycle:
             headers = {k: v for k, v in message.get("headers", [])}
 
             if b"content-type" in headers:
-                mimetype, options = cgi.parse_header(
-                    headers[b"content-type"].decode("utf-8")
-                )
+                mimetype, options = cgi.parse_header(headers[b"content-type"].decode())
                 charset = options.get("charset", None)
                 if charset:
                     self.charset = charset
@@ -78,10 +78,15 @@ class ASGICycle:
                     f"Expected 'http.response.body', received: {message_type}"
                 )
 
-            body = message["body"]
+            body = maybe_encode(message.get("body", b""))
+            more_body = message.get("more_body", False)
 
-            self.on_response_body(body)
-            self.put_message({"type": "http.disconnect"})
+            self.body += body
+
+            if not more_body:
+
+                self.on_response_close()
+                self.put_message({"type": "http.disconnect"})
 
     def on_response_start(self, headers: list, status_code: int) -> None:
         """
@@ -89,8 +94,8 @@ class ASGICycle:
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def on_response_body(self, body: str) -> None:
+    def on_response_close(self) -> None:
         """
-        Handles the `http.response.body` event and completes the response.
+        Complete the response after the body is fully read.
         """
         raise NotImplementedError()  # pragma: no cover

@@ -1,4 +1,5 @@
 import urllib.parse
+from typing import Union
 import os
 import json
 
@@ -35,3 +36,9 @@ def write_file_content(
         content = json.dumps(content)
     with open(filepath, "w") as f:
         f.write(content)
+
+
+def maybe_encode(data: Union[str, bytes]) -> bytes:
+    if not isinstance(data, bytes):
+        return data.encode("utf-8")
+    return data
