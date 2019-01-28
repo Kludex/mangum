@@ -76,6 +76,26 @@ def test_aws_binary_response_with_body(mock_data) -> None:
     }
 
 
+def test_aws_debug(mock_data) -> None:
+    def app(scope):
+        async def asgi(receive, send):
+            response = PlainTextResponse("Hello, world!")
+            raise Exception("Error!")
+            await response(receive, send)
+
+        return asgi
+
+    mock_event = mock_data.get_aws_event()
+    handler = AWSLambdaMiddleware(app, debug=True)
+    response = handler(mock_event, {})
+    assert response == {
+        "statusCode": 500,
+        "isBase64Encoded": False,
+        "headers": {},
+        "body": "Error!",
+    }
+
+
 def test_starlette_aws_response(mock_data) -> None:
 
     mock_event = mock_data.get_aws_event()

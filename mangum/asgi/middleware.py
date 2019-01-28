@@ -8,7 +8,7 @@ class ServerlessMiddleware:
             response = self.asgi(*args, **kwargs)
         except Exception as exc:
             if self.debug:
-                return self._debug(exc)
+                return self._debug(str(exc))
             raise exc
         else:
             return response
