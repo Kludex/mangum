@@ -37,7 +37,7 @@ from yourapp.app import app
 handler = AWSLambdaMiddleware(app)  # optionally set debug=True
 ```
 
-For this example, you would need to specify your lambda event handler as `asgi.handler`. 
+You would then need to specify `<path>.handler` in your AWS Lambda configuration.
 
 **Note**: This platform middleware can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
 
