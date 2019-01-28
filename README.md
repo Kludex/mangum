@@ -24,7 +24,7 @@ $ pip3 install mangum
 
 ## Supported Platforms
 
-Only two platforms are currently supported, but if you'd like to see others, please open an issue.
+Only two platforms are currently supported, but if you'd like to see others, please open an [issue](https://github.com/erm/mangum/issues).
 
 ### AWS Lambda / API Gateway
 
