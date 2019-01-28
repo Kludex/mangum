@@ -1,5 +1,5 @@
 site_name: Mangum
-site_description: Serverless ASGI adapters.
+site_description: Serverless ASGI
 
 theme:
     name: 'material'
@@ -16,8 +16,6 @@ edit_uri: ""
 
 nav:
     - Introduction: 'index.md'
-    - 'azure-how-to.md'
-    - 'aws-how-to.md'
 
 markdown_extensions:
   - markdown.extensions.codehilite:
