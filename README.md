@@ -42,6 +42,8 @@ You would then need to specify `<path>.handler` in your AWS Lambda configuration
 
 **Note**: This platform adapter can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
 
+An example application can be found [here](https://github.com/erm/asgi-examples/tree/master/mangum/aws).
+
 ### Azure Functions
 
 Similarly as above, wrap the application with the `AzureFunctionAdapter`:
@@ -54,7 +56,7 @@ from yourapp.app import app
 handler = AzureFunctionAdapter(app)
 ```
 
-An application can be found [here](https://github.com/erm/azure-functions-python-asgi-example/).
+An example application can be found [here](https://github.com/erm/azure-functions-python-asgi-example/).
 
 ## Dependencies
 
