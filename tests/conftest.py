@@ -87,7 +87,7 @@ Resources:
         Properties:
             FunctionName: TestprojectFunction
             CodeUri: ./build
-            Handler: asgi.lambda_handler
+            Handler: asgi.handler
             Runtime: python3.7
             # Environment:
             #     Variables:

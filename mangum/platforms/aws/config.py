@@ -210,7 +210,7 @@ Resources:
         Properties:
             FunctionName: {self.resource_name}Function
             CodeUri: ./build
-            Handler: asgi.lambda_handler
+            Handler: asgi.handler
             Runtime: python{self.runtime_version}
             # Environment:
             #     Variables:
