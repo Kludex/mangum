@@ -52,8 +52,6 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaMiddleware`:
 
 ```python
-# asgi.py
-
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
 from yourapp.app import app
 
@@ -61,7 +59,9 @@ from yourapp.app import app
 handler = AWSLambdaMiddleware(app)  # optionally set debug=True
 ```
 
-For this example, you would need to specify your lambda event handler as `asgi.handler`.
+For this example, you would need to specify your lambda event handler as `asgi.handler`. 
+
+**Note**: This platform middleware can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
 
 ### Azure Functions
 

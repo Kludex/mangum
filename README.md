@@ -52,8 +52,6 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaMiddleware`:
 
 ```python
-# asgi.py
-
 from mangum.platforms.aws.middleware import AWSLambdaMiddleware
 from yourapp.app import app
 
