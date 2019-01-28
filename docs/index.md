@@ -9,6 +9,7 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
+
 Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with FaaS platforms.
 
 ## Requirements
@@ -23,7 +24,7 @@ $ pip3 install mangum
 
 ## Supported Platforms
 
-Only two platforms are currently supported, but if you'd like to see others, please open an issue.
+Only two platforms are currently supported, but if you'd like to see others, please open an [issue](https://github.com/erm/mangum/issues).
 
 ### AWS Lambda / API Gateway
 
@@ -53,55 +54,14 @@ from yourapp.app import app
 handler = AzureFunctionAdapter(app)
 ```
 
-A basic quickstart guide for using Azure Functions with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).
+An application can be found [here](https://github.com/erm/azure-functions-python-asgi-example/).
 
 ## Dependencies
 
-There are required/optional dependencies for specific platforms being used, but the base install does not have any hard requirements:
+The base install does not have any hard requirements, but there are dependencies required depending on platform:
 
 `azure-functions` - *required* for Azure Function support. Can be installed using:
 
 ```shell
 $ pip3 install mangum[azure]
 ```
-
-`boto3`, `click` - *required* for the AWS-specific CLI tools (this is NOT required in deployments):
-
-```shell
-$ pip3 install mangum[aws]
-```
-
-Everything can be installed with:
-
-```shell
-$ pip3 install mangum[full]
-```
-
-### Mangum CLI (experimental)
-
-Experimental AWS packaging/deployment support. This requires installation of the optional dependencies for AWS:
-
-```shell
-$ pip install mangum[aws]
-```
-
-It also requires:
-
-- AWS CLI
-- AWS credentials.
-
-The available commands are briefly outlined below, but there is also a quickstart guide [here](https://erm.github.io/mangum/aws-how-to/):
-
-* `mangum aws init` - Create a new configuration template for an application.
-
-* `mangum aws build` - Install the requirements and copy the application files into the build directory.
-
-* `mangum aws package` - Package the local project to prepare for deployment.
-
-* `mangum aws deploy` - Deploy the packaged application to AWS.
-
-* `mangum aws tail` - Tail the last 10 minutes of CloudWatch for the function.
-
-* `mangum aws describe` - Retrieve the API endpoints for the function.
-
-* `mangum aws validate` - Validate the SAM template in the current configuration.
