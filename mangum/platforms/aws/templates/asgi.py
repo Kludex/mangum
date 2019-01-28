@@ -1,5 +1,5 @@
-from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from mangum.platforms.aws.adapter import AWSLambdaAdapter
 from yourapp.app import app
 
 
-handler = AWSLambdaMiddleware(app)  # optionally set debug=True
+handler = AWSLambdaAdapter(app)  # optionally set debug=True

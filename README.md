@@ -27,29 +27,29 @@ Only two platforms are currently supported, but if you'd like to see others, ple
 
 ### AWS Lambda / API Gateway
 
-To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaMiddleware`:
+To make an ASGI application compatible with AWS Lambda & AWS Gateway, wrap it in the `AWSLambdaAdapter`:
 
 ```python
-from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from mangum.platforms.aws.adapter import AWSLambdaAdapter
 from yourapp.app import app
 
 
-handler = AWSLambdaMiddleware(app)  # optionally set debug=True
+handler = AWSLambdaAdapter(app)  # optionally set debug=True
 ```
 
 You would then need to specify `<path>.handler` in your AWS Lambda configuration.
 
-**Note**: This platform middleware can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
+**Note**: This platform adapter can also use an optional `debug` argument to return unhandled errors raised by the application. It should NOT be enabled outside of development.
 
 ### Azure Functions
 
-Similarly as above, wrap the application using the `AzureFunctionMiddleware`:
+Similarly as above, wrap the application using the `AzureFunctionAdapter`:
 
 ```python
-from mangum.platforms.azure.middleware import AzureFunctionMiddleware
+from mangum.platforms.azure.adapter import AzureFunctionAdapter
 from yourapp.app import app
 
-handler = AzureFunctionMiddleware(app)
+handler = AzureFunctionAdapter(app)
 ```
 
 A basic quickstart guide for using Azure Functions with Mangum is outlined [here](https://erm.github.io/mangum/azure-how-to/).

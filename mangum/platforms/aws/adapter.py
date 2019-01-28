@@ -1,7 +1,7 @@
 import base64
 from mangum.utils import encode_query_string
 from mangum.asgi.protocol import ASGICycle
-from mangum.asgi.middleware import ServerlessMiddleware
+from mangum.asgi.adapter import ServerlessAdapter
 
 
 class AWSLambdaASGICycle(ASGICycle):
@@ -36,9 +36,9 @@ class AWSLambdaASGICycle(ASGICycle):
         self.response["body"] = body
 
 
-class AWSLambdaMiddleware(ServerlessMiddleware):
+class AWSLambdaAdapter(ServerlessAdapter):
     """
-    A middleware that wraps an ASGI application and handles transforming an incoming
+    A adapter that wraps an ASGI application and handles transforming an incoming
     AWS Lambda & API Gateway request into the ASGI connection scope.
 
     After building the connection scope, it runs the ASGI application cycle and returns

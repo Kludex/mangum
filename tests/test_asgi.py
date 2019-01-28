@@ -1,6 +1,6 @@
 import pytest
 from mangum.asgi.protocol import ASGICycle
-from mangum.asgi.middleware import ServerlessMiddleware
+from mangum.asgi.adapter import ServerlessAdapter
 from starlette.responses import PlainTextResponse
 
 
@@ -12,7 +12,7 @@ class MockASGICycle(ASGICycle):
         self.response["body"] = body
 
 
-class MockServerlessMiddleware(ServerlessMiddleware):
+class MockServerlessAdapter(ServerlessAdapter):
     def asgi(self, event: dict) -> dict:
         scope = {
             "type": "http",
@@ -31,12 +31,12 @@ class MockServerlessMiddleware(ServerlessMiddleware):
         return handler(self.app)
 
 
-class MockServerlessMiddlewareWithOptions(MockServerlessMiddleware):
+class MockServerlessAdapterWithOptions(MockServerlessAdapter):
     def _debug(self, content: str, status_code: int = 500) -> dict:
         return {"body": content, "status_code": status_code}
 
 
-def test_serverless_middleware() -> None:
+def test_serverless_adapter() -> None:
     def app(scope):
         async def asgi(receive, send):
             res = PlainTextResponse("Hello, world!")
@@ -45,7 +45,7 @@ def test_serverless_middleware() -> None:
         return asgi
 
     mock_request = {}
-    response = MockServerlessMiddleware(app)(mock_request)
+    response = MockServerlessAdapter(app)(mock_request)
 
     assert response == {"status": 200, "body": b"Hello, world!"}
 
@@ -58,7 +58,7 @@ def test_asgi_cycle_state() -> None:
         return asgi
 
     with pytest.raises(RuntimeError):
-        MockServerlessMiddleware(app)({})
+        MockServerlessAdapter(app)({})
 
     def app(scope):
         async def asgi(receive, send):
@@ -68,10 +68,10 @@ def test_asgi_cycle_state() -> None:
         return asgi
 
     with pytest.raises(RuntimeError):
-        MockServerlessMiddleware(app)({})
+        MockServerlessAdapter(app)({})
 
 
-def test_serverless_middleware_not_implemented() -> None:
+def test_serverless_adapter_not_implemented() -> None:
     def app(scope):
         async def asgi(receive, send):
             res = PlainTextResponse("Hello, world!")
@@ -81,7 +81,7 @@ def test_serverless_middleware_not_implemented() -> None:
 
     mock_request = {}
     with pytest.raises(NotImplementedError):
-        ServerlessMiddleware(app)(mock_request)
+        ServerlessAdapter(app)(mock_request)
 
     def app(scope):
         async def asgi(receive, send):
@@ -93,10 +93,10 @@ def test_serverless_middleware_not_implemented() -> None:
 
     mock_request = {}
     with pytest.raises(NotImplementedError):
-        MockServerlessMiddleware(app, debug=True)(mock_request)
+        MockServerlessAdapter(app, debug=True)(mock_request)
 
 
-def test_serverless_middleware_debug() -> None:
+def test_serverless_adapter_debug() -> None:
     def app(scope):
         async def asgi(receive, send):
             res = PlainTextResponse("Hello, world!")
@@ -106,5 +106,5 @@ def test_serverless_middleware_debug() -> None:
         return asgi
 
     mock_request = {}
-    response = MockServerlessMiddlewareWithOptions(app, debug=True)(mock_request)
+    response = MockServerlessAdapterWithOptions(app, debug=True)(mock_request)
     assert response == {"body": "There was an error!", "status_code": 500}

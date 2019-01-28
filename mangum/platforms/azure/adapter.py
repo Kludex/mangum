@@ -1,7 +1,7 @@
 import urllib.parse
 from azure.functions import HttpRequest, HttpResponse
 from mangum.asgi.protocol import ASGICycle
-from mangum.asgi.middleware import ServerlessMiddleware
+from mangum.asgi.adapter import ServerlessAdapter
 from mangum.utils import encode_query_string
 
 
@@ -31,9 +31,9 @@ class AzureFunctionCycle(ASGICycle):
         self.response["body"] = body
 
 
-class AzureFunctionMiddleware(ServerlessMiddleware):
+class AzureFunctionAdapter(ServerlessAdapter):
     """
-    A middleware that wraps an ASGI application and handles transforming an incoming
+    A adapter that wraps an ASGI application and handles transforming an incoming
     Azure Function request into the ASGI connection scope.
 
     After building the connection scope, it runs the ASGI application cycle and then

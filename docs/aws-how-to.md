@@ -44,14 +44,14 @@ All that Python packages that should be installed in the build directory. It con
 This is the module that is specified in the generated SAM template. It contains the following:
 
 ```python
-from mangum.platforms.aws.middleware import AWSLambdaMiddleware
+from mangum.platforms.aws.adapter import AWSLambdaAdapter
 from YourApp.app import app
 
 
-handler = AWSLambdaMiddleware(app)  # optionally set debug=True
+handler = AWSLambdaAdapter(app)  # optionally set debug=True
 ```
 
-You will need to modify the `asgi.py` file to import your application to be run by the middleware. Alternatively, you may update the `template.yaml` to point directly to a different handler location - the `asgi.py` is included for convenience.
+You will need to modify the `asgi.py` file to import your application to be run by the adapter. Alternatively, you may update the `template.yaml` to point directly to a different handler location - the `asgi.py` is included for convenience.
 
 After generating the configuration, the file structure should look something like this:
 

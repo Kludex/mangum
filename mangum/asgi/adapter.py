@@ -1,10 +1,10 @@
 from typing import Any
 
 
-class ServerlessMiddleware:
+class ServerlessAdapter:
     def __init__(self, app, debug: bool = False) -> None:
         """
-        Base class for implementing platform-specific ASGI middleware.
+        Base class for implementing platform-specific ASGI Adapter.
         """
         self.app = app
         self.debug = debug
