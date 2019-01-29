@@ -33,7 +33,7 @@ class MockServerlessAdapter(ServerlessAdapter):
 
 class MockServerlessAdapterWithOptions(MockServerlessAdapter):
     def _debug(self, content: str, status_code: int = 500) -> dict:
-        return {"body": content, "status_code": status_code}
+        return {"body": content, "statusCode": status_code}
 
 
 def test_serverless_adapter() -> None:
@@ -107,4 +107,6 @@ def test_serverless_adapter_debug() -> None:
 
     mock_request = {}
     response = MockServerlessAdapterWithOptions(app, debug=True)(mock_request)
-    assert response == {"body": "There was an error!", "status_code": 500}
+
+    assert response["statusCode"] == 500
+    assert response["body"].split()[0] == "Traceback"

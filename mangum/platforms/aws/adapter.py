@@ -113,6 +113,6 @@ class AWSLambdaAdapter(ServerlessAdapter):
         return {
             "statusCode": status_code,
             "isBase64Encoded": False,
-            "headers": {},
+            "headers": {"content-type": "text/plain; charset=utf-8"},
             "body": content,
         }

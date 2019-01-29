@@ -1,4 +1,5 @@
 from typing import Any
+import traceback
 
 
 class ServerlessAdapter:
@@ -21,7 +22,8 @@ class ServerlessAdapter:
             response = self.asgi(*args, **kwargs)
         except Exception as exc:
             if self.debug:
-                return self._debug(str(exc))
+                content = traceback.format_exc()
+                return self._debug(content)
             raise exc
         else:
             return response

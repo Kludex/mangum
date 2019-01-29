@@ -90,12 +90,11 @@ def test_aws_debug(mock_data) -> None:
     mock_event = mock_data.get_aws_event()
     handler = AWSLambdaAdapter(app, debug=True)
     response = handler(mock_event, {})
-    assert response == {
-        "statusCode": 500,
-        "isBase64Encoded": False,
-        "headers": {},
-        "body": "Error!",
-    }
+
+    assert response["statusCode"] == 500
+    assert not response["isBase64Encoded"]
+    assert response["headers"] == {"content-type": "text/plain; charset=utf-8"}
+    assert response["body"].split()[0] == "Traceback"
 
 
 def test_starlette_aws_response(mock_data) -> None:
