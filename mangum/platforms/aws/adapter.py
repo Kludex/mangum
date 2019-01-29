@@ -46,34 +46,25 @@ class AWSLambdaAdapter(ServerlessAdapter):
     """
 
     def asgi(self, event: dict, context: dict) -> dict:
-        server = None
-        client = None
+
         method = event["httpMethod"]
         headers = event["headers"] or {}
         path = event["path"]
-        host = headers.get("Host")
         scheme = headers.get("X-Forwarded-Proto", "http")
-        x_forwarded_for = headers.get("X-Forwarded-For")
-        x_forwarded_port = headers.get("X-Forwarded-Port")
-        if x_forwarded_port and x_forwarded_for:
-            port = int(x_forwarded_port)
-            client = (x_forwarded_for, port)
-            if host:
-                server = (host, port)
+
         query_string_params = event["queryStringParameters"]
         query_string = (
             encode_query_string(query_string_params) if query_string_params else b""
         )
 
-        headers = event["headers"] or {}
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
-        # TODO: Client port
-        client = (client_addr, 0)
+        client = (client_addr, 0)  # TODO: Client port
 
         server_addr = headers["Host"]
         server_port = None
+
         if ":" in server_addr:
-            server_addr, server_port = host.split(":")
+            server_addr, server_port = server_addr.split(":")
         else:
             server_port = headers.get("X-Forwarded-Port")
 
