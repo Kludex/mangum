@@ -68,7 +68,7 @@ class AWSLambdaAdapter(ServerlessAdapter):
         headers = event["headers"] or {}
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         # TODO: Client port
-        client = client_addr if client_addr is not None else None
+        client = client_addr
 
         server_addr = headers["Host"]
         server_port = None
