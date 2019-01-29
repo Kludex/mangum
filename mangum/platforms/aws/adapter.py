@@ -65,6 +65,23 @@ class AWSLambdaAdapter(ServerlessAdapter):
             encode_query_string(query_string_params) if query_string_params else b""
         )
 
+        headers = event["headers"] or {}
+        client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
+        # TODO: Client port
+        client = client_addr if client_addr is not None else None
+
+        server_addr = headers["Host"]
+        server_port = None
+        if ":" in server_addr:
+            server_addr, server_port = host.split(":")
+        else:
+            server_port = headers.get("X-Forwarded-Port")
+
+        if server_port:
+            server = (server_addr, int(server_port))
+        else:
+            server = None
+
         scope = {
             "server": server,
             "client": client,

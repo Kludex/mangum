@@ -15,6 +15,7 @@ def test_aws_response(mock_data) -> None:
         return asgi
 
     mock_event = mock_data.get_aws_event()
+    mock_event["headers"]["Host"] = ":"
     handler = AWSLambdaAdapter(app)
     response = handler(mock_event, {})
 
