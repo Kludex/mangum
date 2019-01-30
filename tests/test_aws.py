@@ -100,7 +100,7 @@ def test_aws_binary_response_with_body(mock_data) -> None:
         "statusCode": 200,
         "isBase64Encoded": True,
         "headers": {"content-length": "3", "content-type": "text/plain; charset=utf-8"},
-        "body": body_encoded,
+        "body": body_encoded.decode(),
     }
 
 

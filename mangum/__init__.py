@@ -72,11 +72,10 @@ class ASGICycle:
         self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
 
     def on_response_close(self) -> None:
+        body = self.body
         if self.binary:
-            body = base64.b64encode(self.body)
-        else:
-            body = self.body.decode()
-        self.response["body"] = body
+            body = base64.b64encode(body)
+        self.response["body"] = body.decode()
 
 
 class Mangum:
@@ -131,16 +130,12 @@ class Mangum:
         }
 
         binary = event.get("isBase64Encoded", False)
-        body = event["body"]
+        body = event["body"] or b""
 
-        if body:
-            if binary:
-                body = base64.b64decode(body)
-
-            else:
-                body = body.encode()
-        else:
-            body = b""
+        if binary:
+            body = base64.b64decode(body)
+        elif not isinstance(body, bytes):
+            body = body.encode()
 
         response = ASGICycle(scope, binary=binary)(self.app, body=body)
         return response
