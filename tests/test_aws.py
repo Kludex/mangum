@@ -1,9 +1,35 @@
 import base64
+import pytest
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from quart import Quart
-from mangum.platforms.aws.adapter import AWSLambdaAdapter
+from mangum import Mangum
+
+
+def test_asgi_cycle_state(mock_data) -> None:
+    def app(scope):
+        async def asgi(receive, send):
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+        return asgi
+
+    mock_event = mock_data.get_aws_event()
+    with pytest.raises(RuntimeError):
+
+        Mangum(app)(mock_event, {})
+
+    def app(scope):
+        async def asgi(receive, send):
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+
+        return asgi
+
+    mock_event = mock_data.get_aws_event()
+    with pytest.raises(RuntimeError):
+
+        Mangum(app)(mock_event, {})
 
 
 def test_aws_response(mock_data) -> None:
@@ -16,7 +42,7 @@ def test_aws_response(mock_data) -> None:
 
     mock_event = mock_data.get_aws_event()
     mock_event["headers"]["Host"] = "127.0.0.1:3000"
-    handler = AWSLambdaAdapter(app)
+    handler = Mangum(app)
     response = handler(mock_event, {})
 
     assert response == {
@@ -41,7 +67,7 @@ def test_aws_response_with_body(mock_data) -> None:
         return asgi
 
     mock_event = mock_data.get_aws_event()
-    handler = AWSLambdaAdapter(app)
+    handler = Mangum(app)
     response = handler(mock_event, {})
 
     assert response == {
@@ -67,7 +93,7 @@ def test_aws_binary_response_with_body(mock_data) -> None:
     body_encoded = base64.b64encode(body)
     mock_event["body"] = body_encoded
     mock_event["isBase64Encoded"] = True
-    handler = AWSLambdaAdapter(app)
+    handler = Mangum(app)
     response = handler(mock_event, {})
 
     assert response == {
@@ -88,7 +114,7 @@ def test_aws_debug(mock_data) -> None:
         return asgi
 
     mock_event = mock_data.get_aws_event()
-    handler = AWSLambdaAdapter(app, debug=True)
+    handler = Mangum(app, debug=True)
     response = handler(mock_event, {})
 
     assert response["statusCode"] == 500
@@ -107,7 +133,7 @@ def test_starlette_aws_response(mock_data) -> None:
     def homepage(request):
         return PlainTextResponse("Hello, world!")
 
-    handler = AWSLambdaAdapter(app)
+    handler = Mangum(app)
     mock_event["body"] = None
     response = handler(mock_event, {})
 
@@ -132,7 +158,7 @@ def test_quart_aws_response(mock_data) -> None:
     async def hello():
         return "hello world!"
 
-    handler = AWSLambdaAdapter(app)
+    handler = Mangum(app)
     response = handler(mock_event, {})
 
     assert response == {
