@@ -13,11 +13,10 @@ setup(
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
-    description="ASGI serverless adapters",
+    description="Serverless ASGI",
     long_description=get_long_description(),
     extras_require={"azure": ["azure_functions"]},
     long_description_content_type="text/markdown",
-    entry_points={"console_scripts": ["mangum = mangum.__main__:main"]},
     author="Jordan Eremieff",
     author_email="jordan@eremieff.com",
     classifiers=[
