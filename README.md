@@ -45,7 +45,6 @@ class App:
 handler = Mangum(App)  # optionally set debug=True
 ```
 
-You would then need to specify `<path>.handler` in your AWS Lambda configuration.
 
 ## Frameworks
 
