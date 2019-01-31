@@ -122,7 +122,9 @@ class Mangum:
             "scheme": scheme,
             "root_path": "",
             "query_string": query_string,
-            "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
+            "headers": [
+                [k.lower().encode(), v.lower().encode()] for k, v in headers.items()
+            ],
             "type": "http",
             "http_version": "1.1",
             "method": method,
