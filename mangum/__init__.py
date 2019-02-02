@@ -48,7 +48,7 @@ class ASGICycle:
             status_code = message["status"]
             headers = {k: v for k, v in message.get("headers", [])}
 
-            self.on_response_start(headers, status_code)
+            self.on_request(headers, status_code)
             self.state = ASGICycleState.RESPONSE
 
         elif self.state is ASGICycleState.RESPONSE:
@@ -63,15 +63,15 @@ class ASGICycle:
             self.body += body
 
             if not more_body:
-                self.on_response_close()
+                self.on_response()
                 self.put_message({"type": "http.disconnect"})
 
-    def on_response_start(self, headers: dict, status_code: int) -> None:
+    def on_request(self, headers: dict, status_code: int) -> None:
         self.response["statusCode"] = status_code
         self.response["isBase64Encoded"] = self.binary
         self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
 
-    def on_response_close(self) -> None:
+    def on_response(self) -> None:
         body = self.body
         if self.binary:
             body = base64.b64encode(body)
@@ -108,7 +108,7 @@ class Mangum:
 
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         client = (client_addr, 0)
-        server_addr = headers.get("Host", "mangum")
+        server_addr = headers.get("Host", "lambda")
         if ":" not in server_addr:
             server_port = 80
         else:
@@ -122,9 +122,7 @@ class Mangum:
             "scheme": scheme,
             "root_path": "",
             "query_string": query_string,
-            "headers": [
-                [k.lower().encode(), v.lower().encode()] for k, v in headers.items()
-            ],
+            "headers": [[k.lower().encode(), v.encode()] for k, v in headers.items()],
             "type": "http",
             "http_version": "1.1",
             "method": method,
