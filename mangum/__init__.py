@@ -14,6 +14,7 @@ class ASGICycleState(enum.Enum):
 
 @dataclass
 class ASGICycle:
+
     scope: dict
     body: bytes = b""
     state: ASGICycleState = ASGICycleState.REQUEST
