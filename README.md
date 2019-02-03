@@ -11,7 +11,7 @@ Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) app
 
 ## Requirements
 
-Python 3.6+
+Python 3.7+
 
 ## Installation
 

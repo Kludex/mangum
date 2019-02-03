@@ -3,6 +3,7 @@ import asyncio
 import enum
 import traceback
 import urllib.parse
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -11,16 +12,22 @@ class ASGICycleState(enum.Enum):
     RESPONSE = enum.auto()
 
 
+@dataclass
 class ASGICycle:
-    def __init__(self, scope: dict, binary: bool = False) -> None:
-        self.scope = scope
-        self.body = b""
-        self.state = ASGICycleState.REQUEST
-        self.app_queue = None
-        self.response = {}
-        self.binary = binary
+    scope: dict
+    body: bytes = b""
+    state: ASGICycleState = ASGICycleState.REQUEST
+    app_queue: asyncio.Queue = None
+    response: dict = field(default_factory=dict)
+    binary: bool = False
 
     def __call__(self, app, body: bytes = b"") -> dict:
+        """
+        Receives the application and any body included in the request, then builds the
+        ASGI instance using the connection scope.
+
+        Runs until the response is completey read from the application.
+        """
         loop = asyncio.new_event_loop()
         self.app_queue = asyncio.Queue(loop=loop)
         self.put_message({"type": "http.request", "body": body, "more_body": False})
@@ -33,10 +40,16 @@ class ASGICycle:
         self.app_queue.put_nowait(message)
 
     async def receive(self) -> dict:
+        """
+        Awaited by the application to receive messages in the queue.
+        """
         message = await self.app_queue.get()
         return message
 
     async def send(self, message: dict) -> None:
+        """
+        Awaited by the application to send messages to the current cycle instance.
+        """
         message_type = message["type"]
 
         if self.state is ASGICycleState.REQUEST:
@@ -60,6 +73,7 @@ class ASGICycle:
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
 
+            # The body must be completely read before returning the response.
             self.body += body
 
             if not more_body:
@@ -67,21 +81,28 @@ class ASGICycle:
                 self.put_message({"type": "http.disconnect"})
 
     def on_request(self, headers: dict, status_code: int) -> None:
+        """
+        Build the response headers for AWS.
+        """
         self.response["statusCode"] = status_code
         self.response["isBase64Encoded"] = self.binary
         self.response["headers"] = {k.decode(): v.decode() for k, v in headers.items()}
 
     def on_response(self) -> None:
+        """
+        Build the response body for AWS.
+        """
         body = self.body
         if self.binary:
             body = base64.b64encode(body)
         self.response["body"] = body.decode()
 
 
+@dataclass
 class Mangum:
-    def __init__(self, app, debug: bool = False) -> None:
-        self.app = app
-        self.debug = debug
+
+    app: Any
+    debug: bool = False
 
     def __call__(self, *args, **kwargs) -> Any:
         try:
@@ -95,6 +116,10 @@ class Mangum:
             return response
 
     def asgi(self, event: dict, context: dict) -> dict:
+        """
+        Entrypoint for the request event from AWS. Handles parsing the scope values and
+        creating the ASGI instance, finally returning the instance response.
+        """
         method = event["httpMethod"]
         headers = event["headers"] or {}
         path = event["path"]
@@ -108,13 +133,16 @@ class Mangum:
 
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         client = (client_addr, 0)
-        server_addr = headers.get("Host", "lambda")
-        if ":" not in server_addr:
-            server_port = 80
-        else:
-            server_port = int(server_addr.split(":")[1])
+        server_addr = headers.get("Host", None)
+        if server_addr is not None:
+            if ":" not in server_addr:
+                server_port = 80
+            else:
+                server_port = int(server_addr.split(":")[1])
 
-        server = (server_addr, server_port)
+            server = (server_addr, server_port)
+        else:
+            server = None  # pragma: no cover
 
         scope = {
             "server": server,
@@ -141,6 +169,9 @@ class Mangum:
         return response
 
     def send_response(self, content: str, status_code: int = 500) -> None:
+        """
+        Sends a server response, used in debugging.
+        """
         return {
             "statusCode": status_code,
             "isBase64Encoded": False,
