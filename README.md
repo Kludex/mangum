@@ -9,7 +9,7 @@
 
 Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
 
-***Status***: This project may face periods of inactivity from time to time, but PRs are welcomed.
+**Status**: This project may face periods of inactivity from time to time, but PRs are welcomed.
 
 ## Requirements
 
