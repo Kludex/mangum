@@ -27,7 +27,7 @@ class ASGICycle:
         Receives the application and any body included in the request, then builds the
         ASGI instance using the connection scope.
 
-        Runs until the response is completey read from the application.
+        Runs until the response is completely read from the application.
         """
         loop = asyncio.new_event_loop()
         self.app_queue = asyncio.Queue(loop=loop)
