@@ -3,7 +3,6 @@ import asyncio
 import enum
 import traceback
 import urllib.parse
-from functools import partial
 from dataclasses import dataclass, field
 from typing import Any
 
