@@ -18,11 +18,23 @@ Python 3.7+
 ## Installation
 
 ```shell
-$ pip3 install mangum
+pip3 install mangum
 ```
 
+## Usage
 
-## Example
+The adapter class `Mangum` accepts the following optional arguments:
+
+* `debug` (bool, default=False) -
+    
+    If an exception is caught by the adapter class, then this will return a simple error response.
+
+
+* `spec_version` (int, choices=[2, 3], default=2) -
+    
+    Select the specification version (ASGI2, ASGI3) to use for the application.
+
+### Example
 
 ```python
 from mangum import Mangum
@@ -44,7 +56,7 @@ class App:
 
 
 
-handler = Mangum(App)  # optionally set debug=True
+handler = Mangum(App)
 ```
 
 

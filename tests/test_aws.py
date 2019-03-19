@@ -1,35 +1,9 @@
 import base64
-import pytest
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from quart import Quart
 from mangum import Mangum
-
-
-def test_asgi_cycle_state(mock_data) -> None:
-    def app(scope):
-        async def asgi(receive, send):
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-        return asgi
-
-    mock_event = mock_data.get_aws_event()
-    with pytest.raises(RuntimeError):
-
-        Mangum(app)(mock_event, {})
-
-    def app(scope):
-        async def asgi(receive, send):
-            await send({"type": "http.response.start", "status": 200, "headers": []})
-            await send({"type": "http.response.start", "status": 200, "headers": []})
-
-        return asgi
-
-    mock_event = mock_data.get_aws_event()
-    with pytest.raises(RuntimeError):
-
-        Mangum(app)(mock_event, {})
 
 
 def test_aws_response(mock_data) -> None:
