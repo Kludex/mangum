@@ -3,7 +3,7 @@ pytest
 codecov
 pytest-cov
 black
-starlette
+git+git://github.com/encode/starlette@master#egg=starlette
 quart
 
 # Docs

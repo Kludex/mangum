@@ -3,7 +3,7 @@ import pytest
 
 class MockData:
     @staticmethod
-    def get_aws_event(body: str = "123", method: str = "GET") -> dict:
+    def get_aws_event(body: str = None, method: str = "GET") -> dict:
         event = {
             "path": "/test/hello",
             "body": body,
