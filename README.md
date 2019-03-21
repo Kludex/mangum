@@ -30,7 +30,7 @@ The adapter class `Mangum` accepts the following optional arguments:
     If an exception is caught by the adapter class, then this will return a simple error response.
 
 
-* `spec_version` (int, choices=[2, 3], default=2) -
+* `spec_version` (int, choices=[2, 3], default=3) -
     
     Select the specification version (ASGI2, ASGI3) to use for the application.
 

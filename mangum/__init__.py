@@ -110,7 +110,7 @@ class Mangum:
 
     app: Any
     debug: bool = False
-    spec_version: int = 2
+    spec_version: int = 3
 
     def __call__(self, *args, **kwargs) -> Any:
 

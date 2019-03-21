@@ -3,20 +3,16 @@ from mangum import Mangum
 
 
 def test_aws_response(mock_data) -> None:
-    def app(scope):
+    async def app(scope, receive, send):
         assert scope["type"] == "http"
-
-        async def asgi(receive, send):
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-        return asgi
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     mock_event = mock_data.get_aws_event()
     mock_event["headers"]["Host"] = "127.0.0.1:3000"
@@ -32,49 +28,11 @@ def test_aws_response(mock_data) -> None:
 
 
 def test_aws_response_body(mock_data) -> None:
-    def app(scope):
+    async def app(scope, receive, send):
         assert scope["type"] == "http"
 
-        async def asgi(receive, send):
-            body = [b"4", b"5", b"6"]
-            while True:
-                message = await receive()
-                if "body" in message:
-                    body.append(message["body"])
-                if not message.get("more_body", False):
-                    body = b"".join(body)
-                    await send(
-                        {
-                            "type": "http.response.start",
-                            "status": 200,
-                            "headers": [
-                                [b"content-type", b"text/plain; charset=utf-8"]
-                            ],
-                        }
-                    )
-                    await send({"type": "http.response.body", "body": body})
-                    return
-
-        return asgi
-
-    mock_event = mock_data.get_aws_event(body="123")
-    handler = Mangum(app)
-    response = handler(mock_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "456123",
-    }
-
-
-def test_aws_binary_response_body(mock_data) -> None:
-    def app(scope):
-        assert scope["type"] == "http"
-
-        async def asgi(receive, send):
-            body = []
+        body = [b"4", b"5", b"6"]
+        while True:
             message = await receive()
             if "body" in message:
                 body.append(message["body"])
@@ -90,7 +48,35 @@ def test_aws_binary_response_body(mock_data) -> None:
                 await send({"type": "http.response.body", "body": body})
                 return
 
-        return asgi
+    mock_event = mock_data.get_aws_event(body="123")
+    handler = Mangum(app)
+    response = handler(mock_event, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "456123",
+    }
+
+
+def test_aws_binary_response_body(mock_data) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        body = []
+        message = await receive()
+        if "body" in message:
+            body.append(message["body"])
+        if not message.get("more_body", False):
+            body = b"".join(body)
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
 
     body_encoded = base64.b64encode(b"123")
     mock_event = mock_data.get_aws_event(body=body_encoded)
@@ -107,21 +93,17 @@ def test_aws_binary_response_body(mock_data) -> None:
 
 
 def test_aws_debug(mock_data) -> None:
-    def app(scope):
+    async def app(scope, receive, send):
         assert scope["type"] == "http"
-
-        async def asgi(receive, send):
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            raise Exception("Error!")
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-        return asgi
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        raise Exception("Error!")
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     mock_event = mock_data.get_aws_event()
     handler = Mangum(app, debug=True)

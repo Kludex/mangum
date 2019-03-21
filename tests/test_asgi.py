@@ -6,22 +6,18 @@ from mangum import Mangum
 
 
 def test_asgi_cycle_state(mock_data) -> None:
-    def app(scope):
-        async def asgi(receive, send):
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-        return asgi
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     mock_event = mock_data.get_aws_event()
     with pytest.raises(RuntimeError):
         Mangum(app)(mock_event, {})
 
-    def app(scope):
-        async def asgi(receive, send):
-            await send({"type": "http.response.start", "status": 200, "headers": []})
-            await send({"type": "http.response.start", "status": 200, "headers": []})
-
-        return asgi
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.start", "status": 200, "headers": []})
 
     mock_event = mock_data.get_aws_event()
     with pytest.raises(RuntimeError):
@@ -29,14 +25,16 @@ def test_asgi_cycle_state(mock_data) -> None:
 
 
 def test_asgi_spec_version(mock_data) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send({"type": "http.response.start", "status": 200, "headers": []})
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
+    def app(scope):
+        async def asgi(receive, send):
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+        return asgi
 
     mock_event = mock_data.get_aws_event()
     mock_event["body"] = None
-    handler = Mangum(app, spec_version=3)
+    handler = Mangum(app, spec_version=2)
     response = handler(mock_event, {})
 
     assert response == {
@@ -81,7 +79,7 @@ def test_quart_response(mock_data) -> None:
     async def hello():
         return "hello world!"
 
-    handler = Mangum(app)
+    handler = Mangum(app, spec_version=2)
     response = handler(mock_event, {})
 
     assert response == {
