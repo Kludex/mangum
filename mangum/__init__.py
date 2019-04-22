@@ -16,13 +16,14 @@ class ASGICycleState(enum.Enum):
 class ASGICycle:
 
     scope: dict
+    spec_version: int
     body: bytes = b""
     state: ASGICycleState = ASGICycleState.REQUEST
     app_queue: asyncio.Queue = None
     response: dict = field(default_factory=dict)
     binary: bool = False
 
-    def __call__(self, app, body: bytes = b"") -> dict:
+    def __call__(self, app, body: bytes) -> dict:
         """
         Receives the application and any body included in the request, then builds the
         ASGI instance using the connection scope.
@@ -32,8 +33,13 @@ class ASGICycle:
         loop = asyncio.new_event_loop()
         self.app_queue = asyncio.Queue(loop=loop)
         self.put_message({"type": "http.request", "body": body, "more_body": False})
-        asgi_instance = app(self.scope)
-        asgi_task = loop.create_task(asgi_instance(self.receive, self.send))
+
+        if self.spec_version == 3:
+            asgi_instance = app(self.scope, self.receive, self.send)
+        else:
+            asgi_instance = app(self.scope)(self.receive, self.send)
+
+        asgi_task = loop.create_task(asgi_instance)
         loop.run_until_complete(asgi_task)
         return self.response
 
@@ -104,8 +110,10 @@ class Mangum:
 
     app: Any
     debug: bool = False
+    spec_version: int = 3
 
     def __call__(self, *args, **kwargs) -> Any:
+
         try:
             response = self.asgi(*args, **kwargs)
         except Exception as exc:
@@ -166,7 +174,8 @@ class Mangum:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        response = ASGICycle(scope, binary=binary)(self.app, body=body)
+        asgi_cycle = ASGICycle(scope, spec_version=self.spec_version, binary=binary)
+        response = asgi_cycle(self.app, body=body)
         return response
 
     def send_response(self, content: str, status_code: int = 500) -> None:

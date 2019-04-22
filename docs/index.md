@@ -7,45 +7,53 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-Mangum is a library for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
+Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
+
+**Status**: This project may face periods of inactivity from time to time, but PRs are welcomed.
 
 ## Requirements
 
-Python 3.6+
+Python 3.7+
 
 ## Installation
 
 ```shell
-$ pip3 install mangum
+pip3 install mangum
 ```
 
+## Usage
 
-## Example
+The adapter class `Mangum` accepts the following optional arguments:
 
-```python
+- `debug` : bool (default=False)
+    
+    Enable a simple error response if an unhandled exception is raised in the adapter.
+
+
+- `spec_version` : int (default=3)
+    
+    Set the ASGI specification version. ASGI 3 uses a single-callable, ASGI 2 uses a double-callable.
+
+### Example
+
+```python3
 from mangum import Mangum
 
-
-class App:
-    def __init__(self, scope):
-        self.scope = scope
-
-    async def __call__(self, receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
+async def app(scope, receive, send):
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 200,
+            "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+        }
+    )
+    await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 
-
-handler = Mangum(App)  # optionally set debug=True
+handler = Mangum(App)
 ```
 
 
 ## Frameworks
 
-Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will causes issues when deploying to a serverless platform.
+Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will causes issues when deploying to a serverless platform. You may also need to specificy `spec_version=2` for frameworks that do not support the latest ASGI version.
