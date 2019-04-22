@@ -56,4 +56,4 @@ handler = Mangum(app)
 
 ## Frameworks
 
-Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will causes issues when deploying to a serverless platform. You may also need to specificy `spec_version=2` for frameworks that do not support the latest ASGI version.
+Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will cause issues when deploying to a serverless platform. You may also need to specify `spec_version=2` for frameworks that do not support the latest ASGI version.
