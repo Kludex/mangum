@@ -115,7 +115,6 @@ class Lifespan:
     app_queue: asyncio.Queue = asyncio.Queue()
 
     async def run(self):
-
         try:
             await self.app({"type": "lifespan"}, self.receive, self.send)
         except BaseException as exc:  # pragma: no cover
@@ -125,11 +124,6 @@ class Lifespan:
             self.shutdown_event.set()
 
     async def send(self, message: dict) -> None:
-        assert message["type"] in (
-            "lifespan.startup.complete",
-            "lifespan.shutdown.complete",
-        )
-
         if message["type"] == "lifespan.startup.complete":
             self.startup_event.set()
         elif message["type"] == "lifespan.shutdown.complete":
