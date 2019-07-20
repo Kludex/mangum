@@ -16,7 +16,7 @@ def test_aws_response(mock_data) -> None:
 
     mock_event = mock_data.get_aws_event()
     mock_event["headers"]["Host"] = "127.0.0.1:3000"
-    handler = Mangum(app)
+    handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_event, {})
 
     assert response == {
@@ -49,7 +49,7 @@ def test_aws_response_body(mock_data) -> None:
                 return
 
     mock_event = mock_data.get_aws_event(body="123")
-    handler = Mangum(app)
+    handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_event, {})
 
     assert response == {
@@ -81,7 +81,7 @@ def test_aws_binary_response_body(mock_data) -> None:
     body_encoded = base64.b64encode(b"123")
     mock_event = mock_data.get_aws_event(body=body_encoded)
     mock_event["isBase64Encoded"] = True
-    handler = Mangum(app)
+    handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_event, {})
 
     assert response == {
@@ -106,7 +106,7 @@ def test_aws_debug(mock_data) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     mock_event = mock_data.get_aws_event()
-    handler = Mangum(app, debug=True)
+    handler = Mangum(app, enable_lifespan=False, debug=True)
     response = handler(mock_event, {})
 
     assert response["statusCode"] == 500

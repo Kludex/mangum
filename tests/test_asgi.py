@@ -11,8 +11,10 @@ def test_asgi_cycle_state(mock_data) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     mock_event = mock_data.get_aws_event()
+    handler = Mangum(app, enable_lifespan=False)
+
     with pytest.raises(RuntimeError):
-        Mangum(app)(mock_event, {})
+        handler(mock_event, {})
 
     async def app(scope, receive, send):
         assert scope["type"] == "http"
@@ -20,8 +22,9 @@ def test_asgi_cycle_state(mock_data) -> None:
         await send({"type": "http.response.start", "status": 200, "headers": []})
 
     mock_event = mock_data.get_aws_event()
+    handler = Mangum(app, enable_lifespan=False)
     with pytest.raises(RuntimeError):
-        Mangum(app)(mock_event, {})
+        handler(mock_event, {})
 
 
 def test_asgi_spec_version(mock_data) -> None:
@@ -34,7 +37,7 @@ def test_asgi_spec_version(mock_data) -> None:
 
     mock_event = mock_data.get_aws_event()
     mock_event["body"] = None
-    handler = Mangum(app, spec_version=2)
+    handler = Mangum(app, spec_version=2, enable_lifespan=False)
     response = handler(mock_event, {})
 
     assert response == {
@@ -47,15 +50,34 @@ def test_asgi_spec_version(mock_data) -> None:
 
 def test_starlette_response(mock_data) -> None:
     mock_event = mock_data.get_aws_event()
+    startup_complete = False
+    shutdown_complete = False
 
     app = Starlette()
+
+    @app.on_event("startup")
+    async def on_startup():
+        nonlocal startup_complete
+        startup_complete = True
+
+    @app.on_event("shutdown")
+    async def on_shutdown():
+        nonlocal shutdown_complete
+        shutdown_complete = True
 
     @app.route(mock_event["path"])
     def homepage(request):
         return PlainTextResponse("Hello, world!")
 
-    handler = Mangum(app, spec_version=3)
+    assert not startup_complete
+    assert not shutdown_complete
+
+    handler = Mangum(app)
     mock_event["body"] = None
+
+    assert startup_complete
+    assert not shutdown_complete
+
     response = handler(mock_event, {})
 
     assert response == {
@@ -67,19 +89,41 @@ def test_starlette_response(mock_data) -> None:
         },
         "body": "Hello, world!",
     }
+    assert startup_complete
+    assert shutdown_complete
 
 
-def test_quart_response(mock_data) -> None:
+def test_quart_app(mock_data) -> None:
     mock_event = mock_data.get_aws_event()
-    mock_event["body"] = None
+
+    startup_complete = False
+    shutdown_complete = False
 
     app = Quart(__name__)
+    mock_event["body"] = None
+
+    @app.before_serving
+    async def on_startup():
+        nonlocal startup_complete
+        startup_complete = True
+
+    @app.after_serving
+    async def on_shutdown():
+        nonlocal shutdown_complete
+        shutdown_complete = True
 
     @app.route(mock_event["path"])
     async def hello():
         return "hello world!"
 
-    handler = Mangum(app, spec_version=2)
+    assert not startup_complete
+    assert not shutdown_complete
+
+    handler = Mangum(app)
+
+    assert startup_complete
+    assert not shutdown_complete
+
     response = handler(mock_event, {})
 
     assert response == {
@@ -88,3 +132,5 @@ def test_quart_response(mock_data) -> None:
         "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
         "body": "hello world!",
     }
+    assert startup_complete
+    assert shutdown_complete
