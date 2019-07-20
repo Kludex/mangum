@@ -3,6 +3,7 @@ import asyncio
 import enum
 import traceback
 import urllib.parse
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -30,8 +31,9 @@ class ASGICycle:
 
         Runs until the response is completely read from the application.
         """
-        loop = asyncio.new_event_loop()
+        loop = asyncio.get_event_loop()
         self.app_queue = asyncio.Queue(loop=loop)
+
         self.put_message({"type": "http.request", "body": body, "more_body": False})
 
         if self.spec_version == 3:
@@ -57,12 +59,10 @@ class ASGICycle:
         """
         Awaited by the application to send messages to the current cycle instance.
         """
-        message_type = message["type"]
-
         if self.state is ASGICycleState.REQUEST:
-            if message_type != "http.response.start":
+            if message["type"] != "http.response.start":
                 raise RuntimeError(
-                    f"Expected 'http.response.start', received: {message_type}"
+                    f"Expected 'http.response.start', received: {message['type']}"
                 )
 
             status_code = message["status"]
@@ -72,9 +72,9 @@ class ASGICycle:
             self.state = ASGICycleState.RESPONSE
 
         elif self.state is ASGICycleState.RESPONSE:
-            if message_type != "http.response.body":
+            if message["type"] != "http.response.body":
                 raise RuntimeError(
-                    f"Expected 'http.response.body', received: {message_type}"
+                    f"Expected 'http.response.body', received: {message['type']}"
                 )
 
             body = message.get("body", b"")
@@ -106,16 +106,76 @@ class ASGICycle:
 
 
 @dataclass
+class Lifespan:
+
+    app: Any
+    logger: logging.Logger
+    startup_event: asyncio.Event = asyncio.Event()
+    shutdown_event: asyncio.Event = asyncio.Event()
+    app_queue: asyncio.Queue = asyncio.Queue()
+
+    async def run(self):
+
+        try:
+            await self.app({"type": "lifespan"}, self.receive, self.send)
+        except BaseException as exc:  # pragma: no cover
+            self.logger.error(f"Exception in 'lifespan' protocol: {exc}")
+        finally:
+            self.startup_event.set()
+            self.shutdown_event.set()
+
+    async def send(self, message: dict) -> None:
+        assert message["type"] in (
+            "lifespan.startup.complete",
+            "lifespan.shutdown.complete",
+        )
+
+        if message["type"] == "lifespan.startup.complete":
+            self.startup_event.set()
+        elif message["type"] == "lifespan.shutdown.complete":
+            self.shutdown_event.set()
+        else:  # pragma: no cover
+            raise RuntimeError(
+                f"Expected lifespan message type, received: {message['type']}"
+            )
+
+    async def receive(self) -> dict:
+        message = await self.app_queue.get()
+        return message
+
+    async def wait_startup(self):
+        self.logger.warning("Waiting for application startup.")
+        await self.app_queue.put({"type": "lifespan.startup"})
+        await self.startup_event.wait()
+
+    async def wait_shutdown(self):
+        self.logger.warning("Waiting for application shutdown.")
+        await self.app_queue.put({"type": "lifespan.shutdown"})
+        await self.shutdown_event.wait()
+
+
+@dataclass
 class Mangum:
 
     app: Any
     debug: bool = False
     spec_version: int = 3
+    enable_lifespan: bool = True
+
+    def __post_init__(self) -> None:
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+        self.logger = logging.getLogger("mangum")
+        self.logger.setLevel(logging.WARNING)
+
+        if self.enable_lifespan:
+            loop = asyncio.get_event_loop()
+            self.lifespan = Lifespan(self.app, self.logger)
+            loop.create_task(self.lifespan.run())
+            loop.run_until_complete(self.lifespan.wait_startup())
 
     def __call__(self, *args, **kwargs) -> Any:
-
         try:
-            response = self.asgi(*args, **kwargs)
+            response = self.handler(*args, **kwargs)
         except Exception as exc:
             if self.debug:
                 content = traceback.format_exc()
@@ -124,11 +184,7 @@ class Mangum:
         else:
             return response
 
-    def asgi(self, event: dict, context: dict) -> dict:
-        """
-        Entrypoint for the request event from AWS. Handles parsing the scope values and
-        creating the ASGI instance, finally returning the instance response.
-        """
+    def handler(self, event: dict, context: dict) -> dict:
         method = event["httpMethod"]
         headers = event["headers"] or {}
         path = event["path"]
@@ -176,6 +232,11 @@ class Mangum:
 
         asgi_cycle = ASGICycle(scope, spec_version=self.spec_version, binary=binary)
         response = asgi_cycle(self.app, body=body)
+
+        if self.enable_lifespan:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.lifespan.wait_shutdown())
+
         return response
 
     def send_response(self, content: str, status_code: int = 500) -> None:

@@ -3,7 +3,7 @@ pytest
 codecov
 pytest-cov
 black
-starlette==0.12.0.b1
+starlette
 quart
 
 # Docs
