@@ -44,6 +44,9 @@ def get_default_region_name() -> str:  # pragma: no cover
 
 @mangum.command()
 def init() -> None:
+    """
+    Create a new deployment configuration.
+    """
     config_dir = os.getcwd()
     project_dir = click.prompt(
         "Enter the name of the directory containing the project code"
@@ -98,6 +101,9 @@ def init() -> None:
 
 @mangum.command()
 def build() -> None:
+    """
+    Create a local build.
+    """
     config = get_config()
     config.build()
     click.echo("Build complete!")
@@ -105,6 +111,9 @@ def build() -> None:
 
 @mangum.command()
 def package() -> None:
+    """
+    Package the local build.
+    """
     config = get_config()
     click.echo("Packaging your application...")
     res = config.package()
@@ -116,6 +125,9 @@ def package() -> None:
 
 @mangum.command()
 def deploy() -> None:
+    """
+    Deploy the packaged project.
+    """
     config = get_config()
     click.echo("Deploying your application! This may take some time...")
     deployed = config.deploy()
@@ -127,14 +139,10 @@ def deploy() -> None:
 
 
 @mangum.command()
-def update() -> None:
-    config = get_config()
-    config.build(update=True)
-    click.echo("Update complete!")
-
-
-@mangum.command()
 def validate() -> None:
+    """
+    Validate the AWS CloudFormation template.
+    """
     config = get_config()
     res = config.validate()
     if res is not None:
@@ -145,6 +153,9 @@ def validate() -> None:
 
 @mangum.command()
 def describe() -> None:
+    """
+    Retrieve the endpoints for the deployment.
+    """
     config = get_config()
     endpoints = config.describe()
     if not endpoints:
