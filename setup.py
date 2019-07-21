@@ -15,6 +15,7 @@ setup(
     url="https://github.com/erm/mangum",
     description="Serverless ASGI",
     long_description=get_long_description(),
+    entry_points={"console_scripts": ["mangum = mangum.__main__:main"]},
     long_description_content_type="text/markdown",
     author="Jordan Eremieff",
     author_email="jordan@eremieff.com",
