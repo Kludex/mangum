@@ -7,6 +7,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from mangum.utils import get_logger
+
 
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
@@ -109,10 +111,12 @@ class ASGICycle:
 class Lifespan:
 
     app: Any
-    logger: logging.Logger
     startup_event: asyncio.Event = asyncio.Event()
     shutdown_event: asyncio.Event = asyncio.Event()
     app_queue: asyncio.Queue = asyncio.Queue()
+
+    def __post_init__(self) -> None:
+        self.logger = get_logger()
 
     async def run(self):
         try:
@@ -138,12 +142,12 @@ class Lifespan:
         return message
 
     async def wait_startup(self):
-        self.logger.warning("Waiting for application startup.")
+        self.logger.info("Waiting for application startup.")
         await self.app_queue.put({"type": "lifespan.startup"})
         await self.startup_event.wait()
 
     async def wait_shutdown(self):
-        self.logger.warning("Waiting for application shutdown.")
+        self.logger.info("Waiting for application shutdown.")
         await self.app_queue.put({"type": "lifespan.shutdown"})
         await self.shutdown_event.wait()
 
@@ -157,13 +161,11 @@ class Mangum:
     enable_lifespan: bool = True
 
     def __post_init__(self) -> None:
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
-        self.logger = logging.getLogger("mangum")
-        self.logger.setLevel(logging.WARNING)
+        self.logger = get_logger()
 
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app, self.logger)
+            self.lifespan = Lifespan(self.app)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
 

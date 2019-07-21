@@ -34,6 +34,10 @@ The adapter class `Mangum` accepts the following optional arguments:
     
     Set the ASGI specification version. ASGI 3 uses a single-callable, ASGI 2 uses a double-callable.
 
+- `enable_lifespan` : bool (default=True)
+    
+    Specify whether or not to enable lifespan support.
+
 ### Example
 
 ```python3
@@ -50,7 +54,7 @@ async def app(scope, receive, send):
     await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 
-handler = Mangum(app)
+handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
 ```
 
 
