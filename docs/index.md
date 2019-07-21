@@ -7,9 +7,9 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
+Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It also provies an experimental CLI for handling deployments. This project may face periods of inactivity from time to time, but PRs are welcomed.
 
-**Status**: This project may face periods of inactivity from time to time, but PRs are welcomed.
+**Documentation**: [https://erm.github.io/mangum](https://erm.github.io/mangum)
 
 ## Requirements
 
