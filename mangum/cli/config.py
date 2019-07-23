@@ -176,10 +176,14 @@ class MangumConfig:
                         "Runtime": "python3.7",
                         "Environment": {"Variables": self.get_env_vars()},
                         "Events": {
-                            "ProxyApi": {
+                            "ProxyApiRoot": {
+                                "Type": "Api",
+                                "Properties": {"Path": "/", "Method": "ANY"},
+                            },
+                            "ProxyApiGreedy": {
                                 "Type": "Api",
                                 "Properties": {"Path": "/{proxy+}", "Method": "ANY"},
-                            }
+                            },
                         },
                     },
                 },
