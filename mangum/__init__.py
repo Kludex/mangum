@@ -112,12 +112,10 @@ class ASGICycle:
 class Lifespan:
 
     app: Any
+    logger: logging.Logger
     startup_event: asyncio.Event = asyncio.Event()
     shutdown_event: asyncio.Event = asyncio.Event()
     app_queue: asyncio.Queue = asyncio.Queue()
-
-    def __post_init__(self) -> None:
-        self.logger = get_logger()
 
     async def run(self):
         try:
@@ -166,7 +164,7 @@ class Mangum:
 
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app)
+            self.lifespan = Lifespan(self.app, logger=self.logger)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
 
@@ -184,7 +182,7 @@ class Mangum:
     def handler(self, event: dict, context: dict) -> dict:
         method = event["httpMethod"]
         headers = event["headers"] or {}
-        path = urllib.unquote(event["path"])
+        path = urllib.parse.unquote(event["path"])
         raw_path = path.encode("latin-1")
 
         scheme = headers.get("X-Forwarded-Proto", "http")
