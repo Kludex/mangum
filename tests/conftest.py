@@ -30,7 +30,7 @@ class MockData:
             "requestContext": {
                 "accountId": "123456789012",
                 "resourceId": "us4z18",
-                "stage": "test",
+                "stage": "Prod",
                 "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
                 "identity": {
                     "cognitoIdentityPoolId": "",

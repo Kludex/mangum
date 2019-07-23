@@ -182,6 +182,7 @@ class Mangum:
     def handler(self, event: dict, context: dict) -> dict:
         method = event["httpMethod"]
         headers = event["headers"] or {}
+        root_path = event["requestContext"]["stage"]
         path = urllib.parse.unquote(event["path"])
         raw_path = path.encode("latin-1")
 
@@ -210,13 +211,13 @@ class Mangum:
             "server": server,
             "client": client,
             "scheme": scheme,
-            "root_path": "",
             "query_string": query_string,
             "headers": [[k.lower().encode(), v.encode()] for k, v in headers.items()],
             "type": "http",
             "http_version": "1.1",
             "method": method,
             "raw_path": raw_path,
+            "root_path": root_path,
             "path": path,
         }
 

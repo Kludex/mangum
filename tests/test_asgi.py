@@ -53,6 +53,8 @@ def test_starlette_response(mock_data) -> None:
     startup_complete = False
     shutdown_complete = False
 
+    path = mock_event["path"]
+
     app = Starlette()
 
     @app.on_event("startup")
@@ -65,7 +67,7 @@ def test_starlette_response(mock_data) -> None:
         nonlocal shutdown_complete
         shutdown_complete = True
 
-    @app.route(mock_event["path"])
+    @app.route(path)
     def homepage(request):
         return PlainTextResponse("Hello, world!")
 
@@ -96,6 +98,8 @@ def test_starlette_response(mock_data) -> None:
 def test_quart_app(mock_data) -> None:
     mock_event = mock_data.get_aws_event()
 
+    path = mock_event["path"]
+
     startup_complete = False
     shutdown_complete = False
 
@@ -112,7 +116,7 @@ def test_quart_app(mock_data) -> None:
         nonlocal shutdown_complete
         shutdown_complete = True
 
-    @app.route(mock_event["path"])
+    @app.route(path)
     async def hello():
         return "hello world!"
 
