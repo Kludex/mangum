@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+
 from mangum.utils import get_logger
 
 
@@ -183,7 +184,9 @@ class Mangum:
     def handler(self, event: dict, context: dict) -> dict:
         method = event["httpMethod"]
         headers = event["headers"] or {}
-        path = event["path"]
+        path = urllib.unquote(event["path"])
+        raw_path = path.encode("latin-1")
+
         scheme = headers.get("X-Forwarded-Proto", "http")
         query_string_params = event["queryStringParameters"]
         query_string = (
@@ -215,7 +218,7 @@ class Mangum:
             "type": "http",
             "http_version": "1.1",
             "method": method,
-            "raw_path": None,
+            "raw_path": raw_path,
             "path": path,
         }
 
