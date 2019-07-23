@@ -215,6 +215,7 @@ class Mangum:
             "type": "http",
             "http_version": "1.1",
             "method": method,
+            "raw_path": None,
             "path": path,
         }
 

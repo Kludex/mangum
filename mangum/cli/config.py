@@ -109,7 +109,6 @@ class MangumConfig:
         return f"{endpoint}Prod\n\n{endpoint}Stage"
 
     def package(self) -> bool:
-
         template_json = json.dumps(self.get_template())
         template_file_path = os.path.join(self.config_dir, "template.json")
         with open(template_file_path, "w") as f:
@@ -146,9 +145,9 @@ class MangumConfig:
 
     def validate(self) -> Union[None, str]:
         client = boto3.client("cloudformation")
-        template = self.get_template_json()
+        template = self.get_template()
         try:
-            client.validate_template(TemplateBody=template)
+            client.validate_template(TemplateBody=json.dumps(template))
         except Exception as exc:
             return str(exc)
         return None
@@ -158,6 +157,11 @@ class MangumConfig:
         return {}
 
     def get_template(self) -> dict:
+        iam_role_name = f"{self.resource_name}FunctionRole"
+        lambda_function_name = f"{self.resource_name}Function"
+        api_gateway_name = f"{self.resource_name}Api"
+        permission_name = f"{self.resource_name}FunctionPermission"
+
         template_dict = {
             "AWSTemplateFormatVersion": "2010-09-09",
             "Transform": "AWS::Serverless-2016-10-31",
@@ -172,30 +176,43 @@ class MangumConfig:
                         "Runtime": "python3.7",
                         "Environment": {"Variables": self.get_env_vars()},
                         "Events": {
-                            "ProxyApiRoot": {
-                                "Type": "Api",
-                                "Properties": {"Path": "/", "Method": "ANY"},
-                            },
-                            "ProxyApiGreedy": {
+                            "ProxyApi": {
                                 "Type": "Api",
                                 "Properties": {"Path": "/{proxy+}", "Method": "ANY"},
-                            },
+                            }
                         },
                     },
-                }
+                },
+                permission_name: {
+                    "Type": "AWS::IAM::Policy",
+                    "Properties": {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": ["s3:*"],
+                                    "Resource": "arn:aws:s3:::*",
+                                }
+                            ],
+                        },
+                        "Roles": [{"Ref": iam_role_name}],
+                    },
+                },
             },
             "Outputs": {
-                f"{self.resource_name}Api": {
+                api_gateway_name: {
                     "Description": "API Gateway endpoint URL for ASGI function",
                     "Value": {
                         "Fn::Sub": "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
                     },
                 },
-                f"{self.resource_name}Function": {
+                lambda_function_name: {
                     "Description": f"{self.resource_name} Lambda Function ARN",
                     "Value": {"Fn::GetAtt": f"{self.resource_name}Function.Arn"},
                 },
-                f"{self.resource_name}FunctionIamRole": {
+                iam_role_name: {
                     "Description": f"Implicit IAM Role created for {self.resource_name} function",
                     "Value": {"Fn::GetAtt": f"{self.resource_name}FunctionRole.Arn"},
                 },
