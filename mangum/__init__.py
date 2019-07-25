@@ -184,7 +184,6 @@ class Mangum:
         headers = event["headers"] or {}
         root_path = event["requestContext"]["stage"]
         path = urllib.parse.unquote(event["path"])
-        raw_path = path.encode("latin-1")
 
         scheme = headers.get("X-Forwarded-Proto", "http")
         query_string_params = event["queryStringParameters"]
@@ -216,7 +215,7 @@ class Mangum:
             "type": "http",
             "http_version": "1.1",
             "method": method,
-            "raw_path": raw_path,
+            "raw_path": None,
             "root_path": root_path,
             "path": path,
         }

@@ -72,6 +72,56 @@ class MockData:
         return settings
 
     @staticmethod
+    def get_expected_scope() -> dict:
+        return {
+            "client": ("192.168.100.1", 0),
+            "headers": [
+                [
+                    b"accept",
+                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/"
+                    b"webp,*/*;q=0.8",
+                ],
+                [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
+                [b"accept-language", b"en-US,en;q=0.8"],
+                [b"cloudfront-forwarded-proto", b"https"],
+                [b"cloudfront-is-desktop-viewer", b"true"],
+                [b"cloudfront-is-mobile-viewer", b"false"],
+                [b"cloudfront-is-smarttv-viewer", b"false"],
+                [b"cloudfront-is-tablet-viewer", b"false"],
+                [b"cloudfront-viewer-country", b"US"],
+                [b"host", b"wt6mne2s9k.execute-api.us-west-2.amazonaws.com"],
+                [b"upgrade-insecure-requests", b"1"],
+                [
+                    b"user-agent",
+                    b"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/"
+                    b"537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36"
+                    b" OPR/39.0.2256.48",
+                ],
+                [
+                    b"via",
+                    b"1.1 fb7cca60f0ecd82ce07790c9c5eef16c.cloudfront.net (CloudFr"
+                    b"ont)",
+                ],
+                [
+                    b"x-amz-cf-id",
+                    b"nBsWBOrSHMgnaROZJK1wGCZ9PcRcSpq_oSXZNQwQ10OTZL4cimZo3g==",
+                ],
+                [b"x-forwarded-for", b"192.168.100.1, 192.168.1.1"],
+                [b"x-forwarded-port", b"443"],
+                [b"x-forwarded-proto", b"https"],
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/test/hello",
+            "query_string": b"name=me",
+            "raw_path": None,
+            "root_path": "Prod",
+            "scheme": "https",
+            "server": ("wt6mne2s9k.execute-api.us-west-2.amazonaws.com", 80),
+            "type": "http",
+        }
+
+    @staticmethod
     def get_mock_SAM_template() -> str:
         return """AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31

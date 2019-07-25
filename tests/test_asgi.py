@@ -5,6 +5,20 @@ from quart import Quart
 from mangum import Mangum
 
 
+def test_asgi_scope(mock_data) -> None:
+
+    expected = mock_data.get_expected_scope()
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope == expected
+        return
+
+    mock_event = mock_data.get_aws_event()
+    handler = Mangum(app, enable_lifespan=False)
+    handler(mock_event, {})
+
+
 def test_asgi_cycle_state(mock_data) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
