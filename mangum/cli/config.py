@@ -79,12 +79,13 @@ class MangumConfig:
 
         for root, dirs, files in os.walk(self.project_dir, topdown=True):
             files[:] = [f for f in files if f not in exclude]
+
             for file_name in files:
                 file_path = os.path.join(root, file_name)
                 relative_file_path = Path(file_path).relative_to(self.project_dir)
                 target_path = Path(os.path.join(build_dir, relative_file_path))
                 if not os.path.isdir(target_path.parent):
-                    os.mkdir(target_path.parent)
+                    os.makedirs(target_path.parent)
                 shutil.copyfile(file_path, target_path)
 
     def describe(self) -> Union[str, None]:  # pragma: no cover
