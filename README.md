@@ -18,7 +18,7 @@ Python 3.7+
 ## Installation
 
 ```shell
-pip3 install mangum
+pip3 install mangum[full]
 ```
 
 ## Usage

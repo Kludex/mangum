@@ -75,7 +75,7 @@ class MangumConfig:
             raise RuntimeError("Build failed, could not install requirements.")
 
         self.logger.info(f"Requirements installed to {build_dir}")
-        exclude = ("config.json", "template.json", "requirements.txt")
+        exclude = ("config.json", "template.json", "requirements.txt", ".env")
 
         for root, dirs, files in os.walk(self.project_dir, topdown=True):
             files[:] = [f for f in files if f not in exclude]
@@ -153,9 +153,16 @@ class MangumConfig:
             return str(exc)
         return None
 
-    def get_env_vars(self) -> None:
-        # TODO
-        return {}
+    def get_env_vars(self) -> dict:
+        env_vars = {}
+        env_file = Path(os.path.join(self.config_dir, ".env"))
+        if env_file.is_file():
+            with open(env_file, "r") as env_file:
+                for line in env_file:
+                    if line[0] != "#":
+                        key, value = line.strip().split("=")
+                        env_vars[key] = value
+        return env_vars
 
     def get_template(self) -> dict:
         iam_role_name = f"{self.resource_name}FunctionRole"
