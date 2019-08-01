@@ -6,6 +6,8 @@ black
 starlette
 quart
 PyYAML
+boto3
+botocore
 
 # Docs
 mkdocs
