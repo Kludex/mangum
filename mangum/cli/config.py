@@ -186,8 +186,8 @@ class Config:
                                     "Effect": "Allow",
                                     "Action": ["s3:*"],
                                     "Resource": [
-                                        f"arn:aws:s3:::{self.bucket_name}",
-                                        f"arn:aws:s3:::{self.bucket_name}/*",
+                                        f"arn:aws:s3:::*",
+                                        f"arn:aws:s3:::*/*",
                                     ],
                                 }
                             ],
