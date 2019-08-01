@@ -8,7 +8,14 @@ Mangum provides a command-line interface for creating a deployment configuration
 
 - Local AWS Credentials
 - [AWS CLI](https://aws.amazon.com/cli/)
-- [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+
+## Installation
+
+There are two required dependencies for using the CLI, `boto3` and `click`, they can be installed with Mangum using this command:
+
+```shell
+pip install mangum[full]
+```
 
 ## Commands
 
@@ -57,7 +64,9 @@ def list_items():
 def read_root():
     return {"Hello": "World!"}
 
+
 handler = Mangum(app)
+
 ```
 
 This demonstrates a basic FastAPI application, the most relevant part is:
@@ -78,28 +87,19 @@ fastapi
 
 ### Step 2 - Create a new deployment configuration
     
-Run the following command to answer a series of questions about the project to define a new configuration:
+Run the following command with a name for the project (required) and optionally include the name of an S3 bucket and the region (these values can be changed later):
 
 ```shell
-mangum init
+mangum init <name> [bucket-name] [region-name]
 ```
 
-**Note**: An S3 bucket will be required for storing the packaged application. An existing S3 bucket name may be provided, otherwise one will be generated.
-
-For this tutorial, enter the following when prompted for the first two questions (use defaults for the rest):
-
-```shell
-Enter the name of the directory containing the project code: app
-Enter a name for the project: mangum
-```
-
-After defining the configuration a `config.json` file will be generated, the current directory should now look this:
+After defining the configuration a `mangum.yml` file will be generated, the current directory should now look this:
 
 ```shell
 
 ├── app
 │   └── asgi.py
-├── config.json
+├── mangum.yml
 └── requirements.txt
 ```
 
@@ -121,7 +121,7 @@ Run the following command to package the local build:
 mangum package
 ```
 
-This wraps the AWS CLI's `package` command, it uses the definitions in `config.json` to produce a `packaged.yaml` file and a `template.json` file.
+This wraps the AWS CLI's `package` command, it uses the definitions in `mangum.yml` to produce a `packaged.yml` file and a `template.yml` file.
 
 ### Step 5 - Deploy the packaged build
 
