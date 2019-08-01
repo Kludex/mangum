@@ -8,85 +8,100 @@ from typing import Union
 from dataclasses import dataclass
 from pathlib import Path
 
+import yaml
 from mangum.utils import get_logger
 
 import boto3
 
 
 @dataclass
-class MangumConfig:
+class Config:
 
-    config_dir: str
-    project_dir: str
-    project_name: str
-    resource_name: str
-    handler_name: str
-    description: str
-    url_root: str
-    timeout: int
+    name: str
+    code_dir: str
+    handler: str
+    bucket_name: str
     region_name: str
-    s3_bucket_name: str
+    timeout: int
 
     def __post_init__(self) -> None:
         self.logger = get_logger()
-        self.init()
+        self.resource_name = self.name.title()
+        self.config_dir = os.getcwd()
+        self.stack_name = self.name.lower()
 
-    def init(self) -> None:
-        config_file_path = os.path.join(self.config_dir, "config.json")
-        config_json = json.dumps(
-            {
-                "config_dir": self.config_dir,
-                "project_dir": self.project_dir,
-                "project_name": self.project_name,
-                "handler_name": self.handler_name,
-                "resource_name": self.resource_name,
-                "description": self.description,
-                "region_name": self.region_name,
-                "url_root": self.url_root,
-                "s3_bucket_name": self.s3_bucket_name,
-                "timeout": self.timeout,
-            }
-        )
-        with open(config_file_path, "w") as f:
-            f.write(config_json)
-
-    def build(self) -> None:
-
+    def build(self, *, no_pip: bool) -> None:
         build_dir = os.path.join(self.config_dir, "build")
-        if os.path.exists(build_dir):
-            shutil.rmtree(build_dir)
+
+        # Remove an existing build directory entirely when building with dependencies.
+        if not no_pip:
+            if os.path.exists(build_dir):
+                shutil.rmtree(build_dir)
 
         if not os.path.isdir(build_dir):
             os.mkdir(build_dir)
 
-        self.logger.info("Installing requirements...")
-        install_cmd = [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            "requirements.txt",
-            "-t",
-            build_dir,
-        ]
-        installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
-        if installed.returncode != 0:
-            raise RuntimeError("Build failed, could not install requirements.")
+        if not no_pip:
+            self.logger.info("Installing dependencies from 'requirements.txt'...")
+            install_cmd = [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                "requirements.txt",
+                "-t",
+                build_dir,
+            ]
+            installed = subprocess.run(install_cmd, stdout=subprocess.PIPE)
+            if installed.returncode != 0:
+                raise RuntimeError("Build failed, could not install requirements.")
+            self.logger.info(f"Requirements installed to {build_dir}")
 
-        self.logger.info(f"Requirements installed to {build_dir}")
-        exclude = ("config.json", "template.json", "requirements.txt", ".env")
-
-        for root, dirs, files in os.walk(self.project_dir, topdown=True):
-            files[:] = [f for f in files if f not in exclude]
-
+        for root, dirs, files in os.walk(self.code_dir, topdown=True):
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-                relative_file_path = Path(file_path).relative_to(self.project_dir)
+                relative_file_path = Path(file_path).relative_to(self.code_dir)
                 target_path = Path(os.path.join(build_dir, relative_file_path))
                 if not os.path.isdir(target_path.parent):
                     os.makedirs(target_path.parent)
                 shutil.copyfile(file_path, target_path)
+
+    def package(self) -> bool:
+        template = self.get_template()
+        template_yml = yaml.dump(template, default_flow_style=False, sort_keys=False)
+        template_file_path = os.path.join(self.config_dir, "template.yml")
+        with open(template_file_path, "w") as f:
+            f.write(template_yml)
+
+        cmd = [
+            "aws",
+            "cloudformation",
+            "package",
+            "--template-file",
+            "template.yml",
+            "--output-template-file",
+            "packaged.yml",
+            "--s3-bucket",
+            self.bucket_name,
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE)
+        return res.returncode == 0
+
+    def deploy(self) -> bool:
+        cmd = [
+            "aws",
+            "cloudformation",
+            "deploy",
+            "--template-file",
+            "packaged.yml",
+            "--stack-name",
+            self.stack_name,
+            "--capabilities",
+            "CAPABILITY_IAM",
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE)
+        return res.returncode == 0
 
     def describe(self) -> Union[str, None]:  # pragma: no cover
         cmd = [
@@ -94,7 +109,7 @@ class MangumConfig:
             "cloudformation",
             "describe-stacks",
             "--stack-name",
-            self.project_name.lower(),
+            self.stack_name,
             "--query",
             "Stacks[].Outputs",
         ]
@@ -108,41 +123,6 @@ class MangumConfig:
                 if j["OutputKey"] == f"{self.resource_name}Api":
                     endpoint = j["OutputValue"]
         return f"{endpoint}Prod\n\n{endpoint}Stage"
-
-    def package(self) -> bool:
-        template_json = json.dumps(self.get_template())
-        template_file_path = os.path.join(self.config_dir, "template.json")
-        with open(template_file_path, "w") as f:
-            f.write(template_json)
-
-        cmd = [
-            "aws",
-            "cloudformation",
-            "package",
-            "--template-file",
-            "template.json",
-            "--output-template-file",
-            "packaged.yaml",
-            "--s3-bucket",
-            self.s3_bucket_name,
-        ]
-        res = subprocess.run(cmd, stdout=subprocess.PIPE)
-        return res.returncode == 0
-
-    def deploy(self) -> bool:
-        cmd = [
-            "aws",
-            "cloudformation",
-            "deploy",
-            "--template-file",
-            "packaged.yaml",
-            "--stack-name",
-            self.project_name.lower(),
-            "--capabilities",
-            "CAPABILITY_IAM",
-        ]
-        res = subprocess.run(cmd, stdout=subprocess.PIPE)
-        return res.returncode == 0
 
     def validate(self) -> Union[None, str]:
         client = boto3.client("cloudformation")
@@ -170,17 +150,17 @@ class MangumConfig:
         api_gateway_name = f"{self.resource_name}Api"
         permission_name = f"{self.resource_name}FunctionPermission"
 
-        template_dict = {
+        template = {
             "AWSTemplateFormatVersion": "2010-09-09",
             "Transform": "AWS::Serverless-2016-10-31",
-            "Description": f"{self.description} {datetime.datetime.now()}",
+            "Description": f"ASGI application updated @ {datetime.datetime.now()}",
             "Globals": {"Function": {"Timeout": self.timeout}},
             "Resources": {
                 f"{self.resource_name}Function": {
                     "Type": "AWS::Serverless::Function",
                     "Properties": {
                         "CodeUri": os.path.join(self.config_dir, "build"),
-                        "Handler": self.handler_name,
+                        "Handler": self.handler,
                         "Runtime": "python3.7",
                         "Environment": {"Variables": self.get_env_vars()},
                         "Events": {
@@ -205,7 +185,10 @@ class MangumConfig:
                                 {
                                     "Effect": "Allow",
                                     "Action": ["s3:*"],
-                                    "Resource": "arn:aws:s3:::*",
+                                    "Resource": [
+                                        f"arn:aws:s3:::{self.bucket_name}",
+                                        f"arn:aws:s3:::{self.bucket_name}/*",
+                                    ],
                                 }
                             ],
                         },
@@ -230,4 +213,4 @@ class MangumConfig:
                 },
             },
         }
-        return template_dict
+        return template

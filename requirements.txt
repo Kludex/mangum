@@ -5,6 +5,7 @@ pytest-cov
 black
 starlette
 quart
+PyYAML
 
 # Docs
 mkdocs
