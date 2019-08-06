@@ -38,6 +38,24 @@ def get_connections():
     return connections
 
 
+def send_to_connections(*, data, connections, items, endpoint_url):
+    apigw_management = boto3.client(
+        "apigatewaymanagementapi", endpoint_url=endpoint_url
+    )
+    for item in items:
+        try:
+            apigw_management.post_to_connection(
+                ConnectionId=item["connectionId"], Data=data
+            )
+        except botocore.exceptions.ClientError as exc:
+            status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status_code == 410:
+                connections.delete_item(Key={"connectionId": item["connectionId"]})
+            else:
+                return make_response("Connection error", status_code=500)
+    return make_response("OK", status_code=200)
+
+
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
@@ -142,25 +160,32 @@ class ASGIWebSocketCycle(ASGICycle):
                     }
                     self.response["body"] = "Connection error"
                 else:
-                    apigw_management = boto3.client(
-                        "apigatewaymanagementapi", endpoint_url=self.endpoint_url
+                    self.response = send_to_connections(
+                        data=data,
+                        connections=connections,
+                        items=items,
+                        endpoint_url=self.endpoint_url,
                     )
-                    for item in items:
-                        try:
-                            apigw_management.post_to_connection(
-                                ConnectionId=item["connectionId"], Data=data
-                            )
-                        except botocore.exceptions.ClientError as exc:
-                            status_code = exc.response.get("ResponseMetadata", {}).get(
-                                "HTTPStatusCode"
-                            )
-                            if status_code == 410:
-                                connections.delete_item(
-                                    Key={"connectionId": item["connectionId"]}
-                                )
-                            else:
-                                self.response["body"] = "Connection error"
-                                self.response["statusCode"] = 500
+
+                    # apigw_management = boto3.client(
+                    #     "apigatewaymanagementapi", endpoint_url=self.endpoint_url
+                    # )
+                    # for item in items:
+                    #     try:
+                    #         apigw_management.post_to_connection(
+                    #             ConnectionId=item["connectionId"], Data=data
+                    #         )
+                    #     except botocore.exceptions.ClientError as exc:
+                    #         status_code = exc.response.get("ResponseMetadata", {}).get(
+                    #             "HTTPStatusCode"
+                    #         )
+                    #         if status_code == 410:
+                    #             connections.delete_item(
+                    #                 Key={"connectionId": item["connectionId"]}
+                    #             )
+                    #         else:
+                    #             self.response["body"] = "Connection error"
+                    #             self.response["statusCode"] = 500
 
 
 @dataclass
@@ -189,12 +214,6 @@ class Mangum:
             raise exc
         else:
             return response
-
-    def get_scope(self, event: AWSEvent) -> ASGIScope:
-        root_path = event["requestContext"]["stage"]
-        scheme = event["headers"].get("X-Forwarded-Proto")
-        scope = {"scheme": scheme, "raw_path": None, "root_path": root_path}
-        return scope
 
     def get_scope_from_db(
         self, connection_id: str, connections: typing.Any
@@ -271,17 +290,34 @@ class Mangum:
 
         if event_type == "CONNECT":
             headers = event["headers"]
-            scope = self.get_scope(event)
-            scope.update(
-                {
-                    "type": "websocket",
-                    "path": "/ws",
-                    "query_string": "",
-                    "server": None,
-                    "client": None,
-                    "headers": headers,
-                }
+            client_addr = (
+                event["requestContext"].get("identity", {}).get("sourceIp", None)
             )
+            client = (client_addr, 0)
+            server_addr = event["headers"].get("Host", None)
+            if server_addr is not None:
+                if ":" not in server_addr:
+                    server_port = 80
+                else:
+                    server_port = int(server_addr.split(":")[1])
+
+                server = (server_addr, server_port)
+            else:
+                server = None
+
+            root_path = event["requestContext"]["stage"]
+            scope = {
+                "type": "websocket",
+                "path": "/ws",
+                "headers": headers,
+                "raw_path": None,
+                "root_path": root_path,
+                "scheme": event["headers"].get("X-Forwarded-Proto", "wss"),
+                "query_string": "",
+                "server": server,
+                "client": client,
+            }
+
             connections = get_connections()
             result = connections.put_item(
                 Item={"connectionId": connection_id, "scope": json.dumps(scope)}
@@ -292,6 +328,7 @@ class Mangum:
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
+            print("Message received")
             event_body = json.loads(event["body"])
             event_data = event_body["data"] or b""
             connections = get_connections()
@@ -310,9 +347,11 @@ class Mangum:
             elif isinstance(event_data, str):
                 message["text"] = event_data
 
+            print("Starting cycle")
             asgi_cycle.put_message({"type": "websocket.connect"})
             asgi_cycle.put_message(message)
             response = asgi_cycle(self.app)
+            print("Returning response")
             return response
 
         elif event_type == "DISCONNECT":

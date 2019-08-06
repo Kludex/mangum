@@ -130,11 +130,8 @@ class MockWSConnection:
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Cache-Control": "no-cache",
-                "Cookie": "pN=89; "
-                "s_pers=%20s_vnum%3D1566262539670%2526vn%253D10%7C1566262539670%3B%20s_invisit%3Dtrue%7C1564884941744%3B%20s_nr%3D1564883141747-Repeat%7C1572659141747%3B; "
-                "s_sess=%20s_cc%3Dtrue%3B%20s_sq%3D%3B",
                 "Host": "test.execute-api.ap-southeast-1.amazonaws.com",
-                "Origin": "https://2oz0a8hmz0.execute-api.ap-southeast-1.amazonaws.com",
+                "Origin": "https://test.execute-api.ap-southeast-1.amazonaws.com",
                 "Pragma": "no-cache",
                 "Sec-WebSocket-Extensions": "permessage-deflate; "
                 "client_max_window_bits",
@@ -144,7 +141,7 @@ class MockWSConnection:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/75.0.3770.100 Safari/537.36",
                 "X-Amzn-Trace-Id": "Root=1-5d465cb6-78ddcac1e21f89203d004a89",
-                "X-Forwarded-For": "101.164.35.219",
+                "X-Forwarded-For": "192.168.100.1",
                 "X-Forwarded-Port": "443",
                 "X-Forwarded-Proto": "https",
             },
@@ -153,15 +150,8 @@ class MockWSConnection:
                 "Accept-Encoding": ["gzip, deflate, br"],
                 "Accept-Language": ["en-US,en;q=0.9"],
                 "Cache-Control": ["no-cache"],
-                "Cookie": [
-                    "pN=89; "
-                    "s_pers=%20s_vnum%3D1566262539670%2526vn%253D10%7C1566262539670%3B%20s_invisit%3Dtrue%7C1564884941744%3B%20s_nr%3D1564883141747-Repeat%7C1572659141747%3B; "
-                    "s_sess=%20s_cc%3Dtrue%3B%20s_sq%3D%3B"
-                ],
                 "Host": ["test.execute-api.ap-southeast-1.amazonaws.com"],
-                "Origin": [
-                    "https://2oz0a8hmz0.execute-api.ap-southeast-1.amazonaws.com"
-                ],
+                "Origin": ["https://test.execute-api.ap-southeast-1.amazonaws.com"],
                 "Pragma": ["no-cache"],
                 "Sec-WebSocket-Extensions": [
                     "permessage-deflate; " "client_max_window_bits"
@@ -175,7 +165,7 @@ class MockWSConnection:
                     "Safari/537.36"
                 ],
                 "X-Amzn-Trace-Id": ["Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
-                "X-Forwarded-For": ["101.164.35.219"],
+                "X-Forwarded-For": ["192.168.100.1"],
                 "X-Forwarded-Port": ["443"],
                 "X-Forwarded-Proto": ["https"],
             },
@@ -195,7 +185,7 @@ class MockWSConnection:
                     "cognitoIdentityId": None,
                     "cognitoIdentityPoolId": None,
                     "principalOrgId": None,
-                    "sourceIp": "101.164.35.219",
+                    "sourceIp": "192.168.100.1",
                     "user": None,
                     "userAgent": "Mozilla/5.0 (Macintosh; Intel "
                     "Mac OS X 10_14_5) "
@@ -214,7 +204,7 @@ class MockWSConnection:
             },
         }
 
-    def get_message_event() -> dict:
+    def get_send_event() -> dict:
         return {
             "body": '{"action": "sendmessage", "data": "Hello world"}',
             "isBase64Encoded": False,
@@ -234,7 +224,7 @@ class MockWSConnection:
                     "cognitoIdentityId": None,
                     "cognitoIdentityPoolId": None,
                     "principalOrgId": None,
-                    "sourceIp": "101.164.35.219",
+                    "sourceIp": "192.168.100.1",
                     "user": None,
                     "userAgent": None,
                     "userArn": None,
@@ -247,6 +237,41 @@ class MockWSConnection:
                 "routeKey": "sendmessage",
                 "stage": "Prod",
             },
+        }
+
+    def get_expected_scope() -> dict:
+        return {
+            "client": ["192.168.100.1", 0],
+            "headers": [
+                [b"Accept-Encoding", b"gzip, deflate, br"],
+                [b"Accept-Language", b"en-US,en;q=0.9"],
+                [b"Cache-Control", b"no-cache"],
+                [b"Host", b"test.execute-api.ap-southeast-1.amazonaws.com"],
+                [b"Origin", b"https://test.execute-api.ap-southeast-1.amazonaws.com"],
+                [b"Pragma", b"no-cache"],
+                [
+                    b"Sec-WebSocket-Extensions",
+                    b"permessage-deflate; client_max_window_bits",
+                ],
+                [b"Sec-WebSocket-Key", b"bnfeqmh9SSPr5Sg9DvFIBw=="],
+                [b"Sec-WebSocket-Version", b"13"],
+                [
+                    b"User-Agent",
+                    b"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/"
+                    b"537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+                ],
+                [b"X-Amzn-Trace-Id", b"Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
+                [b"X-Forwarded-For", b"192.168.100.1"],
+                [b"X-Forwarded-Port", b"443"],
+                [b"X-Forwarded-Proto", b"https"],
+            ],
+            "path": "/ws",
+            "query_string": b"",
+            "raw_path": None,
+            "root_path": "Prod",
+            "scheme": "https",
+            "server": ["test.execute-api.ap-southeast-1.amazonaws.com", 80],
+            "type": "websocket",
         }
 
 
