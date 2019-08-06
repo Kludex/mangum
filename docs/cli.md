@@ -1,4 +1,4 @@
-# Mangum CLI (experimental)
+# CLI (experimental)
 
 Mangum provides a command-line interface for creating a deployment configuration and build, however the adapter class may be used standalone in any custom deployment.
 
