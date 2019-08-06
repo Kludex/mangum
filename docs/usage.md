@@ -1,22 +1,5 @@
 # Usage
 
-
-Signature: `Response(content, status_code=200, headers=None, media_type=None)`
-
-* `content` - A string or bytestring.
-* `status_code` - An integer HTTP status code.
-* `headers` - A dictionary of strings.
-* `media_type` - A string giving the media type. eg. "text/html"
-
-Starlette will automatically include a Content-Length header. It will also
-include a Content-Type header, based on the media_type and appending a charset
-for text types.
-
-Once you've instantiated a response, you can send it by calling it as an
-ASGI application instance.
-
-
-
 The adapter class `Mangum` accepts the following optional arguments:
 
 - `debug` : bool (default=False)
