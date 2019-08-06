@@ -32,10 +32,15 @@ def make_response(content: str, status_code: int = 500):
     }
 
 
+def get_connections():
+    db = boto3.resource("dynamodb")
+    connections = db.Table(os.environ["TABLE_NAME"])
+    return connections
+
+
 class ASGICycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
-    COMPLETE = enum.auto()
 
 
 @dataclass
@@ -108,8 +113,6 @@ class ASGIHTTPCycle(ASGICycle):
 @dataclass
 class ASGIWebSocketCycle(ASGICycle):
 
-    connection_id: str = None
-    connections: typing.Any = None
     endpoint_url: str = None
 
     async def send(self, message: ASGIMessage) -> None:
@@ -128,7 +131,8 @@ class ASGIWebSocketCycle(ASGICycle):
             text_data = message.get("text")
             data = text_data if bytes_data is None else bytes_data
             if message["type"] == "websocket.send":
-                items = self.connections.scan(ProjectionExpression="connectionId").get(
+                connections = get_connections()
+                items = connections.scan(ProjectionExpression="connectionId").get(
                     "Items"
                 )
                 if items is None:
@@ -151,7 +155,7 @@ class ASGIWebSocketCycle(ASGICycle):
                                 "HTTPStatusCode"
                             )
                             if status_code == 410:
-                                self.connections.delete_item(
+                                connections.delete_item(
                                     Key={"connectionId": item["connectionId"]}
                                 )
                             else:
@@ -175,9 +179,9 @@ class Mangum:
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
 
-    def __call__(self, app: ASGIApp, **kwargs) -> AWSResponse:
+    def __call__(self, event: AWSEvent, context: AWSContext) -> AWSResponse:
         try:
-            response = self.handler(app, **kwargs)
+            response = self.handler(event, context)
         except Exception as exc:
             if self.debug:
                 content = traceback.format_exc()
@@ -207,7 +211,6 @@ class Mangum:
         return scope
 
     def handle_http(self, event: AWSEvent, context: AWSContext) -> AWSResponse:
-        scope = self.get_scope(event)
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         client = (client_addr, 0)
         server_addr = event["headers"].get("Host", None)
@@ -219,33 +222,33 @@ class Mangum:
 
             server = (server_addr, server_port)
         else:
-            server = None  # pragma: no cover
+            server = None
 
+        headers = [
+            [k.lower().encode(), v.encode()] for k, v in event["headers"].items()
+        ]
         query_string_params = event["queryStringParameters"]
         query_string = (
             urllib.parse.urlencode(query_string_params).encode()
             if query_string_params
             else b""
         )
-        headers = event["headers"]
+        scope = {
+            "type": "http",
+            "http_version": "1.1",
+            "method": event["httpMethod"],
+            "headers": headers,
+            "path": urllib.parse.unquote(event["path"]),
+            "raw_path": None,
+            "root_path": event["requestContext"]["stage"],
+            "scheme": event["headers"].get("X-Forwarded-Proto", "https"),
+            "query_string": query_string,
+            "server": server,
+            "client": client,
+        }
 
-        scope.update(
-            {
-                "type": "http",
-                "http_version": "1.1",
-                "method": event["httpMethod"],
-                "path": urllib.parse.unquote(event["path"]),
-                "query_string": query_string,
-                "server": server,
-                "client": client,
-                "headers": [
-                    [k.lower().encode(), v.encode()] for k, v in headers.items()
-                ],
-            }
-        )
         binary = event.get("isBase64Encoded", False)
         body = event["body"] or b""
-
         if binary:
             body = base64.b64decode(body)
         elif not isinstance(body, bytes):
@@ -256,16 +259,10 @@ class Mangum:
             {"type": "http.request", "body": body, "more_body": False}
         )
         response = asgi_cycle(self.app)
-        if self.enable_lifespan:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.lifespan.wait_shutdown())
-
         return response
 
     def handle_ws(self, event: AWSEvent, context: AWSContext) -> AWSResponse:
         request_context = event["requestContext"]
-        db = boto3.resource("dynamodb")
-        connections = db.Table(os.environ["TABLE_NAME"])
         connection_id = request_context.get("connectionId")
         domain_name = request_context.get("domainName")
         stage = request_context.get("stage")
@@ -285,6 +282,7 @@ class Mangum:
                     "headers": headers,
                 }
             )
+            connections = get_connections()
             result = connections.put_item(
                 Item={"connectionId": connection_id, "scope": json.dumps(scope)}
             )
@@ -296,15 +294,11 @@ class Mangum:
         elif event_type == "MESSAGE":
             event_body = json.loads(event["body"])
             event_data = event_body["data"] or b""
+            connections = get_connections()
             scope = self.get_scope_from_db(
                 connection_id=connection_id, connections=connections
             )
-            asgi_cycle = ASGIWebSocketCycle(
-                scope,
-                connection_id=connection_id,
-                connections=connections,
-                endpoint_url=endpoint_url,
-            )
+            asgi_cycle = ASGIWebSocketCycle(scope, endpoint_url=endpoint_url)
             message = {
                 "type": "websocket.receive",
                 "path": "/ws",
@@ -315,12 +309,14 @@ class Mangum:
                 message["bytes"] = event_data
             elif isinstance(event_data, str):
                 message["text"] = event_data
+
             asgi_cycle.put_message({"type": "websocket.connect"})
             asgi_cycle.put_message(message)
             response = asgi_cycle(self.app)
             return response
 
         elif event_type == "DISCONNECT":
+            connections = get_connections()
             result = connections.delete_item(Key={"connectionId": connection_id})
             status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -332,4 +328,9 @@ class Mangum:
             response = self.handle_http(event, context)
         else:
             response = self.handle_ws(event, context)
+
+        if self.enable_lifespan:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.lifespan.wait_shutdown())
+
         return response
