@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-from mangum.__version__ import __version__
+from mangum import __version__
 
 
 def get_long_description():
@@ -15,7 +15,7 @@ setup(
     url="https://github.com/erm/mangum",
     description="AWS Lambda & API Gateway support for ASGI",
     long_description=get_long_description(),
-    extras_require={"full": ["boto3", "click", "PyYAML"]},
+    package_data={"mangum": ["py.typed"]},
     entry_points={"console_scripts": ["mangum = mangum.__main__:main"]},
     long_description_content_type="text/markdown",
     author="Jordan Eremieff",

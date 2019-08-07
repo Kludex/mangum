@@ -1,27 +1,4 @@
-# Mangum
-
-<a href="https://pypi.org/project/mangum/">
-    <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
-</a>
-<a href="https://travis-ci.org/erm/mangum">
-    <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
-</a>
-
-Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It also provies an experimental CLI for handling deployments. This project may face periods of inactivity from time to time, but PRs are welcomed.
-
-**Documentation**: [https://erm.github.io/mangum](https://erm.github.io/mangum)
-
-## Requirements
-
-Python 3.7+
-
-## Installation
-
-```shell
-pip3 install mangum
-```
-
-## Usage
+# Usage
 
 The adapter class `Mangum` accepts the following optional arguments:
 

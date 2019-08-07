@@ -5,9 +5,9 @@ pytest-cov
 black
 starlette
 quart
-PyYAML
 boto3
 botocore
+moto
 
 # Docs
 mkdocs
