@@ -1,6 +1,7 @@
 import mock
 import pytest
 from mangum import Mangum
+from mangum.connections import ConnectionTable
 
 
 def test_websocket_events(
@@ -65,8 +66,8 @@ def test_websocket_events(
     }
 
     handler = Mangum(app, enable_lifespan=False)
-    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
-        send.return_value = None
+    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
+        send_data.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {
             "body": "OK",
@@ -111,8 +112,8 @@ def test_websocket_cycle_state(
     handler = Mangum(app, enable_lifespan=False)
 
     with pytest.raises(RuntimeError):
-        with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
-            send.return_value = None
+        with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
+            send_data.return_value = None
             handler(mock_ws_send_event, {})
 
 
@@ -179,8 +180,9 @@ def test_websocket_group_events(
     }
 
     handler = Mangum(app, enable_lifespan=False)
-    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
-        send.return_value = None
+
+    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
+        send_data.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {
             "body": "OK",
@@ -199,19 +201,16 @@ def test_websocket_group_events(
     }
 
 
-# def test_websocket_group_events(
-#     mock_ws_connect_event, mock_ws_send_event, dynamodb
-# ) -> None:
-
-#     table_name = "test-table"
-#     dynamodb.create_table(
-#         TableName=table_name,
-#         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
-#         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
-#         ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-#     )
-
-#     async def app(scope, receive, send):
-#         await send({"type": "websocket.accept", "subprotocol": None})
-#         await send({"type": "websocket.send", "text": "Hello world!"})
-#         await send({"type": "websocket.close", "code": 1000})
+def test_websocket_get_group_items(dynamodb) -> None:
+    table_name = "test-table"
+    dynamodb.create_table(
+        TableName=table_name,
+        KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+    groups = ["test-group"]
+    connection_table = ConnectionTable()
+    connection_table.update_item("test1234", groups=groups)
+    group_items = connection_table.get_group_items(groups[0])
+    assert group_items[0]["connectionId"] == "test1234"

@@ -99,13 +99,13 @@ class ASGIWebSocketCycle(ASGICycle):
             data = message.get("text")
             if message["type"] == "websocket.send":
                 group = message.get("group", None)
-                self.send(data=data, group=group)
+                self.send_data(data=data, group=group)
 
-    def send(self, *, data: str, group: str = None) -> None:
+    def send_data(self, *, data: str, group: str = None) -> None:  # pragma: no cover
         """
         Send a data message to a client or group of clients using the connection table.
         """
-        item = self.connection_table.get(self.connection_id)
+        item = self.connection_table.get_item(self.connection_id)
         if group:
             # Retrieve the existing groups for the current connection, or create a new
             # groups entry if one does not exist.
@@ -113,8 +113,8 @@ class ASGIWebSocketCycle(ASGICycle):
             if group not in groups:
                 # Ensure the group specified in the message is included.
                 groups.append(group)
-                result = self.connection_table.set(
-                    {"connectionId": self.connection_id, "groups": groups}
+                result = self.connection_table.update_item(
+                    self.connection_id, groups=groups
                 )
                 status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
                 if status_code != 200:
@@ -128,4 +128,4 @@ class ASGIWebSocketCycle(ASGICycle):
             # Single send, add the current item to a list to be iterated by the
             # connection table.
             items = [item]
-        self.connection_table.send(items, data=data)
+        self.connection_table.send_data(items, data=data)

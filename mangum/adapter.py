@@ -131,8 +131,9 @@ class Mangum:
             status_code = connection_table.update_item(
                 connection_id, scope=json.dumps(scope)
             )
-            if status_code != 200:
-                return make_response("Error.", status_code=500)
+            if status_code != 200:  # pragma: no cover
+                # TODO: Improve error handling
+                return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
@@ -141,7 +142,8 @@ class Mangum:
 
             connection_table = ConnectionTable()
             item = connection_table.get_item(connection_id)
-            if not item:
+            if not item:  # pragma: no cover
+                # TODO: Improve error handling
                 return make_response("Error", status_code=500)
 
             # Retrieve and deserialize the scope entry created in the connect event for
@@ -172,14 +174,16 @@ class Mangum:
             )
             try:
                 asgi_cycle(self.app)
-            except ASGIWebSocketCycleException:
+            except ASGIWebSocketCycleException:  # pragma: no cover
+                # TODO: Improve error handling
                 return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "DISCONNECT":
             connection_table = ConnectionTable()
             status_code = connection_table.delete_item(connection_id)
-            if status_code != 200:
+            if status_code != 200:  # pragma: no cover
+                # TODO: Improve error handling
                 return make_response("WebSocket disconnect error.", status_code=500)
             return make_response("OK", status_code=200)
 

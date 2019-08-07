@@ -43,7 +43,9 @@ class ConnectionTable:
         result = self.table.delete_item(Key={"connectionId": connection_id})
         return result.get("ResponseMetadata", {}).get("HTTPStatusCode")
 
-    def get_group(self, group: str) -> typing.Union[typing.List[typing.Dict], None]:
+    def get_group_items(
+        self, group: str
+    ) -> typing.Union[typing.List[typing.Dict], None]:
         """
         Retrieve a list of items in the connection table by group.
         """
@@ -53,7 +55,9 @@ class ConnectionTable:
         ).get("Items", None)
         return items
 
-    def send(self, items: typing.List[typing.Dict], data: str) -> None:
+    def send_data(
+        self, items: typing.List[typing.Dict], data: str
+    ) -> None:  # pragma: no cover
         """
         Send data to one or more items in the connection table.
         """
