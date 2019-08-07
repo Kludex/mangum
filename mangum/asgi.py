@@ -1,14 +1,9 @@
 import enum
 import asyncio
 import base64
-import typing
-import json
 from dataclasses import dataclass, field
 
-import boto3
-import botocore
-from boto3.dynamodb.conditions import Attr
-
+from mangum.connections import ConnectionTable
 from mangum.types import ASGIScope, ASGIMessage, ASGIApp
 from mangum.exceptions import ASGIWebSocketCycleException
 
@@ -89,8 +84,8 @@ class ASGIHTTPCycle(ASGICycle):
 class ASGIWebSocketCycle(ASGICycle):
 
     endpoint_url: str = None
-    connections: typing.Any = None
     connection_id: str = None
+    connection_table: ConnectionTable = None
 
     async def send(self, message: ASGIMessage) -> None:
         if self.state is ASGICycleState.REQUEST:
@@ -101,66 +96,28 @@ class ASGIWebSocketCycle(ASGICycle):
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
-            bytes_data = message.get("bytes")
-            text_data = message.get("text")
-            data = text_data if bytes_data is None else bytes_data
+            data = message.get("text")
             if message["type"] == "websocket.send":
                 group = message.get("group", None)
-                if group:
-                    self.send_to_group(data=data, group=group)
-                else:
-                    self.send_to_connection(data=data)
+                self.send_data(data=data, group=group)
 
-    def send_data(self, *, item, data):
-        apigw_management = boto3.client(
-            "apigatewaymanagementapi", endpoint_url=self.endpoint_url
-        )
-        try:
-            apigw_management.post_to_connection(
-                ConnectionId=item["connectionId"], Data=data
-            )
-        except botocore.exceptions.ClientError as exc:
-            status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            if status_code == 410:
-                # Delete stale connection
-                self.connections.delete_item(Key={"connectionId": item["connectionId"]})
-            else:
-                raise ASGIWebSocketCycleException("No connection found")
-
-    def send_to_connection(self, *, data: typing.Union[bytes, str]) -> None:
-        item = self.connections.get_item(Key={"connectionId": self.connection_id}).get(
-            "Item", None
-        )
-        if item is None:
-            raise ASGIWebSocketCycleException("No connection found")
-        self.send_data(item=item, data=data)
-
-    def send_to_group(self, *, data: typing.Union[bytes, str], group: str) -> None:
-        item = self.connections.get_item(Key={"connectionId": self.connection_id}).get(
-            "Item", None
-        )
-        if item is None:
-            raise ASGIWebSocketCycleException("No connection found")
-
-        groups = item.get("groups", None)
-        if groups is None:
-            groups = []
-        if group not in groups:
-            groups.append(group)
-            result = self.connections.put_item(
-                Item={"connectionId": self.connection_id, "groups": groups}
-            )
-            status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            if status_code != 200:
-                raise ASGIWebSocketCycleException("Error updating groups")
-
-        items = self.connections.scan(
-            ProjectionExpression="connectionId",
-            FilterExpression=Attr("groups").contains(group),
-        ).get("Items", None)
-
-        if items is None:
-            raise ASGIWebSocketCycleException("No connections found")
-
-        for item in items:
-            self.send_data(item=item, data=data)
+    def send_data(self, *, data: str, group: str = None) -> None:
+        item = self.connection_table.get(self.connection_id)
+        if group:
+            groups = item.get("groups", None)
+            if groups is None:
+                groups = []
+            if group not in groups:
+                groups.append(group)
+                result = self.connection_table.set(
+                    {"connectionId": self.connection_id, "groups": groups}
+                )
+                status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                if status_code != 200:
+                    raise ASGIWebSocketCycleException("Error updating groups")
+            items = self.connection_table.get_group_items(group)
+            if items is None:
+                raise ASGIWebSocketCycleException("No connections found")
+        else:
+            items = [items]
+        self.connection_table.send(items, data=data)

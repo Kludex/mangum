@@ -1,5 +1,7 @@
 import os
 import pytest
+from moto import mock_dynamodb2
+import boto3
 
 
 @pytest.fixture
@@ -238,6 +240,12 @@ def mock_ws_disconnect_event() -> dict:
 #             "timeout": 300,
 #         }
 #         return settings
+
+
+@pytest.fixture(scope="function")
+def dynamodb():
+    with mock_dynamodb2():
+        yield boto3.client("dynamodb")
 
 
 def pytest_generate_tests(metafunc):

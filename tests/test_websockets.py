@@ -1,19 +1,14 @@
 import mock
 import pytest
-import boto3
-from moto import mock_dynamodb2
 from mangum import Mangum
 
 
-@mock_dynamodb2
 def test_websocket_events(
-    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
+    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event, dynamodb
 ) -> None:
 
     table_name = "test-table"
-    region_name = "ap-southeast-1"
-    conn = boto3.client("dynamodb", region_name=region_name)
-    conn.create_table(
+    dynamodb.create_table(
         TableName=table_name,
         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
@@ -57,6 +52,7 @@ def test_websocket_events(
 
         await send({"type": "websocket.accept", "subprotocol": None})
         await send({"type": "websocket.send", "text": "Hello world!"})
+        await send({"type": "websocket.send", "bytes": b"Hello world!"})
         await send({"type": "websocket.close", "code": 1000})
 
     handler = Mangum(app, enable_lifespan=False)
@@ -89,13 +85,11 @@ def test_websocket_events(
     }
 
 
-@mock_dynamodb2
-def test_websocket_cycle_state(mock_ws_connect_event, mock_ws_send_event) -> None:
-
+def test_websocket_cycle_state(
+    mock_ws_connect_event, mock_ws_send_event, dynamodb
+) -> None:
     table_name = "test-table"
-    region_name = "ap-southeast-1"
-    conn = boto3.client("dynamodb", region_name=region_name)
-    conn.create_table(
+    dynamodb.create_table(
         TableName=table_name,
         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
@@ -122,15 +116,12 @@ def test_websocket_cycle_state(mock_ws_connect_event, mock_ws_send_event) -> Non
             handler(mock_ws_send_event, {})
 
 
-@mock_dynamodb2
 def test_websocket_group_events(
-    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
+    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event, dynamodb
 ) -> None:
 
     table_name = "test-table"
-    region_name = "ap-southeast-1"
-    conn = boto3.client("dynamodb", region_name=region_name)
-    conn.create_table(
+    dynamodb.create_table(
         TableName=table_name,
         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
@@ -206,3 +197,21 @@ def test_websocket_group_events(
         "isBase64Encoded": False,
         "statusCode": 200,
     }
+
+
+# def test_websocket_group_events(
+#     mock_ws_connect_event, mock_ws_send_event, dynamodb
+# ) -> None:
+
+#     table_name = "test-table"
+#     dynamodb.create_table(
+#         TableName=table_name,
+#         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+#         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
+#         ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+#     )
+
+#     async def app(scope, receive, send):
+#         await send({"type": "websocket.accept", "subprotocol": None})
+#         await send({"type": "websocket.send", "text": "Hello world!"})
+#         await send({"type": "websocket.close", "code": 1000})

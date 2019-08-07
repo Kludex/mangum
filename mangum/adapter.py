@@ -8,9 +8,10 @@ from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
 from mangum.utils import get_logger, make_response, get_connections
-from mangum.types import ASGIScope, ASGIApp, AWSEvent, AWSContext, AWSResponse
+from mangum.types import ASGIApp, AWSEvent, AWSContext, AWSResponse
 from mangum.asgi import ASGIHTTPCycle, ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
+from mangum.connections import ConnectionTable
 
 
 @dataclass
@@ -40,21 +41,9 @@ class Mangum:
         else:
             return response
 
-    def get_scope_from_db(
-        self, connection_id: str, connections: typing.Any
-    ) -> ASGIScope:
-        scope_json = connections.get_item(Key={"connectionId": connection_id})["Item"][
-            "scope"
-        ]
-        scope = json.loads(scope_json)
-        query_string = scope["query_string"]
-        headers = scope["headers"]
-        headers = [[k.encode(), v.encode()] for k, v in headers.items()]
-        query_string = query_string.encode()
-        scope.update({"headers": headers, "query_string": query_string})
-        return scope
-
-    def handle_http(self, event: AWSEvent, context: AWSContext) -> AWSResponse:
+    def get_server_and_client(
+        self, event: AWSEvent
+    ) -> typing.Tuple:  # pragma: no cover
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         client = (client_addr, 0)
         server_addr = event["headers"].get("Host", None)
@@ -67,7 +56,10 @@ class Mangum:
             server = (server_addr, server_port)
         else:
             server = None
+        return server, client
 
+    def handle_http(self, event: AWSEvent, context: AWSContext) -> AWSResponse:
+        server, client = self.get_server_and_client(event)
         headers = [
             [k.lower().encode(), v.encode()] for k, v in event["headers"].items()
         ]
@@ -114,22 +106,8 @@ class Mangum:
         endpoint_url = f"https://{domain_name}/{stage}"
 
         if event_type == "CONNECT":
+            server, client = self.get_server_and_client(event)
             headers = event["headers"]
-            client_addr = (
-                event["requestContext"].get("identity", {}).get("sourceIp", None)
-            )
-            client = (client_addr, 0)
-            server_addr = event["headers"].get("Host", None)
-            if server_addr is not None:
-                if ":" not in server_addr:
-                    server_port = 80
-                else:
-                    server_port = int(server_addr.split(":")[1])
-
-                server = (server_addr, server_port)
-            else:
-                server = None
-
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
@@ -142,57 +120,56 @@ class Mangum:
                 "server": server,
                 "client": client,
             }
-            connections = get_connections()
-            result = connections.put_item(
-                Item={"connectionId": connection_id, "scope": json.dumps(scope)}
+            connection_table = ConnectionTable()
+            status_code = connection_table.update_item(
+                connection_id, scope=json.dumps(scope)
             )
-            status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
-                # error creating connection in db
+                # Error creating connection in db
                 return make_response("Error.", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
             event_body = json.loads(event["body"])
-            event_data = event_body["data"] or b""
-            connections = get_connections()
-            scope = self.get_scope_from_db(
-                connection_id=connection_id, connections=connections
-            )
+            event_data = event_body["data"] or ""
+
+            connection_table = ConnectionTable()
+            item = connection_table.get_item(connection_id)
+            if not item:
+                return make_response("Error", status_code=500)
+            scope = json.loads(item["scope"])
+            # Update the deserialized scope object to comply with ASGI spec
+            query_string = scope["query_string"]
+            headers = scope["headers"]
+            headers = [[k.encode(), v.encode()] for k, v in headers.items()]
+            query_string = query_string.encode()
+            scope.update({"headers": headers, "query_string": query_string})
             asgi_cycle = ASGIWebSocketCycle(
                 scope,
                 endpoint_url=endpoint_url,
                 connection_id=connection_id,
-                connections=connections,
+                connection_table=connection_table,
             )
-            message = {
-                "type": "websocket.receive",
-                "path": "/ws",
-                "bytes": None,
-                "text": None,
-            }
-            if isinstance(event_data, bytes):
-                message["bytes"] = event_data
-            elif isinstance(event_data, str):
-                message["text"] = event_data
-
             asgi_cycle.put_message({"type": "websocket.connect"})
-            asgi_cycle.put_message(message)
-
+            asgi_cycle.put_message(
+                {
+                    "type": "websocket.receive",
+                    "path": "/ws",
+                    "bytes": None,
+                    "text": event_data,
+                }
+            )
             try:
                 asgi_cycle(self.app)
-            except ASGIWebSocketCycleException as exc:
+            except ASGIWebSocketCycleException:
                 return make_response("Error", status_code=500)
-
             return make_response("OK", status_code=200)
 
         elif event_type == "DISCONNECT":
-            connections = get_connections()
-            result = connections.delete_item(Key={"connectionId": connection_id})
-            status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            connection_table = ConnectionTable()
+            status_code = connection_table.delete_item(connection_id)
             if status_code != 200:
                 return make_response("WebSocket disconnect error.", status_code=500)
-
             return make_response("OK", status_code=200)
 
     def handler(self, event: dict, context: dict) -> dict:
