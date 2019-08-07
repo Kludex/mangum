@@ -69,6 +69,6 @@ def test_websocket(mock_ws_connect_event, mock_ws_send_event) -> None:
     }
 
     handler = Mangum(app, enable_lifespan=False)
-    with mock.patch("mangum.adapter.send_to_connections") as send_to_connections:
+    with mock.patch("mangum.asgi.send_to_connections") as send_to_connections:
         send_to_connections.return_value = {"body": "OK", "status_code": 200}
         response = handler(mock_ws_send_event, {})
