@@ -1,9 +1,7 @@
 import mock
-from pprint import pprint
+import pytest
 import boto3
 from moto import mock_dynamodb2
-from starlette.websockets import WebSocket
-
 from mangum import Mangum
 
 
@@ -54,10 +52,10 @@ def test_websocket(mock_ws_connect_event, mock_ws_send_event) -> None:
             "server": ["test.execute-api.ap-southeast-1.amazonaws.com", 80],
             "type": "websocket",
         }
-        websocket = WebSocket(scope=scope, receive=receive, send=send)
-        await websocket.accept()
-        await websocket.send_text("Hello, world")
-        await websocket.close()
+
+        await send({"type": "websocket.accept", "subprotocol": None})
+        await send({"type": "websocket.send", "text": "Hello world!"})
+        await send({"type": "websocket.close", "code": 1000})
 
     handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_ws_connect_event, {})
@@ -72,3 +70,69 @@ def test_websocket(mock_ws_connect_event, mock_ws_send_event) -> None:
     with mock.patch("mangum.asgi.send_to_connections") as send_to_connections:
         send_to_connections.return_value = {"body": "OK", "status_code": 200}
         response = handler(mock_ws_send_event, {})
+
+
+@mock_dynamodb2
+def test_websocket_cycle_state(mock_ws_connect_event, mock_ws_send_event) -> None:
+
+    table_name = "test-table"
+    region_name = "ap-southeast-1"
+    conn = boto3.client("dynamodb", region_name=region_name)
+    conn.create_table(
+        TableName=table_name,
+        KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+
+    async def app(scope, receive, send):
+        await send({"type": "websocket.send", "text": "Hello world!"})
+
+    handler = Mangum(app, enable_lifespan=False)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {
+        "body": "OK",
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    handler = Mangum(app, enable_lifespan=False)
+
+    with pytest.raises(RuntimeError):
+        with mock.patch("mangum.asgi.send_to_connections") as send_to_connections:
+            send_to_connections.return_value = {"body": "OK", "status_code": 200}
+            handler(mock_ws_send_event, {})
+
+
+# @mock_dynamodb2
+# def test_websocket_disconnect(mock_ws_connect_event, mock_ws_send_event) -> None:
+
+#     table_name = "test-table"
+#     region_name = "ap-southeast-1"
+#     conn = boto3.client("dynamodb", region_name=region_name)
+#     conn.create_table(
+#         TableName=table_name,
+#         KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+#         AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
+#         ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+#     )
+
+#     async def app(scope, receive, send):
+#         await send({"type": "websocket.send", "text": "Hello world!"})
+
+#     handler = Mangum(app, enable_lifespan=False)
+#     response = handler(mock_ws_connect_event, {})
+#     assert response == {
+#         "body": "OK",
+#         "headers": {"content-type": "text/plain; charset=utf-8"},
+#         "isBase64Encoded": False,
+#         "statusCode": 200,
+#     }
+
+#     handler = Mangum(app, enable_lifespan=False)
+
+#     with pytest.raises(RuntimeError):
+#         with mock.patch("mangum.asgi.send_to_connections") as send_to_connections:
+#             send_to_connections.return_value = {"body": "OK", "status_code": 200}
+#             handler(mock_ws_send_event, {})

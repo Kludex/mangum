@@ -85,7 +85,7 @@ class ASGIWebSocketCycle(ASGICycle):
     endpoint_url: str = None
 
     async def send(self, message: ASGIMessage) -> None:
-        if self.state is not ASGICycleState.REQUEST:
+        if self.state is ASGICycleState.REQUEST:
             if message["type"] in ("websocket.accept", "websocket.close"):
                 self.response["statusCode"] = 200
                 self.response["headers"] = {"content-type": "text/plain; charset=utf-8"}
