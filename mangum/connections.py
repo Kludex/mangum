@@ -1,6 +1,5 @@
 import typing
 import os
-from dataclasses import dataclass
 
 import boto3
 import botocore
@@ -9,16 +8,14 @@ from boto3.dynamodb.conditions import Attr
 from mangum.exceptions import ConnectionTableException
 
 
-@dataclass
 class ConnectionTable:
     """
     Represents a DynamoDB resource that contains the WebSocket connection table.
     """
 
-    dynamodb = boto3.resource("dynamodb")
-
-    def __post_init__(self) -> None:
-        self.table = self.dynamodb.Table(os.environ["TABLE_NAME"])
+    def __init__(self) -> None:
+        dynamodb = boto3.resource("dynamodb", region_name=os.environ["REGION_NAME"])
+        self.table = dynamodb.Table(os.environ["TABLE_NAME"])
 
     def get_item(self, connection_id: str) -> typing.Union[typing.Dict, None]:
         """
