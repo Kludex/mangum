@@ -65,8 +65,8 @@ def test_websocket_events(
     }
 
     handler = Mangum(app, enable_lifespan=False)
-    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
-        send_data.return_value = None
+    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
+        send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {
             "body": "OK",
@@ -111,8 +111,8 @@ def test_websocket_cycle_state(
     handler = Mangum(app, enable_lifespan=False)
 
     with pytest.raises(RuntimeError):
-        with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
-            send_data.return_value = None
+        with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
+            send.return_value = None
             handler(mock_ws_send_event, {})
 
 
@@ -179,8 +179,8 @@ def test_websocket_group_events(
     }
 
     handler = Mangum(app, enable_lifespan=False)
-    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
-        send_data.return_value = None
+    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send") as send:
+        send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {
             "body": "OK",

@@ -1,13 +1,4 @@
 import logging
-import os
-
-import boto3
-
-
-def get_connections():
-    db = boto3.resource("dynamodb")
-    connections = db.Table(os.environ["TABLE_NAME"])
-    return connections
 
 
 def make_response(content: str, status_code: int = 500) -> dict:
