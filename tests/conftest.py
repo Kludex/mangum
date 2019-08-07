@@ -234,3 +234,4 @@ def dynamodb():
 
 def pytest_generate_tests(metafunc):
     os.environ["TABLE_NAME"] = "test-table"
+    os.environ["REGION_NAME"] = "ap-southeast-1"
