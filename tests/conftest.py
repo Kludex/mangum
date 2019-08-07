@@ -226,22 +226,6 @@ def mock_ws_disconnect_event() -> dict:
     }
 
 
-#     @staticmethod
-#     def get_aws_config_settings() -> dict:
-#         settings = {
-#             "project_name": "TestProject",
-#             "description": "ASGI application",
-#             "s3_bucket_name": "testproject-04a427ce-3267-4cbf-91c9-44fb986cddfd",
-#             "stack_name": "testproject",
-#             "resource_name": "Testproject",
-#             "url_root": "/",
-#             "runtime_version": "3.7",
-#             "region_name": "ap-southeast-1",
-#             "timeout": 300,
-#         }
-#         return settings
-
-
 @pytest.fixture(scope="function")
 def dynamodb():
     with mock_dynamodb2():
