@@ -7,7 +7,7 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It also provies an experimental CLI for handling deployments. This project may face periods of inactivity from time to time, but PRs are welcomed.
+Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
 
 **Documentation**: [https://erm.github.io/mangum](https://erm.github.io/mangum)
 
@@ -52,6 +52,9 @@ async def app(scope, receive, send):
 handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
 ```
 
+## CLI
+
+There is an experimental CLI that can be used for creating deployments, [Mangum CLI](https://github.com/erm/mangum-cli).
 
 ## Frameworks
 
