@@ -10,6 +10,7 @@ from mangum.lifespan import Lifespan
 from mangum.utils import get_logger, make_response, get_connections
 from mangum.types import ASGIScope, ASGIApp, AWSEvent, AWSContext, AWSResponse
 from mangum.asgi import ASGIHTTPCycle, ASGIWebSocketCycle
+from mangum.exceptions import ASGIWebSocketCycleException
 
 
 @dataclass
@@ -141,25 +142,29 @@ class Mangum:
                 "server": server,
                 "client": client,
             }
-
             connections = get_connections()
             result = connections.put_item(
                 Item={"connectionId": connection_id, "scope": json.dumps(scope)}
             )
             status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
-                return make_response("WebSocket connection error.", status_code=500)
+                # error creating connection in db
+                return make_response("Error.", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
-            print("Message received")
             event_body = json.loads(event["body"])
             event_data = event_body["data"] or b""
             connections = get_connections()
             scope = self.get_scope_from_db(
                 connection_id=connection_id, connections=connections
             )
-            asgi_cycle = ASGIWebSocketCycle(scope, endpoint_url=endpoint_url)
+            asgi_cycle = ASGIWebSocketCycle(
+                scope,
+                endpoint_url=endpoint_url,
+                connection_id=connection_id,
+                connections=connections,
+            )
             message = {
                 "type": "websocket.receive",
                 "path": "/ws",
@@ -171,12 +176,15 @@ class Mangum:
             elif isinstance(event_data, str):
                 message["text"] = event_data
 
-            print("Starting cycle")
             asgi_cycle.put_message({"type": "websocket.connect"})
             asgi_cycle.put_message(message)
-            response = asgi_cycle(self.app)
-            print("Returning response")
-            return response
+
+            try:
+                asgi_cycle(self.app)
+            except ASGIWebSocketCycleException as exc:
+                return make_response("Error", status_code=500)
+
+            return make_response("OK", status_code=200)
 
         elif event_type == "DISCONNECT":
             connections = get_connections()
@@ -184,6 +192,7 @@ class Mangum:
             status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
                 return make_response("WebSocket disconnect error.", status_code=500)
+
             return make_response("OK", status_code=200)
 
     def handler(self, event: dict, context: dict) -> dict:

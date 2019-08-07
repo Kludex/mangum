@@ -174,6 +174,56 @@ def mock_ws_send_event() -> dict:
     }
 
 
+@pytest.fixture
+def mock_ws_disconnect_event() -> dict:
+    return {
+        "headers": {
+            "Host": "test.execute-api.ap-southeast-1.amazonaws.com",
+            "x-api-key": "",
+            "x-restapi": "",
+        },
+        "isBase64Encoded": False,
+        "multiValueHeaders": {
+            "Host": ["test.execute-api.ap-southeast-1.amazonaws.com"],
+            "x-api-key": [""],
+            "x-restapi": [""],
+        },
+        "requestContext": {
+            "apiId": "test",
+            "connectedAt": 1565140098258,
+            "connectionId": "eBqkWf-GSQ0CGmA=",
+            "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
+            "eventType": "DISCONNECT",
+            "extendedRequestId": "eBql1FJmSQ0FrjA=",
+            "identity": {
+                "accessKey": None,
+                "accountId": None,
+                "caller": None,
+                "cognitoAuthenticationProvider": None,
+                "cognitoAuthenticationType": None,
+                "cognitoIdentityId": None,
+                "cognitoIdentityPoolId": None,
+                "principalOrgId": None,
+                "sourceIp": "101.164.35.219",
+                "user": None,
+                "userAgent": "Mozilla/5.0 (Macintosh; Intel "
+                "Mac OS X 10_14_6) "
+                "AppleWebKit/537.36 (KHTML, like "
+                "Gecko) Chrome/75.0.3770.142 "
+                "Safari/537.36",
+                "userArn": None,
+            },
+            "messageDirection": "IN",
+            "messageId": None,
+            "requestId": "eBql1FJmSQ0FrjA=",
+            "requestTime": "07/Aug/2019:01:08:27 +0000",
+            "requestTimeEpoch": 1565140107779,
+            "routeKey": "$disconnect",
+            "stage": "Prod",
+        },
+    }
+
+
 #     @staticmethod
 #     def get_aws_config_settings() -> dict:
 #         settings = {
