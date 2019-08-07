@@ -210,7 +210,7 @@ class Mangum:
         except Exception as exc:
             if self.debug:
                 content = traceback.format_exc()
-                return self.send_response(content, status_code=500)
+                return make_response(content, status_code=500)
             raise exc
         else:
             return response

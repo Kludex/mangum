@@ -1,15 +1,14 @@
 import mock
-
+from pprint import pprint
 import boto3
-
-from mangum import Mangum
-
 from moto import mock_dynamodb2
 from starlette.websockets import WebSocket
 
+from mangum import Mangum
+
 
 @mock_dynamodb2
-def test_websocket(mock_ws) -> None:
+def test_websocket(mock_ws_connect_event, mock_ws_send_event) -> None:
 
     table_name = "test-table"
     region_name = "ap-southeast-1"
@@ -22,15 +21,46 @@ def test_websocket(mock_ws) -> None:
     )
 
     async def app(scope, receive, send):
-        assert scope == mock_ws.get_expected_scope()
+        assert scope == {
+            "client": ["192.168.100.1", 0],
+            "headers": [
+                [b"Accept-Encoding", b"gzip, deflate, br"],
+                [b"Accept-Language", b"en-US,en;q=0.9"],
+                [b"Cache-Control", b"no-cache"],
+                [b"Host", b"test.execute-api.ap-southeast-1.amazonaws.com"],
+                [b"Origin", b"https://test.execute-api.ap-southeast-1.amazonaws.com"],
+                [b"Pragma", b"no-cache"],
+                [
+                    b"Sec-WebSocket-Extensions",
+                    b"permessage-deflate; client_max_window_bits",
+                ],
+                [b"Sec-WebSocket-Key", b"bnfeqmh9SSPr5Sg9DvFIBw=="],
+                [b"Sec-WebSocket-Version", b"13"],
+                [
+                    b"User-Agent",
+                    b"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/"
+                    b"537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+                ],
+                [b"X-Amzn-Trace-Id", b"Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
+                [b"X-Forwarded-For", b"192.168.100.1"],
+                [b"X-Forwarded-Port", b"443"],
+                [b"X-Forwarded-Proto", b"https"],
+            ],
+            "path": "/ws",
+            "query_string": b"",
+            "raw_path": None,
+            "root_path": "Prod",
+            "scheme": "https",
+            "server": ["test.execute-api.ap-southeast-1.amazonaws.com", 80],
+            "type": "websocket",
+        }
         websocket = WebSocket(scope=scope, receive=receive, send=send)
         await websocket.accept()
         await websocket.send_text("Hello, world")
         await websocket.close()
 
-    mock_connect_event = mock_ws.get_connect_event()
     handler = Mangum(app, enable_lifespan=False)
-    response = handler(mock_connect_event, {})
+    response = handler(mock_ws_connect_event, {})
     assert response == {
         "body": "OK",
         "headers": {"content-type": "text/plain; charset=utf-8"},
@@ -38,8 +68,7 @@ def test_websocket(mock_ws) -> None:
         "statusCode": 200,
     }
 
-    mock_send_event = mock_ws.get_send_event()
     handler = Mangum(app, enable_lifespan=False)
     with mock.patch("mangum.adapter.send_to_connections") as send_to_connections:
         send_to_connections.return_value = {"body": "OK", "status_code": 200}
-        response = handler(mock_send_event, {})
+        response = handler(mock_ws_send_event, {})
