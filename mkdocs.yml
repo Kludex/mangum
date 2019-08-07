@@ -16,7 +16,6 @@ edit_uri: ""
 
 nav:
     - Introduction: 'index.md'
-    - CLI: 'cli.md'
 
 markdown_extensions:
   - markdown.extensions.codehilite:
