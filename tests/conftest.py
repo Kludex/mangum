@@ -229,9 +229,8 @@ def mock_ws_disconnect_event() -> dict:
 @pytest.fixture(scope="function")
 def dynamodb():
     with mock_dynamodb2():
-        yield boto3.client("dynamodb")
+        yield boto3.client("dynamodb", region_name="ap-southeast-1")
 
 
 def pytest_generate_tests(metafunc):
     os.environ["TABLE_NAME"] = "test-table"
-    os.environ["REGION_NAME"] = "ap-southeast-1"
