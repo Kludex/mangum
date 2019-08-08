@@ -31,8 +31,8 @@ class Mangum:
             loop.run_until_complete(self.lifespan.wait_startup())
 
     def __call__(
-        self, event: typing.Dict[str, str], context: typing.Dict[str, str]
-    ) -> typing.Dict[str, str]:
+        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
         try:
             response = self.handler(event, context)
         except Exception as exc:
@@ -44,7 +44,7 @@ class Mangum:
             return response
 
     def get_server_and_client(
-        self, event: typing.Dict[str, str]
+        self, event: typing.Dict[str, typing.Any]
     ) -> typing.Tuple:  # pragma: no cover
         """
         Parse the server and client keys for the scope definition, if possible.
@@ -64,8 +64,8 @@ class Mangum:
         return server, client
 
     def handle_http(
-        self, event: typing.Dict[str, str], context: typing.Dict[str, str]
-    ) -> typing.Dict[str, str]:
+        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
         server, client = self.get_server_and_client(event)
         headers = [
             [k.lower().encode(), v.encode()] for k, v in event["headers"].items()
@@ -103,8 +103,8 @@ class Mangum:
         return response
 
     def handle_ws(
-        self, event: typing.Dict[str, str], context: typing.Dict[str, str]
-    ) -> typing.Dict[str, str]:
+        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
         request_context = event["requestContext"]
         connection_id = request_context.get("connectionId")
         domain_name = request_context.get("domainName")
@@ -188,8 +188,8 @@ class Mangum:
             return make_response("OK", status_code=200)
 
     def handler(
-        self, event: typing.Dict[str, str], context: typing.Dict[str, str]
-    ) -> typing.Dict[str, str]:
+        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
         if "httpMethod" in event:
             response = self.handle_http(event, context)
         else:
