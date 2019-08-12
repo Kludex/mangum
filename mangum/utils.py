@@ -10,12 +10,17 @@ def make_response(content: str, status_code: int = 500) -> dict:
     }
 
 
-def get_logger() -> logging.Logger:
+def get_logger(log_level: str) -> logging.Logger:
+    level = {
+        "critical": logging.CRITICAL,
+        "error": logging.ERROR,
+        "warning": logging.WARNING,
+        "info": logging.INFO,
+        "debug": logging.DEBUG,
+    }[log_level]
     logging.basicConfig(
-        format="[%(asctime)s] %(message)s",
-        level=logging.INFO,
-        datefmt="%d-%b-%y %H:%M:%S",
+        format="[%(asctime)s] %(message)s", level=level, datefmt="%d-%b-%y %H:%M:%S"
     )
     logger = logging.getLogger("mangum")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level)
     return logger

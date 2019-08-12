@@ -21,9 +21,10 @@ class Mangum:
     app: ASGIApp
     debug: bool = False
     enable_lifespan: bool = True
-    logger: logging.Logger = get_logger()
+    log_level: str = "info"
 
     def __post_init__(self) -> None:
+        self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
             self.lifespan = Lifespan(self.app, logger=self.logger)
@@ -47,7 +48,7 @@ class Mangum:
         self, event: typing.Dict[str, typing.Any]
     ) -> typing.Tuple:  # pragma: no cover
         """
-        Parse the server and client keys for the scope definition, if possible.
+        Parse the server and client for the scope definition, if possible.
         """
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
         client = (client_addr, 0)
@@ -113,12 +114,14 @@ class Mangum:
         endpoint_url = f"https://{domain_name}/{stage}"
 
         if event_type == "CONNECT":
+            # The initial connect event. Parse and store the scope for the connection
+            # in DynamoDB to be retrieved in subsequent message events for this request.
             server, client = self.get_server_and_client(event)
             headers = event["headers"]
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
-                "path": "/ws",
+                "path": "/",
                 "headers": headers,
                 "raw_path": None,
                 "root_path": root_path,
@@ -167,7 +170,7 @@ class Mangum:
             asgi_cycle.put_message(
                 {
                     "type": "websocket.receive",
-                    "path": "/ws",
+                    "path": "/",
                     "bytes": None,
                     "text": event_data,
                 }

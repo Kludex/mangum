@@ -2,6 +2,8 @@ import mock
 import pytest
 from mangum import Mangum
 from mangum.connections import ConnectionTable
+from starlette.applications import Starlette
+from starlette.websockets import WebSocket
 
 
 def test_websocket_events(
@@ -42,7 +44,7 @@ def test_websocket_events(
                 [b"X-Forwarded-Port", b"443"],
                 [b"X-Forwarded-Proto", b"https"],
             ],
-            "path": "/ws",
+            "path": "/",
             "query_string": b"",
             "raw_path": None,
             "root_path": "Prod",
@@ -155,7 +157,7 @@ def test_websocket_group_events(
                 [b"X-Forwarded-Port", b"443"],
                 [b"X-Forwarded-Proto", b"https"],
             ],
-            "path": "/ws",
+            "path": "/",
             "query_string": b"",
             "raw_path": None,
             "root_path": "Prod",
@@ -180,7 +182,6 @@ def test_websocket_group_events(
     }
 
     handler = Mangum(app, enable_lifespan=False)
-
     with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
         send_data.return_value = None
         response = handler(mock_ws_send_event, {})
@@ -214,3 +215,42 @@ def test_websocket_get_group_items(dynamodb) -> None:
     connection_table.update_item("test1234", groups=groups)
     group_items = connection_table.get_group_items(groups[0])
     assert group_items[0]["connectionId"] == "test1234"
+
+
+def test_starlette_websocket(
+    mock_ws_connect_event, mock_ws_send_event, dynamodb
+) -> None:
+    table_name = "test-table"
+    dynamodb.create_table(
+        TableName=table_name,
+        KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+    app = Starlette()
+
+    @app.websocket_route("/ws")
+    async def websocket_endpoint(websocket):
+        await websocket.accept()
+        await websocket.send_json({"url": str(websocket.url)})
+        await websocket.close()
+
+    handler = Mangum(app, enable_lifespan=False)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {
+        "body": "OK",
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    handler = Mangum(app, enable_lifespan=False)
+    with mock.patch("mangum.asgi.ASGIWebSocketCycle.send_data") as send_data:
+        send_data.return_value = None
+        response = handler(mock_ws_send_event, {})
+        assert response == {
+            "body": "OK",
+            "headers": {"content-type": "text/plain; charset=utf-8"},
+            "isBase64Encoded": False,
+            "statusCode": 200,
+        }
