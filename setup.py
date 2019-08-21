@@ -1,7 +1,5 @@
 from setuptools import find_packages, setup
 
-from mangum import __version__
-
 
 def get_long_description():
     return open("README.md", "r", encoding="utf8").read()
@@ -9,14 +7,15 @@ def get_long_description():
 
 setup(
     name="mangum",
-    version=__version__,
+    version="0.6.15",
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
     description="AWS Lambda & API Gateway support for ASGI",
     long_description=get_long_description(),
+    python_requires=">=3.7",
+    extras_require={"full": ["boto3"]},
     package_data={"mangum": ["py.typed"]},
-    entry_points={"console_scripts": ["mangum = mangum.__main__:main"]},
     long_description_content_type="text/markdown",
     author="Jordan Eremieff",
     author_email="jordan@eremieff.com",
