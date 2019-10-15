@@ -1,6 +1,7 @@
 import enum
 import asyncio
 import base64
+import typing
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIScope, ASGIMessage, ASGIApp
@@ -23,13 +24,13 @@ class ASGICycle:
         self.loop = asyncio.get_event_loop()
         self.app_queue = asyncio.Queue(loop=self.loop)
 
-    def __call__(self, app: ASGIApp):
+    def __call__(self, app: ASGIApp) -> typing.Dict[str, typing.Any]:
         asgi_instance = app(self.scope, self.asgi_receive, self.asgi_send)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
         return self.response
 
-    async def asgi_receive(self) -> dict:
+    async def asgi_receive(self) -> ASGIMessage:
         message = await self.app_queue.get()
         return message
 

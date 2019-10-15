@@ -9,9 +9,7 @@ from mangum import Mangum
 def test_starlette_response(mock_http_event) -> None:
     startup_complete = False
     shutdown_complete = False
-
     path = mock_http_event["path"]
-
     app = Starlette()
 
     @app.on_event("startup")
@@ -54,10 +52,9 @@ def test_starlette_response(mock_http_event) -> None:
 
 @pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
 def test_quart_app(mock_http_event) -> None:
-    path = mock_http_event["path"]
     startup_complete = False
     shutdown_complete = False
-
+    path = mock_http_event["path"]
     app = Quart(__name__)
 
     @app.before_serving

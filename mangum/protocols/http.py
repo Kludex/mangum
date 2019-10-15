@@ -70,7 +70,7 @@ def handle_http(
         "headers": headers,
         "path": urllib.parse.unquote(event["path"]),
         "raw_path": None,
-        "root_path": event["requestContext"]["stage"],
+        "root_path": "",
         "scheme": event["headers"].get("X-Forwarded-Proto", "https"),
         "query_string": query_string,
         "server": server,
