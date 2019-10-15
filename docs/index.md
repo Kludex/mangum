@@ -7,13 +7,13 @@
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
 
-Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It also provies an experimental CLI for handling deployments. This project may face periods of inactivity from time to time, but PRs are welcomed.
+Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway.
 
 **Documentation**: [https://erm.github.io/mangum](https://erm.github.io/mangum)
 
 ## Requirements
 
-Python 3.7+
+Python 3.7
 
 ## Installation
 
@@ -52,6 +52,13 @@ async def app(scope, receive, send):
 handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
 ```
 
+## WebSockets (experimental)
+
+The adapter currently provides some basic WebSocket support using `boto3` with [DynamoDB](https://aws.amazon.com/dynamodb/). To install Mangum with the optional dependency:
+
+```shell
+pip3 install mangum[full]
+```
 
 ## Frameworks
 

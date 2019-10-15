@@ -34,7 +34,7 @@ def test_http_response(mock_http_event) -> None:
             "path": "/test/hello",
             "query_string": b"name=me",
             "raw_path": None,
-            "root_path": "Prod",
+            "root_path": "",
             "scheme": "https",
             "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
             "type": "http",

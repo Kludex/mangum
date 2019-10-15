@@ -13,7 +13,7 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 ## Requirements
 
-Python 3.7+
+Python 3.7
 
 ## Installation
 
@@ -52,17 +52,13 @@ async def app(scope, receive, send):
 handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
 ```
 
-## WebSockets
+## WebSockets (experimental)
 
 The adapter currently provides some basic WebSocket support using `boto3` with [DynamoDB](https://aws.amazon.com/dynamodb/). To install Mangum with the optional dependency:
 
 ```shell
 pip3 install mangum[full]
 ```
-
-## CLI
-
-There is an experimental CLI that can be used for creating deployments, [Mangum CLI](https://github.com/erm/mangum-cli).
 
 ## Frameworks
 
