@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from mangum.lifespan import Lifespan
 from mangum.utils import get_logger, make_response, get_server_and_client
 from mangum.types import ASGIApp
-from mangum.protocols import handle_http, handle_ws
 
 
 @dataclass
@@ -46,9 +45,17 @@ class Mangum:
         self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
     ) -> typing.Dict[str, typing.Any]:
         if "httpMethod" in event:
+            from mangum.protocols.http import handle_http
+
             response = handle_http(self.app, event, context)
         else:
+            try:
+                from mangum.protocols.websockets import handle_ws
+            except ImportError as exc:  # pragma: nocover
+                raise exc
+
             response = handle_ws(self.app, event, context)
+
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.lifespan.wait_shutdown())
