@@ -3,7 +3,7 @@ language: python
 cache: pip
 
 python:
-  - "3.7-dev"
+  - "3.7"
 
 before_install:
   - export BOTO_CONFIG=/dev/null
