@@ -26,7 +26,7 @@ class ConnectionTable:
         )
         return item
 
-    def update_item(self, connection_id: str, **kwargs) -> int:
+    def update_item(self, connection_id: str, **kwargs: typing.Any) -> int:
         """
         Update an item in the connection table by id.
         """
@@ -53,13 +53,13 @@ class ConnectionTable:
         return items
 
     def send_data(
-        self, items: typing.List[typing.Dict], data: str
+        self, items: typing.List[typing.Dict], *, endpoint_url: str, data: str
     ) -> None:  # pragma: no cover
         """
         Send data to one or more items in the connection table.
         """
         apigw_management = boto3.client(
-            "apigatewaymanagementapi", endpoint_url=self.endpoint_url
+            "apigatewaymanagementapi", endpoint_url=endpoint_url
         )
         for item in items:
             try:
@@ -72,8 +72,6 @@ class ConnectionTable:
                 )
                 if status_code == 410:
                     # Delete stale connection
-                    self.connection_table.delete_item(
-                        Key={"connectionId": item["connectionId"]}
-                    )
+                    self.delete_item(item["connectionId"])
                 else:
                     raise ConnectionTableException("Connection does not exist")

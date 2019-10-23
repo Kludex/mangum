@@ -1,8 +1,10 @@
 import logging
 import typing
 
+from mangum.types import AWSMessage
 
-def make_response(content: str, status_code: int = 500) -> dict:
+
+def make_response(content: str, status_code: int = 500) -> AWSMessage:
     return {
         "statusCode": status_code,
         "isBase64Encoded": False,
@@ -11,14 +13,13 @@ def make_response(content: str, status_code: int = 500) -> dict:
     }
 
 
-def get_server_and_client(
-    event: typing.Dict[str, typing.Any]
-) -> typing.Tuple:  # pragma: no cover
+def get_server_and_client(event: AWSMessage) -> typing.Tuple:  # pragma: no cover
     """
     Parse the server and client for the scope definition, if possible.
     """
     client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
     client = (client_addr, 0)
+
     server_addr = event["headers"].get("Host", None)
 
     if server_addr is not None:
@@ -28,9 +29,10 @@ def get_server_and_client(
             server_addr, server_port = server_addr.split(":")
             server_port = int(server_port)
 
-        server = (server_addr, server_port)
+        server = (server_addr, server_port)  # type: typing.Any
     else:
         server = None
+
     return server, client
 
 

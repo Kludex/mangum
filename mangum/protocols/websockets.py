@@ -35,6 +35,9 @@ class ASGIWebSocketCycle(ASGICycle):
         Send a data message to a client or group of clients using the connection table.
         """
         item = self.connection_table.get_item(self.connection_id)
+        if not item:
+            raise ASGIWebSocketCycleException("Connection not found")
+
         if group:
             # Retrieve the existing groups for the current connection, or create a new
             # groups entry if one does not exist.
@@ -42,10 +45,9 @@ class ASGIWebSocketCycle(ASGICycle):
             if group not in groups:
                 # Ensure the group specified in the message is included.
                 groups.append(group)
-                result = self.connection_table.update_item(
+                status_code = self.connection_table.update_item(
                     self.connection_id, groups=groups
                 )
-                status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
                 if status_code != 200:
                     raise ASGIWebSocketCycleException("Error updating groups")
 
@@ -57,7 +59,9 @@ class ASGIWebSocketCycle(ASGICycle):
             # Single send, add the current item to a list to be iterated by the
             # connection table.
             items = [item]
-        self.connection_table.send_data(items, data=data)
+        self.connection_table.send_data(
+            items, endpoint_url=self.endpoint_url, data=data
+        )
 
 
 def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessage:
@@ -144,3 +148,5 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
             # TODO: Improve error handling
             return make_response("WebSocket disconnect error.", status_code=500)
         return make_response("OK", status_code=200)
+
+    return make_response("Error", status_code=500)  # pragma: no cover

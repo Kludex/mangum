@@ -22,7 +22,7 @@ class ASGICycle:
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
-        self.app_queue = asyncio.Queue(loop=self.loop)
+        self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
 
     def __call__(self, app: ASGIApp) -> AWSMessage:
         asgi_instance = app(self.scope, self.asgi_receive, self.asgi_send)
@@ -33,6 +33,9 @@ class ASGICycle:
     async def asgi_receive(self) -> ASGIMessage:
         message = await self.app_queue.get()
         return message
+
+    async def asgi_send(self, message: ASGIMessage) -> None:  # pragma: no cover
+        raise NotImplementedError
 
     def put_message(self, message: ASGIMessage) -> None:
         self.app_queue.put_nowait(message)
