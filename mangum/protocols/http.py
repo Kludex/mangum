@@ -4,7 +4,7 @@ import typing
 from dataclasses import dataclass
 
 from mangum.protocols.asgi import ASGICycle, ASGICycleState
-from mangum.types import ASGIMessage, ASGIApp
+from mangum.types import ASGIMessage, ASGIApp, AWSMessage
 from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.utils import get_server_and_client
 
@@ -50,11 +50,7 @@ class ASGIHTTPCycle(ASGICycle):
                 self.put_message({"type": "http.disconnect"})
 
 
-def handle_http(
-    app: ASGIApp,
-    event: typing.Dict[str, typing.Any],
-    context: typing.Dict[str, typing.Any],
-) -> typing.Dict[str, typing.Any]:
+def handle_http(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessage:
     server, client = get_server_and_client(event)
     headers = [[k.lower().encode(), v.encode()] for k, v in event["headers"].items()]
     query_string_params = event["queryStringParameters"]

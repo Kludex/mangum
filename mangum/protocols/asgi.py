@@ -4,7 +4,7 @@ import base64
 import typing
 from dataclasses import dataclass, field
 
-from mangum.types import ASGIScope, ASGIMessage, ASGIApp
+from mangum.types import ASGIScope, ASGIMessage, ASGIApp, AWSMessage
 
 
 class ASGICycleState(enum.Enum):
@@ -18,13 +18,13 @@ class ASGICycle:
     scope: ASGIScope
     state: ASGICycleState = ASGICycleState.REQUEST
     binary: bool = False
-    response: dict = field(default_factory=dict)
+    response: AWSMessage = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
         self.app_queue = asyncio.Queue(loop=self.loop)
 
-    def __call__(self, app: ASGIApp) -> typing.Dict[str, typing.Any]:
+    def __call__(self, app: ASGIApp) -> AWSMessage:
         asgi_instance = app(self.scope, self.asgi_receive, self.asgi_send)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
