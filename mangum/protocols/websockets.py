@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from mangum.utils import make_response, get_server_and_client
 from mangum.connections import ConnectionTable
 from mangum.protocols.asgi import ASGICycle, ASGICycleState
-from mangum.types import ASGIMessage, ASGIApp
+from mangum.types import ASGIMessage, ASGIApp, AWSMessage
 from mangum.exceptions import ASGIWebSocketCycleException
 
 
@@ -60,11 +60,7 @@ class ASGIWebSocketCycle(ASGICycle):
         self.connection_table.send_data(items, data=data)
 
 
-def handle_ws(
-    app: ASGIApp,
-    event: typing.Dict[str, typing.Any],
-    context: typing.Dict[str, typing.Any],
-) -> typing.Dict[str, typing.Any]:
+def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessage:
     request_context = event["requestContext"]
     connection_id = request_context.get("connectionId")
     domain_name = request_context.get("domainName")

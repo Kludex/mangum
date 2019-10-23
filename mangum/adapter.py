@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
 from mangum.utils import get_logger, make_response, get_server_and_client
-from mangum.types import ASGIApp
+from mangum.types import ASGIApp, AWSMessage
 
 
 @dataclass
@@ -28,9 +28,7 @@ class Mangum:
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
 
-    def __call__(
-        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
+    def __call__(self, event: AWSMessage, context: AWSMessage) -> AWSMessage:
         try:
             response = self.handler(event, context)
         except Exception as exc:
@@ -41,9 +39,7 @@ class Mangum:
         else:
             return response
 
-    def handler(
-        self, event: typing.Dict[str, typing.Any], context: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
+    def handler(self, event: AWSMessage, context: AWSMessage) -> AWSMessage:
         if "httpMethod" in event:
             from mangum.protocols.http import handle_http
 
