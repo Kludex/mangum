@@ -8,6 +8,7 @@ quart
 boto3
 botocore
 moto
+mypy
 
 # Docs
 mkdocs

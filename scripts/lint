@@ -8,3 +8,4 @@ fi
 set -x
 
 ${PREFIX}black mangum tests --check
+${PREFIX}mypy mangum --disallow-untyped-defs --ignore-missing-imports

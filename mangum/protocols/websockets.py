@@ -57,7 +57,9 @@ class ASGIWebSocketCycle(ASGICycle):
             # Single send, add the current item to a list to be iterated by the
             # connection table.
             items = [item]
-        self.connection_table.send_data(items, data=data)
+        self.connection_table.send_data(
+            items, endpoint_url=self.endpoint_url, data=data
+        )
 
 
 def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessage:
@@ -144,3 +146,5 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
             # TODO: Improve error handling
             return make_response("WebSocket disconnect error.", status_code=500)
         return make_response("OK", status_code=200)
+
+    return make_response("Error", status_code=500)
