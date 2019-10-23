@@ -34,7 +34,7 @@ class ASGICycle:
         message = await self.app_queue.get()
         return message
 
-    async def asgi_send(self, message: ASGIMessage) -> None:
+    async def asgi_send(self, message: ASGIMessage) -> None:  # pragma: no cover
         raise NotImplementedError
 
     def put_message(self, message: ASGIMessage) -> None:

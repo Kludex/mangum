@@ -149,4 +149,4 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
             return make_response("WebSocket disconnect error.", status_code=500)
         return make_response("OK", status_code=200)
 
-    return make_response("Error", status_code=500)
+    return make_response("Error", status_code=500)  # pragma: no cover
