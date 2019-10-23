@@ -72,6 +72,6 @@ class ConnectionTable:
                 )
                 if status_code == 410:
                     # Delete stale connection
-                    self.delete_item(Key={"connectionId": item["connectionId"]})
+                    self.delete_item(item["connectionId"])
                 else:
                     raise ConnectionTableException("Connection does not exist")
