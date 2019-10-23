@@ -35,6 +35,9 @@ class ASGIWebSocketCycle(ASGICycle):
         Send a data message to a client or group of clients using the connection table.
         """
         item = self.connection_table.get_item(self.connection_id)
+        if not item:
+            raise ASGIWebSocketCycleException("Connection not found")
+
         if group:
             # Retrieve the existing groups for the current connection, or create a new
             # groups entry if one does not exist.
@@ -42,10 +45,9 @@ class ASGIWebSocketCycle(ASGICycle):
             if group not in groups:
                 # Ensure the group specified in the message is included.
                 groups.append(group)
-                result = self.connection_table.update_item(
+                status_code = self.connection_table.update_item(
                     self.connection_id, groups=groups
                 )
-                status_code = result.get("ResponseMetadata", {}).get("HTTPStatusCode")
                 if status_code != 200:
                     raise ASGIWebSocketCycleException("Error updating groups")
 

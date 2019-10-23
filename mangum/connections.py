@@ -26,7 +26,7 @@ class ConnectionTable:
         )
         return item
 
-    def update_item(self, connection_id: str, **kwargs) -> int:
+    def update_item(self, connection_id: str, **kwargs: typing.Any) -> int:
         """
         Update an item in the connection table by id.
         """
