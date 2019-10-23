@@ -20,11 +20,13 @@ def get_server_and_client(
     client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
     client = (client_addr, 0)
     server_addr = event["headers"].get("Host", None)
+
     if server_addr is not None:
         if ":" not in server_addr:
             server_port = 80
         else:
-            server_port = int(server_addr.split(":")[1])
+            server_addr, server_port = server_addr.split(":")
+            server_port = int(server_port)
 
         server = (server_addr, server_port)
     else:
