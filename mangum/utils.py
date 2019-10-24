@@ -1,10 +1,8 @@
 import logging
 import typing
 
-from mangum.types import AWSMessage
 
-
-def make_response(content: str, status_code: int = 500) -> AWSMessage:
+def make_response(content: str, status_code: int = 500) -> dict:
     return {
         "statusCode": status_code,
         "isBase64Encoded": False,
@@ -13,7 +11,7 @@ def make_response(content: str, status_code: int = 500) -> AWSMessage:
     }
 
 
-def get_server_and_client(event: AWSMessage) -> typing.Tuple:  # pragma: no cover
+def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
     """
     Parse the server and client for the scope definition, if possible.
     """

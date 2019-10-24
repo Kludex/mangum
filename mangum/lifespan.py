@@ -3,7 +3,7 @@ import logging
 import asyncio
 from dataclasses import dataclass
 
-from mangum.types import ASGIApp, ASGIMessage
+from mangum.types import ASGIApp, Message
 
 
 @dataclass
@@ -24,7 +24,7 @@ class Lifespan:
             self.startup_event.set()
             self.shutdown_event.set()
 
-    async def send(self, message: ASGIMessage) -> None:
+    async def send(self, message: Message) -> None:
         if message["type"] == "lifespan.startup.complete":
             self.startup_event.set()
         elif message["type"] == "lifespan.shutdown.complete":
@@ -34,7 +34,7 @@ class Lifespan:
                 f"Expected lifespan message type, received: {message['type']}"
             )
 
-    async def receive(self) -> ASGIMessage:
+    async def receive(self) -> Message:
         message = await self.app_queue.get()
         return message
 
