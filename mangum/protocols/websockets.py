@@ -1,25 +1,49 @@
 import typing
 import json
-from dataclasses import dataclass
+import enum
+import asyncio
+from dataclasses import dataclass, field
 
 from mangum.utils import make_response, get_server_and_client
 from mangum.connections import ConnectionTable
-from mangum.protocols.asgi import ASGICycle, ASGICycleState
-from mangum.types import ASGIMessage, ASGIApp, AWSMessage
+from mangum.types import ASGIApp, Message, Scope
 from mangum.exceptions import ASGIWebSocketCycleException
 
 
-@dataclass
-class ASGIWebSocketCycle(ASGICycle):
+class ASGIState(enum.Enum):
+    REQUEST = enum.auto()
+    RESPONSE = enum.auto()
 
+
+@dataclass
+class ASGIWebSocketCycle:
+
+    scope: Scope
+    state: ASGIState = ASGIState.REQUEST
+    binary: bool = False
+    response: dict = field(default_factory=dict)
     endpoint_url: str = None
     connection_id: str = None
     connection_table: ConnectionTable = None
 
-    async def asgi_send(self, message: ASGIMessage) -> None:
-        if self.state is ASGICycleState.REQUEST:
+    def __post_init__(self) -> None:
+        self.loop = asyncio.get_event_loop()
+        self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
+
+    def __call__(self, app: ASGIApp) -> dict:
+        asgi_instance = app(self.scope, self.asgi_receive, self.asgi_send)
+        asgi_task = self.loop.create_task(asgi_instance)
+        self.loop.run_until_complete(asgi_task)
+        return self.response
+
+    async def asgi_receive(self) -> Message:  # pragma: no cover
+        message = await self.app_queue.get()
+        return message
+
+    async def asgi_send(self, message: Message) -> None:
+        if self.state is ASGIState.REQUEST:
             if message["type"] in ("websocket.accept", "websocket.close"):
-                self.state = ASGICycleState.RESPONSE
+                self.state = ASGIState.RESPONSE
             else:
                 raise RuntimeError(
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
@@ -64,7 +88,7 @@ class ASGIWebSocketCycle(ASGICycle):
         )
 
 
-def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessage:
+def handle_ws(app: ASGIApp, event: dict, context: dict) -> dict:
     request_context = event["requestContext"]
     connection_id = request_context.get("connectionId")
     domain_name = request_context.get("domainName")
@@ -88,6 +112,7 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
             "query_string": "",
             "server": server,
             "client": client,
+            # "aws": {"event": event, "context": context},
         }
         connection_table = ConnectionTable()
         status_code = connection_table.update_item(
@@ -125,8 +150,8 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
             connection_id=connection_id,
             connection_table=connection_table,
         )
-        asgi_cycle.put_message({"type": "websocket.connect"})
-        asgi_cycle.put_message(
+        asgi_cycle.app_queue.put_nowait({"type": "websocket.connect"})
+        asgi_cycle.app_queue.put_nowait(
             {
                 "type": "websocket.receive",
                 "path": "/",
@@ -134,6 +159,7 @@ def handle_ws(app: ASGIApp, event: AWSMessage, context: AWSMessage) -> AWSMessag
                 "text": event_data,
             }
         )
+
         try:
             asgi_cycle(app)
         except ASGIWebSocketCycleException:  # pragma: no cover

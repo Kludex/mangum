@@ -1,8 +1,7 @@
 import typing
 
-ASGIScope = typing.Dict[str, typing.Any]
-ASGIMessage = typing.Dict[str, typing.Any]
-ASGIReceive = typing.Callable[[], typing.Awaitable[ASGIMessage]]
-ASGISend = typing.Callable[[ASGIMessage], typing.Awaitable[None]]
-ASGIApp = typing.Callable[[ASGIScope, ASGIReceive, ASGISend], typing.Awaitable[None]]
-AWSMessage = typing.Dict[str, typing.Any]
+Scope = typing.Dict[str, typing.Any]
+Message = typing.Dict[str, typing.Any]
+Receive = typing.Callable[[], typing.Awaitable[Message]]
+Send = typing.Callable[[Message], typing.Awaitable[None]]
+ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]

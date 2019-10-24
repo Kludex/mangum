@@ -64,10 +64,12 @@ def test_http_response_with_body(mock_http_event) -> None:
         assert scope["type"] == "http"
 
         body = [b"4", b"5", b"6"]
+
         while True:
             message = await receive()
             if "body" in message:
                 body.append(message["body"])
+
             if not message.get("more_body", False):
                 body = b"".join(body)
                 await send(
@@ -94,9 +96,10 @@ def test_http_response_with_body(mock_http_event) -> None:
 @pytest.mark.parametrize(
     "mock_http_event", [["GET", base64.b64encode(b"123")]], indirect=True
 )
-def test_http_binary_response__with_body(mock_http_event) -> None:
+def test_http_binary_response_with_body(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
+
         body = []
         message = await receive()
 
@@ -104,6 +107,7 @@ def test_http_binary_response__with_body(mock_http_event) -> None:
             body.append(message["body"])
 
         if not message.get("more_body", False):
+
             body = b"".join(body)
             await send(
                 {
@@ -117,6 +121,7 @@ def test_http_binary_response__with_body(mock_http_event) -> None:
     mock_http_event["isBase64Encoded"] = True
     handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_http_event, {})
+
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": True,
