@@ -2,6 +2,7 @@ import urllib.parse
 import base64
 import typing
 import enum
+import logging
 import asyncio
 from dataclasses import dataclass, field
 
@@ -12,12 +13,14 @@ from mangum.utils import get_server_and_client
 class ASGIState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
+    COMPLETE = enum.auto()
 
 
 @dataclass
 class ASGIHTTPCycle:
 
     scope: Scope
+    logger: logging.Logger
     state: ASGIState = ASGIState.REQUEST
     binary: bool = False
     body: bytes = b""
@@ -26,18 +29,43 @@ class ASGIHTTPCycle:
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
+        self.response["isBase64Encoded"] = self.binary
 
     def __call__(self, app: ASGIApp) -> dict:
-        asgi_instance = app(self.scope, self.asgi_receive, self.asgi_send)
+        asgi_instance = self.run(app)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
         return self.response
 
-    async def asgi_receive(self) -> Message:
+    async def run(self, app: ASGIApp) -> response:
+        try:
+            await app(self.scope, self.receive, self.send)
+        except BaseException as exc:
+            msg = "Exception in ASGI application\n"
+            self.logger.error(msg, exc_info=exc)
+            if self.state is ASGIState.REQUEST:
+                await self.send(
+                    {
+                        "type": "http.response.start",
+                        "status": 500,
+                        "headers": [(b"content-type", b"text/plain; charset=utf-8")],
+                    }
+                )
+                await self.send(
+                    {"type": "http.response.body", "body": b"Internal Server Error"}
+                )
+                self.state = ASGIState.COMPLETE
+
+            elif self.state is not ASGIState.COMPLETE:
+                self.response["statusCode"] = 500
+                self.response["body"] = "Internal Server Error"
+                self.response["headers"] = {"content-type": "text/plain; charset=utf-8"}
+
+    async def receive(self) -> Message:
         message = await self.app_queue.get()
         return message
 
-    async def asgi_send(self, message: Message) -> None:
+    async def send(self, message: Message) -> None:
         if self.state is ASGIState.REQUEST:
             if message["type"] != "http.response.start":
                 raise RuntimeError(
@@ -47,7 +75,7 @@ class ASGIHTTPCycle:
             status_code = message["status"]
             headers = {k: v for k, v in message.get("headers", [])}
             self.response["statusCode"] = status_code
-            self.response["isBase64Encoded"] = self.binary
+
             self.response["headers"] = {
                 k.decode(): v.decode() for k, v in headers.items()
             }
@@ -71,12 +99,15 @@ class ASGIHTTPCycle:
                     body = base64.b64encode(body)
                 self.response["body"] = body.decode()
                 self.put_message({"type": "http.disconnect"})
+                self.state = ASGIState.COMPLETE
 
     def put_message(self, message: Message) -> None:
         self.app_queue.put_nowait(message)
 
 
-def handle_http(app: ASGIApp, event: dict, context: dict) -> dict:
+def handle_http(
+    app: ASGIApp, logger: logging.Logger, event: dict, context: dict
+) -> dict:
     server, client = get_server_and_client(event)
     headers = [[k.lower().encode(), v.encode()] for k, v in event["headers"].items()]
     query_string_params = event["queryStringParameters"]
@@ -106,7 +137,7 @@ def handle_http(app: ASGIApp, event: dict, context: dict) -> dict:
     elif not isinstance(body, bytes):
         body = body.encode()
 
-    asgi_cycle = ASGIHTTPCycle(scope, binary=binary)
+    asgi_cycle = ASGIHTTPCycle(scope, logger, binary=binary)
     asgi_cycle.put_message({"type": "http.request", "body": body, "more_body": False})
     response = asgi_cycle(app)
 

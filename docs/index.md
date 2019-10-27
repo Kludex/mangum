@@ -25,10 +25,6 @@ pip3 install mangum
 
 The adapter class `Mangum` accepts the following optional arguments:
 
-- `debug` : bool (default=False)
-    
-    Enable a simple error response if an unhandled exception is raised in the adapter.
-
 - `enable_lifespan` : bool (default=True)
     
     Specify whether or not to enable lifespan support.

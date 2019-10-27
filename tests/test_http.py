@@ -1,5 +1,7 @@
 import base64
 import pytest
+from starlette.applications import Starlette
+from starlette.responses import PlainTextResponse
 from mangum import Mangum
 
 
@@ -131,26 +133,46 @@ def test_http_binary_response_with_body(mock_http_event) -> None:
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
-def test_http_event_debug(mock_http_event) -> None:
+def test_http_exception(mock_http_event) -> None:
     async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        raise Exception("Error!")
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
+        await send({"type": "http.response.start", "status": 200})
+        raise Exception()
+        await send({"type": "http.response.body", "body": b"1", "more_body": True})
 
-    handler = Mangum(app, enable_lifespan=False, debug=True)
+    handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_http_event, {})
 
-    assert response["statusCode"] == 500
-    assert not response["isBase64Encoded"]
-    assert response["headers"] == {"content-type": "text/plain; charset=utf-8"}
-    assert response["body"].split()[0] == "Traceback"
+    assert response == {
+        "body": "Internal Server Error",
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 500,
+    }
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
+def test_http_exception_handler(mock_http_event) -> None:
+    path = mock_http_event["path"]
+    app = Starlette()
+
+    @app.exception_handler(Exception)
+    async def all_exceptions(request, exc):
+        return PlainTextResponse(content="Error!", status_code=500)
+
+    @app.route(path)
+    def homepage(request):
+        raise Exception()
+        return PlainTextResponse("Hello, world!")
+
+    handler = Mangum(app)
+    response = handler(mock_http_event, {})
+
+    assert response == {
+        "body": "Error!",
+        "headers": {"content-length": "6", "content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 500,
+    }
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", ""]], indirect=True)
@@ -161,14 +183,10 @@ def test_http_cycle_state(mock_http_event) -> None:
 
     handler = Mangum(app, enable_lifespan=False)
 
-    with pytest.raises(RuntimeError):
-        handler(mock_http_event, {})
-
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send({"type": "http.response.start", "status": 200, "headers": []})
-        await send({"type": "http.response.start", "status": 200, "headers": []})
-
-    handler = Mangum(app, enable_lifespan=False)
-    with pytest.raises(RuntimeError):
-        handler(mock_http_event, {})
+    response = handler(mock_http_event, {})
+    assert response == {
+        "body": "Internal Server Error",
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 500,
+    }
