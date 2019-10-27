@@ -8,7 +8,8 @@ import logging
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
-from mangum.utils import get_logger, make_response, get_server_and_client
+
+from mangum.utils import get_logger, get_server_and_client
 from mangum.types import ASGIApp
 
 
@@ -16,7 +17,6 @@ from mangum.types import ASGIApp
 class Mangum:
 
     app: ASGIApp
-    debug: bool = False
     enable_lifespan: bool = True
     log_level: str = "info"
 
@@ -31,19 +31,15 @@ class Mangum:
     def __call__(self, event: dict, context: dict) -> dict:
         try:
             response = self.handler(event, context)
-        except Exception as exc:
-            if self.debug:
-                content = traceback.format_exc()
-                return make_response(content, status_code=500)
+        except BaseException as exc:
             raise exc
-        else:
-            return response
+        return response
 
     def handler(self, event: dict, context: dict) -> dict:
         if "httpMethod" in event:
             from mangum.protocols.http import handle_http
 
-            response = handle_http(self.app, event, context)
+            response = handle_http(self.app, self.logger, event, context)
         else:
             try:
                 from mangum.protocols.websockets import handle_ws
