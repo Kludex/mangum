@@ -22,14 +22,14 @@ class ASGIHTTPCycle:
     scope: Scope
     logger: logging.Logger
     state: ASGIState = ASGIState.REQUEST
-    binary: bool = False
+    is_binary: bool = False
     body: bytes = b""
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
-        self.response["isBase64Encoded"] = self.binary
+        self.response["isBase64Encoded"] = self.is_binary
 
     def __call__(self, app: ASGIApp) -> dict:
         asgi_instance = self.run(app)
@@ -95,7 +95,7 @@ class ASGIHTTPCycle:
 
             if not more_body:
                 body = self.body
-                if self.binary:
+                if self.is_binary:
                     body = base64.b64encode(body)
                 self.response["body"] = body.decode()
                 self.put_message({"type": "http.disconnect"})
@@ -103,42 +103,3 @@ class ASGIHTTPCycle:
 
     def put_message(self, message: Message) -> None:
         self.app_queue.put_nowait(message)
-
-
-def handle_http(
-    app: ASGIApp, logger: logging.Logger, event: dict, context: dict
-) -> dict:
-    server, client = get_server_and_client(event)
-    headers = [[k.lower().encode(), v.encode()] for k, v in event["headers"].items()]
-    query_string_params = event["queryStringParameters"]
-    query_string = (
-        urllib.parse.urlencode(query_string_params).encode()
-        if query_string_params
-        else b""
-    )
-    scope = {
-        "type": "http",
-        "http_version": "1.1",
-        "method": event["httpMethod"],
-        "headers": headers,
-        "path": urllib.parse.unquote(event["path"]),
-        "raw_path": None,
-        "root_path": "",
-        "scheme": event["headers"].get("X-Forwarded-Proto", "https"),
-        "query_string": query_string,
-        "server": server,
-        "client": client,
-        # "aws": {"event": event, "context": context},
-    }
-    binary = event.get("isBase64Encoded", False)
-    body = event["body"] or b""
-    if binary:
-        body = base64.b64decode(body)
-    elif not isinstance(body, bytes):
-        body = body.encode()
-
-    asgi_cycle = ASGIHTTPCycle(scope, logger, binary=binary)
-    asgi_cycle.put_message({"type": "http.request", "body": body, "more_body": False})
-    response = asgi_cycle(app)
-
-    return response
