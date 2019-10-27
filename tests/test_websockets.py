@@ -20,6 +20,98 @@ def test_websocket_events(
 
     async def app(scope, receive, send):
         assert scope == {
+            "aws": {
+                "context": {},
+                "event": {
+                    "headers": {
+                        "Accept-Encoding": "gzip, deflate, br",
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Cache-Control": "no-cache",
+                        "Host": "test.execute-api.ap-southeast-1.amazonaws.com",
+                        "Origin": "https://test.execute-api.ap-southeast-1.amazonaws.com",
+                        "Pragma": "no-cache",
+                        "Sec-WebSocket-Extensions": "permessage-deflate; "
+                        "client_max_window_bits",
+                        "Sec-WebSocket-Key": "bnfeqmh9SSPr5Sg9DvFIBw==",
+                        "Sec-WebSocket-Version": "13",
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel "
+                        "Mac OS X 10_14_5) "
+                        "AppleWebKit/537.36 (KHTML, like "
+                        "Gecko) Chrome/75.0.3770.100 "
+                        "Safari/537.36",
+                        "X-Amzn-Trace-Id": "Root=1-5d465cb6-78ddcac1e21f89203d004a89",
+                        "X-Forwarded-For": "192.168.100.1",
+                        "X-Forwarded-Port": "443",
+                        "X-Forwarded-Proto": "https",
+                    },
+                    "isBase64Encoded": False,
+                    "multiValueHeaders": {
+                        "Accept-Encoding": ["gzip, deflate, " "br"],
+                        "Accept-Language": ["en-US,en;q=0.9"],
+                        "Cache-Control": ["no-cache"],
+                        "Host": ["test.execute-api.ap-southeast-1.amazonaws.com"],
+                        "Origin": [
+                            "https://test.execute-api.ap-southeast-1.amazonaws.com"
+                        ],
+                        "Pragma": ["no-cache"],
+                        "Sec-WebSocket-Extensions": [
+                            "permessage-deflate; " "client_max_window_bits"
+                        ],
+                        "Sec-WebSocket-Key": ["bnfeqmh9SSPr5Sg9DvFIBw=="],
+                        "Sec-WebSocket-Version": ["13"],
+                        "User-Agent": [
+                            "Mozilla/5.0 "
+                            "(Macintosh; Intel Mac "
+                            "OS X 10_14_5) "
+                            "AppleWebKit/537.36 "
+                            "(KHTML, like Gecko) "
+                            "Chrome/75.0.3770.100 "
+                            "Safari/537.36"
+                        ],
+                        "X-Amzn-Trace-Id": ["Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
+                        "X-Forwarded-For": ["192.168.100.1"],
+                        "X-Forwarded-Port": ["443"],
+                        "X-Forwarded-Proto": ["https"],
+                    },
+                    "requestContext": {
+                        "apiId": "test",
+                        "connectedAt": 1564892342293,
+                        "connectionId": "d4NsecoByQ0CH-Q=",
+                        "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
+                        "eventType": "CONNECT",
+                        "extendedRequestId": "d4NseGc4yQ0FsSA=",
+                        "identity": {
+                            "accessKey": None,
+                            "accountId": None,
+                            "caller": None,
+                            "cognitoAuthenticationProvider": None,
+                            "cognitoAuthenticationType": None,
+                            "cognitoIdentityId": None,
+                            "cognitoIdentityPoolId": None,
+                            "principalOrgId": None,
+                            "sourceIp": "192.168.100.1",
+                            "user": None,
+                            "userAgent": "Mozilla/5.0 "
+                            "(Macintosh; "
+                            "Intel Mac OS "
+                            "X 10_14_5) "
+                            "AppleWebKit/537.36 "
+                            "(KHTML, like "
+                            "Gecko) "
+                            "Chrome/75.0.3770.100 "
+                            "Safari/537.36",
+                            "userArn": None,
+                        },
+                        "messageDirection": "IN",
+                        "messageId": None,
+                        "requestId": "d4NseGc4yQ0FsSA=",
+                        "requestTime": "04/Aug/2019:04:19:02 " "+0000",
+                        "requestTimeEpoch": 1564892342293,
+                        "routeKey": "$connect",
+                        "stage": "Prod",
+                    },
+                },
+            },
             "client": ["192.168.100.1", 0],
             "headers": [
                 [b"Accept-Encoding", b"gzip, deflate, br"],
@@ -52,7 +144,6 @@ def test_websocket_events(
             "server": ["test.execute-api.ap-southeast-1.amazonaws.com", 80],
             "type": "websocket",
         }
-
         await send({"type": "websocket.accept", "subprotocol": None})
         await send({"type": "websocket.send", "text": "Hello world!"})
         await send({"type": "websocket.send", "bytes": b"Hello world!"})
@@ -136,7 +227,100 @@ def test_websocket_group_events(
     )
 
     async def app(scope, receive, send):
+
         assert scope == {
+            "aws": {
+                "context": {},
+                "event": {
+                    "headers": {
+                        "Accept-Encoding": "gzip, deflate, br",
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Cache-Control": "no-cache",
+                        "Host": "test.execute-api.ap-southeast-1.amazonaws.com",
+                        "Origin": "https://test.execute-api.ap-southeast-1.amazonaws.com",
+                        "Pragma": "no-cache",
+                        "Sec-WebSocket-Extensions": "permessage-deflate; "
+                        "client_max_window_bits",
+                        "Sec-WebSocket-Key": "bnfeqmh9SSPr5Sg9DvFIBw==",
+                        "Sec-WebSocket-Version": "13",
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel "
+                        "Mac OS X 10_14_5) "
+                        "AppleWebKit/537.36 (KHTML, like "
+                        "Gecko) Chrome/75.0.3770.100 "
+                        "Safari/537.36",
+                        "X-Amzn-Trace-Id": "Root=1-5d465cb6-78ddcac1e21f89203d004a89",
+                        "X-Forwarded-For": "192.168.100.1",
+                        "X-Forwarded-Port": "443",
+                        "X-Forwarded-Proto": "https",
+                    },
+                    "isBase64Encoded": False,
+                    "multiValueHeaders": {
+                        "Accept-Encoding": ["gzip, deflate, " "br"],
+                        "Accept-Language": ["en-US,en;q=0.9"],
+                        "Cache-Control": ["no-cache"],
+                        "Host": ["test.execute-api.ap-southeast-1.amazonaws.com"],
+                        "Origin": [
+                            "https://test.execute-api.ap-southeast-1.amazonaws.com"
+                        ],
+                        "Pragma": ["no-cache"],
+                        "Sec-WebSocket-Extensions": [
+                            "permessage-deflate; " "client_max_window_bits"
+                        ],
+                        "Sec-WebSocket-Key": ["bnfeqmh9SSPr5Sg9DvFIBw=="],
+                        "Sec-WebSocket-Version": ["13"],
+                        "User-Agent": [
+                            "Mozilla/5.0 "
+                            "(Macintosh; Intel Mac "
+                            "OS X 10_14_5) "
+                            "AppleWebKit/537.36 "
+                            "(KHTML, like Gecko) "
+                            "Chrome/75.0.3770.100 "
+                            "Safari/537.36"
+                        ],
+                        "X-Amzn-Trace-Id": ["Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
+                        "X-Forwarded-For": ["192.168.100.1"],
+                        "X-Forwarded-Port": ["443"],
+                        "X-Forwarded-Proto": ["https"],
+                    },
+                    "requestContext": {
+                        "apiId": "test",
+                        "connectedAt": 1564892342293,
+                        "connectionId": "d4NsecoByQ0CH-Q=",
+                        "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
+                        "eventType": "CONNECT",
+                        "extendedRequestId": "d4NseGc4yQ0FsSA=",
+                        "identity": {
+                            "accessKey": None,
+                            "accountId": None,
+                            "caller": None,
+                            "cognitoAuthenticationProvider": None,
+                            "cognitoAuthenticationType": None,
+                            "cognitoIdentityId": None,
+                            "cognitoIdentityPoolId": None,
+                            "principalOrgId": None,
+                            "sourceIp": "192.168.100.1",
+                            "user": None,
+                            "userAgent": "Mozilla/5.0 "
+                            "(Macintosh; "
+                            "Intel Mac OS "
+                            "X 10_14_5) "
+                            "AppleWebKit/537.36 "
+                            "(KHTML, like "
+                            "Gecko) "
+                            "Chrome/75.0.3770.100 "
+                            "Safari/537.36",
+                            "userArn": None,
+                        },
+                        "messageDirection": "IN",
+                        "messageId": None,
+                        "requestId": "d4NseGc4yQ0FsSA=",
+                        "requestTime": "04/Aug/2019:04:19:02 " "+0000",
+                        "requestTimeEpoch": 1564892342293,
+                        "routeKey": "$connect",
+                        "stage": "Prod",
+                    },
+                },
+            },
             "client": ["192.168.100.1", 0],
             "headers": [
                 [b"Accept-Encoding", b"gzip, deflate, br"],
