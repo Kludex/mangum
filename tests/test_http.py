@@ -190,3 +190,18 @@ def test_http_cycle_state(mock_http_event) -> None:
         "isBase64Encoded": False,
         "statusCode": 500,
     }
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send({"type": "http.response.start", "status": 200})
+        await send({"type": "http.response.start", "status": 200})
+
+    handler = Mangum(app, enable_lifespan=False)
+
+    response = handler(mock_http_event, {})
+    assert response == {
+        "body": "Internal Server Error",
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "isBase64Encoded": False,
+        "statusCode": 500,
+    }
