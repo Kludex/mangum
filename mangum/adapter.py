@@ -106,7 +106,7 @@ class Mangum:
         domain_name = request_context.get("domainName")
         stage = request_context.get("stage")
         event_type = request_context["eventType"]
-        endpoint_url = f"https://{domain_name}/{stage}"
+        endpoint_url = f"https://{domain_name}"
 
         if event_type == "CONNECT":
             # The initial connect event. Parse and store the scope for the connection
@@ -124,20 +124,19 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": context},
+                "aws": {"event": event, "context": {}},  # , "context": context},
             }
             connection_table = ConnectionTable()
             status_code = connection_table.update_item(
                 connection_id, scope=json.dumps(scope)
             )
+
             if status_code != 200:  # pragma: no cover
                 # TODO: Improve error handling
                 return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
-            event_body = json.loads(event["body"])
-            event_data = event_body["data"] or ""
 
             connection_table = ConnectionTable()
             item = connection_table.get_item(connection_id)
@@ -168,7 +167,7 @@ class Mangum:
                     "type": "websocket.receive",
                     "path": "/",
                     "bytes": None,
-                    "text": event_data,
+                    "text": event["body"],
                 }
             )
 

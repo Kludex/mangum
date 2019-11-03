@@ -58,13 +58,16 @@ class ConnectionTable:
         """
         Send data to one or more items in the connection table.
         """
+
         apigw_management = boto3.client(
             "apigatewaymanagementapi", endpoint_url=endpoint_url
         )
         for item in items:
+
+            connection_id = item["connectionId"]
             try:
                 apigw_management.post_to_connection(
-                    ConnectionId=item["connectionId"], Data=data
+                    ConnectionId=connection_id, Data=data
                 )
             except botocore.exceptions.ClientError as exc:
                 status_code = exc.response.get("ResponseMetadata", {}).get(
@@ -72,6 +75,6 @@ class ConnectionTable:
                 )
                 if status_code == 410:
                     # Delete stale connection
-                    self.delete_item(item["connectionId"])
+                    self.delete_item(connection_id)
                 else:
                     raise ConnectionTableException("Connection does not exist")
