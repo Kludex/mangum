@@ -106,7 +106,7 @@ class Mangum:
         domain_name = request_context.get("domainName")
         stage = request_context.get("stage")
         event_type = request_context["eventType"]
-        endpoint_url = f"https://{domain_name}"
+        endpoint_url = f"https://{domain_name}/{stage}"
 
         if event_type == "CONNECT":
             # The initial connect event. Parse and store the scope for the connection
