@@ -77,4 +77,6 @@ class ConnectionTable:
                     # Delete stale connection
                     self.delete_item(connection_id)
                 else:
-                    raise ConnectionTableException("Connection does not exist")
+                    raise exc
+                # else:
+                #     raise ConnectionTableException("Connection does not exist")
