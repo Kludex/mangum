@@ -9,7 +9,6 @@ try:
     __ERR__ = ""
 except ImportError:
     __ERR__ = "boto3 must be installed for WebSocket support."
-    pass
 
 from mangum.exceptions import ConnectionTableException
 

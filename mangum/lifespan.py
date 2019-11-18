@@ -24,7 +24,7 @@ class Lifespan:
     async def run(self) -> None:
         receive, send = (self.receiver(), self.sender())
         try:
-            await self.app({"type": "lifespan"}, receive, send)  #!
+            await self.app({"type": "lifespan"}, receive, send)
         except BaseException as exc:  # pragma: no cover
             self.logger.error(f"Exception in 'lifespan' protocol: {exc}")
         finally:

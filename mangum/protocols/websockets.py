@@ -49,7 +49,7 @@ class ASGIWebSocketCycle:
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
-            data = message.get("text", "")  # !
+            data = message.get("text", "")
             if message["type"] == "websocket.send":
                 group = message.get("group", None)
                 self.send_data(data=data, group=group)

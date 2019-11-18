@@ -25,18 +25,12 @@ class Mangum:
     def __init__(
         self, app: ASGIApp, enable_lifespan: bool = True, log_level: str = "info"
     ) -> None:
-        # Incompatible types in assignment (expression has type
-        #                   "Callable[[Dict[str, Any], Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
-        # variable has type "Callable[[Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]")
         self.app = app
         self.enable_lifespan = enable_lifespan
         self.log_level = log_level
         self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            # Argument 1 to "Lifespan" has incompatible type
-            #          "Callable[[                Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
-            # expected "Callable[[Dict[str, Any], Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
             self.lifespan = Lifespan(self.app, self.logger)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
@@ -99,9 +93,6 @@ class Mangum:
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
         )
-        # Argument 1 to "__call__" of "ASGIHTTPCycle" has incompatible type
-        #          "Callable[[                Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
-        # expected "Callable[[Dict[str, Any], Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]
         response = asgi_cycle(self.app)
         return response
 
@@ -181,9 +172,6 @@ class Mangum:
             )
 
             try:
-                # Argument 1 to "__call__" of "ASGIWebSocketCycle" has incompatible type
-                #          "Callable[[                Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
-                # expected "Callable[[Dict[str, Any], Callable[[], Awaitable[Dict[str, Any]]], Callable[[Dict[str, Any]], Awaitable[None]]], Awaitable[None]]"
                 asgi_cycle(self.app)
             except ASGIWebSocketCycleException:  # pragma: no cover
                 # TODO: Improve error handling
