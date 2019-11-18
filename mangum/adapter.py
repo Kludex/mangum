@@ -187,4 +187,3 @@ class Mangum:
             return make_response("OK", status_code=200)
 
         return make_response("Error", status_code=500)  # pragma: no cover
-

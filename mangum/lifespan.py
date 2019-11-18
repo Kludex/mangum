@@ -63,4 +63,3 @@ class Lifespan:
         self.logger.info("Waiting for application shutdown.")
         await self.app_queue.put({"type": "lifespan.shutdown"})
         await self.shutdown_event.wait()
-
