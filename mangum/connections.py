@@ -7,7 +7,7 @@ try:
     from boto3.dynamodb.conditions import Attr
 
     __ERR__ = ""
-except ImportError:
+except ImportError:  # pragma: no cover
     __ERR__ = "boto3 must be installed for WebSocket support."
 
 from mangum.exceptions import ConnectionTableException

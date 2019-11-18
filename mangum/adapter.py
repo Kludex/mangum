@@ -97,7 +97,7 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        if __ERR__:
+        if __ERR__:  # pragma: no cover
             raise ImportError(__ERR__)
 
         request_context = event["requestContext"]
