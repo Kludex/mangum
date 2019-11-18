@@ -65,7 +65,7 @@ class Mangum:
         server, client = get_server_and_client(event)
         headers = event.get("headers", dict())
         headers_key_value_pairs = [
-            (k.lower().encode(), v.encode()) for k, v in headers.items()
+            [k.lower().encode(), v.encode()] for k, v in headers.items()
         ]
         query_string_params = event["queryStringParameters"]
         query_string = (
