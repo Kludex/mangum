@@ -3,8 +3,10 @@
 export PREFIX=""
 if [ -d 'venv' ] ; then
     export PREFIX="venv/bin/"
+    export PATH="venv/bin:$PATH"
 fi
 
-set -x
-
-PYTHONPATH=. ${PREFIX}pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=100 --cov-report=term-missing ${@}
+set -x # print executed commands to the terminal
+mypy ./mangum
+PYTHONPATH=. ${PREFIX}pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=100 --cov-report=term-missing "${@}"
+black --check ./
