@@ -63,8 +63,9 @@ class Mangum:
 
     def handle_http(self, event: dict, context: dict) -> dict:
         server, client = get_server_and_client(event)
-        headers = [
-            [k.lower().encode(), v.encode()] for k, v in event["headers"].items()
+        headers = event.get("headers", dict())
+        headers_key_value_pairs = [
+            (k.lower().encode(), v.encode()) for k, v in headers.items()
         ]
         query_string_params = event["queryStringParameters"]
         query_string = (
@@ -76,11 +77,11 @@ class Mangum:
             "type": "http",
             "http_version": "1.1",
             "method": event["httpMethod"],
-            "headers": headers,
+            "headers": headers_key_value_pairs,
             "path": urllib.parse.unquote(event["path"]),
             "raw_path": None,
             "root_path": "",
-            "scheme": event["headers"].get("X-Forwarded-Proto", "https"),
+            "scheme": headers.get("X-Forwarded-Proto", "https"),
             "query_string": query_string,
             "server": server,
             "client": client,
@@ -120,7 +121,7 @@ class Mangum:
             # The initial connect event. Parse and store the scope for the connection
             # in DynamoDB to be retrieved in subsequent message events for this request.
             server, client = get_server_and_client(event)
-            headers = event["headers"]
+            headers = event.get("headers", dict())
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
@@ -128,7 +129,7 @@ class Mangum:
                 "headers": headers,
                 "raw_path": None,
                 "root_path": root_path,
-                "scheme": event["headers"].get("X-Forwarded-Proto", "wss"),
+                "scheme": headers.get("X-Forwarded-Proto", "wss"),
                 "query_string": "",
                 "server": server,
                 "client": client,
