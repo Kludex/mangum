@@ -17,21 +17,18 @@ from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.connections import ConnectionTable, __ERR__
 
 
+@dataclass
 class Mangum:
 
+    app: ASGIApp
     enable_lifespan: bool = True
     log_level: str = "info"
 
-    def __init__(
-        self, app: ASGIApp, enable_lifespan: bool = True, log_level: str = "info"
-    ) -> None:
-        self.app = app
-        self.enable_lifespan = enable_lifespan
-        self.log_level = log_level
+    def __post_init__(self,) -> None:
         self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app, self.logger)
+            self.lifespan = Lifespan(self.app, logger=self.logger)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.wait_startup())
 

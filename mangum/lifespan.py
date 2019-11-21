@@ -6,20 +6,13 @@ from dataclasses import dataclass
 from mangum.types import ASGIApp, Message, Send, Receive
 
 
+@dataclass
 class Lifespan:
-    def __init__(
-        self,
-        app: ASGIApp,
-        logger: logging.Logger,
-        startup_event: asyncio.Event = asyncio.Event(),
-        shutdown_event: asyncio.Event = asyncio.Event(),
-        app_queue: asyncio.Queue = asyncio.Queue(),
-    ):
-        self.app = app
-        self.logger = logger
-        self.startup_event = startup_event
-        self.shutdown_event = shutdown_event
-        self.app_queue = app_queue
+    app: ASGIApp
+    logger: logging.Logger
+    startup_event: asyncio.Event = asyncio.Event()
+    shutdown_event: asyncio.Event = asyncio.Event()
+    app_queue: asyncio.Queue = asyncio.Queue()
 
     async def run(self) -> None:
         receive, send = (self.receiver(), self.sender())
