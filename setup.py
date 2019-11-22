@@ -7,7 +7,7 @@ def get_long_description():
 
 setup(
     name="mangum",
-    version="0.6.17",
+    version="0.6.18",
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
