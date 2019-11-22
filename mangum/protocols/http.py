@@ -1,13 +1,10 @@
-import urllib.parse
 import base64
-import typing
 import enum
 import logging
 import asyncio
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
-from mangum.utils import get_server_and_client
 
 
 class ASGIState(enum.Enum):

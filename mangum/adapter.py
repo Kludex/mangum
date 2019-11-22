@@ -2,15 +2,39 @@ import base64
 import asyncio
 import urllib.parse
 import json
+import typing
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
-from mangum.utils import get_logger, get_server_and_client, make_response
+from mangum.utils import get_logger, make_response
 from mangum.types import ASGIApp
 from mangum.protocols.http import ASGIHTTPCycle
 from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.connections import ConnectionTable, __ERR__
+
+
+def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
+    """
+    Parse the server and client for the scope definition, if possible.
+    """
+    client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
+    client = (client_addr, 0)
+
+    server_addr = event["headers"].get("Host", None)
+
+    if server_addr is not None:
+        if ":" not in server_addr:
+            server_port = 80
+        else:
+            server_addr, server_port = server_addr.split(":")
+            server_port = int(server_port)
+
+        server = (server_addr, server_port)  # type: typing.Any
+    else:
+        server = None
+
+    return server, client
 
 
 @dataclass
@@ -105,7 +129,11 @@ class Mangum:
             # The initial connect event. Parse and store the scope for the connection
             # in DynamoDB to be retrieved in subsequent message events for this request.
             server, client = get_server_and_client(event)
+
+            # The scope headers must be JSON serializable to store in DynamoDB, but
+            # they will be parsed on the MESSAGE event.
             headers = event.get("headers", {})
+
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
@@ -117,7 +145,7 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": {}},  # , "context": context},
+                "aws": {"event": event, "context": context},
             }
             connection_table = ConnectionTable()
             status_code = connection_table.update_item(
@@ -125,7 +153,6 @@ class Mangum:
             )
 
             if status_code != 200:  # pragma: no cover
-                # TODO: Improve error handling
                 return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
@@ -134,14 +161,13 @@ class Mangum:
             connection_table = ConnectionTable()
             item = connection_table.get_item(connection_id)
             if not item:  # pragma: no cover
-                # TODO: Improve error handling
                 return make_response("Error", status_code=500)
 
             # Retrieve and deserialize the scope entry created in the connect event for
             # the current connection.
             scope = json.loads(item["scope"])
 
-            # Ensure the scope definitions comply with the ASGI spec.
+            # Ensure the scope definition complies with the ASGI spec.
             query_string = scope["query_string"]
             headers = scope["headers"]
             headers = [[k.encode(), v.encode()] for k, v in headers.items()]
@@ -167,7 +193,6 @@ class Mangum:
             try:
                 asgi_cycle(self.app)
             except ASGIWebSocketCycleException:  # pragma: no cover
-                # TODO: Improve error handling
                 return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
@@ -175,8 +200,6 @@ class Mangum:
             connection_table = ConnectionTable()
             status_code = connection_table.delete_item(connection_id)
             if status_code != 200:  # pragma: no cover
-                # TODO: Improve error handling
                 return make_response("WebSocket disconnect error.", status_code=500)
             return make_response("OK", status_code=200)
-
         return make_response("Error", status_code=500)  # pragma: no cover
