@@ -10,8 +10,6 @@ try:
 except ImportError:  # pragma: no cover
     __ERR__ = "boto3 must be installed for WebSocket support."
 
-from mangum.exceptions import ConnectionTableException
-
 
 class ConnectionTable:
     """
@@ -83,5 +81,3 @@ class ConnectionTable:
                     self.delete_item(connection_id)
                 else:
                     raise exc
-                # else:
-                #     raise ConnectionTableException("Connection does not exist")
