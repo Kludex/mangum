@@ -37,7 +37,7 @@ class ASGIHTTPCycle:
         self.loop.run_until_complete(asgi_task)
         return self.response
 
-    async def run(self, app: ASGIApp) -> response:
+    async def run(self, app: ASGIApp) -> None:
         try:
             await app(self.scope, self.receive, self.send)
         except BaseException as exc:
