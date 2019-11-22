@@ -1,10 +1,7 @@
 import base64
 import asyncio
-import traceback
 import urllib.parse
-import typing
 import json
-import logging
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
@@ -13,7 +10,6 @@ from mangum.types import ASGIApp
 from mangum.protocols.http import ASGIHTTPCycle
 from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
-
 from mangum.connections import ConnectionTable, __ERR__
 
 
@@ -24,7 +20,7 @@ class Mangum:
     enable_lifespan: bool = True
     log_level: str = "info"
 
-    def __post_init__(self,) -> None:
+    def __post_init__(self) -> None:
         self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
@@ -120,20 +116,19 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": context},
+                "aws": {"event": event, "context": {}},  # , "context": context},
             }
             connection_table = ConnectionTable()
             status_code = connection_table.update_item(
                 connection_id, scope=json.dumps(scope)
             )
+
             if status_code != 200:  # pragma: no cover
                 # TODO: Improve error handling
                 return make_response("Error", status_code=500)
             return make_response("OK", status_code=200)
 
         elif event_type == "MESSAGE":
-            event_body = json.loads(event["body"])
-            event_data = event_body["data"] or ""
 
             connection_table = ConnectionTable()
             item = connection_table.get_item(connection_id)
@@ -164,7 +159,7 @@ class Mangum:
                     "type": "websocket.receive",
                     "path": "/",
                     "bytes": None,
-                    "text": event_data,
+                    "text": event["body"],
                 }
             )
 

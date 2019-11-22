@@ -3,7 +3,7 @@ import typing
 try:
     from typing import Protocol  # python 3.8+
 except ImportError:
-    from typing_extensions import Protocol as _Protocol  # python 2.7, 3.4-3.7
+    from typing_extensions import Protocol as _Protocol  # python 3.7
 
     Protocol = typing.cast(typing._SpecialForm, _Protocol)
     # Otherwise, Protocol has incompatible type "typing_extensions._SpecialForm"

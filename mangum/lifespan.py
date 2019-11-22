@@ -1,4 +1,3 @@
-import typing
 import logging
 import asyncio
 from dataclasses import dataclass
