@@ -63,7 +63,7 @@ class Mangum:
 
     def handle_http(self, event: dict, context: dict) -> dict:
         server, client = get_server_and_client(event)
-        headers = event.get("headers", dict())
+        headers = event.get("headers", {})
         headers_key_value_pairs = [
             [k.lower().encode(), v.encode()] for k, v in headers.items()
         ]
@@ -121,7 +121,7 @@ class Mangum:
             # The initial connect event. Parse and store the scope for the connection
             # in DynamoDB to be retrieved in subsequent message events for this request.
             server, client = get_server_and_client(event)
-            headers = event.get("headers", dict())
+            headers = event.get("headers", {})
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
