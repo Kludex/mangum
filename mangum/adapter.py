@@ -14,10 +14,7 @@ from mangum.protocols.http import ASGIHTTPCycle
 from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
 
-try:
-    from mangum.connections import ConnectionTable
-except ImportError:  # pragma: no cover
-    ConnectionTable = None
+from mangum.connections import ConnectionTable, __ERR__
 
 
 @dataclass
@@ -27,7 +24,7 @@ class Mangum:
     enable_lifespan: bool = True
     log_level: str = "info"
 
-    def __post_init__(self) -> None:
+    def __post_init__(self,) -> None:
         self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
@@ -97,9 +94,8 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        assert (
-            ConnectionTable is not None
-        ), "boto3 must be installed for WebSocket support."
+        if __ERR__:  # pragma: no cover
+            raise ImportError(__ERR__)
 
         request_context = event["requestContext"]
         connection_id = request_context.get("connectionId")

@@ -1,4 +1,5 @@
 import typing
+from typing import Optional
 import json
 import enum
 import asyncio
@@ -19,11 +20,11 @@ class ASGIState(enum.Enum):
 class ASGIWebSocketCycle:
 
     scope: Scope
+    endpoint_url: str
+    connection_id: str
+    connection_table: ConnectionTable
     state: ASGIState = ASGIState.REQUEST
     response: dict = field(default_factory=dict)
-    endpoint_url: str = None
-    connection_id: str = None
-    connection_table: ConnectionTable = None
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
@@ -48,7 +49,7 @@ class ASGIWebSocketCycle:
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
-            data = message.get("text")
+            data = message.get("text", "")
             if message["type"] == "websocket.send":
                 group = message.get("group", None)
                 self.send_data(data=data, group=group)

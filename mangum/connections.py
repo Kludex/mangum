@@ -1,9 +1,14 @@
 import typing
 import os
 
-import boto3
-import botocore
-from boto3.dynamodb.conditions import Attr
+try:
+    import boto3
+    import botocore
+    from boto3.dynamodb.conditions import Attr
+
+    __ERR__ = ""
+except ImportError:  # pragma: no cover
+    __ERR__ = "boto3 must be installed for WebSocket support."
 
 from mangum.exceptions import ConnectionTableException
 
