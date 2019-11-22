@@ -1,10 +1,7 @@
 import base64
 import asyncio
-import traceback
 import urllib.parse
-import typing
 import json
-import logging
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
@@ -13,7 +10,6 @@ from mangum.types import ASGIApp
 from mangum.protocols.http import ASGIHTTPCycle
 from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
-
 from mangum.connections import ConnectionTable, __ERR__
 
 
@@ -24,7 +20,7 @@ class Mangum:
     enable_lifespan: bool = True
     log_level: str = "info"
 
-    def __post_init__(self,) -> None:
+    def __post_init__(self) -> None:
         self.logger = get_logger(log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()

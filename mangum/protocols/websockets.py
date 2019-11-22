@@ -1,11 +1,7 @@
-import typing
-from typing import Optional
-import json
 import enum
 import asyncio
 from dataclasses import dataclass, field
 
-from mangum.utils import make_response, get_server_and_client
 from mangum.connections import ConnectionTable
 from mangum.types import ASGIApp, Message, Scope
 from mangum.exceptions import ASGIWebSocketCycleException
