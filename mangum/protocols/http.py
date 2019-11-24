@@ -25,7 +25,7 @@ class ASGIHTTPCycle:
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
+        self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["isBase64Encoded"] = self.is_binary
 
     def __call__(self, app: ASGIApp) -> dict:

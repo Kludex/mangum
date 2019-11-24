@@ -24,7 +24,7 @@ class ASGIWebSocketCycle:
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue(loop=self.loop)
+        self.app_queue: asyncio.Queue = asyncio.Queue()
 
     def __call__(self, app: ASGIApp) -> dict:
         asgi_instance = app(self.scope, self.receive, self.send)
