@@ -1,9 +1,11 @@
 import mock
+
 import pytest
-from mangum import Mangum
-from mangum.connections import ConnectionTable
 from starlette.applications import Starlette
 from starlette.websockets import WebSocket
+
+from mangum import Mangum
+from mangum.connections import ConnectionTable
 
 
 def test_websocket_events(

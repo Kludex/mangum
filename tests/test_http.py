@@ -1,4 +1,5 @@
 import base64
+
 import pytest
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse

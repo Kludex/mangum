@@ -2,7 +2,7 @@ import typing
 
 try:
     from typing import Protocol  # python 3.8+
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import Protocol as _Protocol  # python 3.7
 
     Protocol = typing.cast(typing._SpecialForm, _Protocol)

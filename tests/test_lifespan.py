@@ -1,8 +1,19 @@
+import sys
+
 import pytest
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
-from quart import Quart
+
+
 from mangum import Mangum
+
+# One (or more) of Quart's dependencies does not support Python 3.8, ignore this case.
+IS_PY38 = sys.version_info[:2] == (3, 8)
+
+if not IS_PY38:
+    from quart import Quart
+else:
+    Quart = None
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
@@ -50,6 +61,9 @@ def test_starlette_response(mock_http_event) -> None:
     assert shutdown_complete
 
 
+@pytest.mark.skipif(
+    IS_PY38, reason="One (or more) of Quart's dependencies does not support Python 3.8."
+)
 @pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
 def test_quart_app(mock_http_event) -> None:
     startup_complete = False
