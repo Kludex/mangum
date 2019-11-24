@@ -4,7 +4,7 @@ codecov
 pytest-cov
 black
 starlette
-quart
+quart; python_version == '3.7'
 boto3
 botocore
 moto
