@@ -13,7 +13,7 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 ## Requirements
 
-Python 3.7
+Python 3.7+
 
 ## Installation
 
