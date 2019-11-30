@@ -1,15 +1,5 @@
 import typing
-
-try:
-    from typing import Protocol  # python 3.8+
-except ImportError:  # pragma: no cover
-    from typing_extensions import Protocol as _Protocol  # python 3.7
-
-    if hasattr(typing, '_SpecialForm'):
-        Protocol = typing.cast(typing._SpecialForm, _Protocol)
-    else:
-        Protocol = _Protocol
-    # Otherwise, Protocol has incompatible type "typing_extensions._SpecialForm"
+from typing_extensions import Protocol
 
 Message = typing.Dict[str, typing.Any]
 Scope = typing.Dict[str, typing.Any]
