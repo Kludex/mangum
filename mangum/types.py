@@ -5,7 +5,10 @@ try:
 except ImportError:  # pragma: no cover
     from typing_extensions import Protocol as _Protocol  # python 3.7
 
-    Protocol = typing.cast(typing._SpecialForm, _Protocol)
+    if hasattr(typing, '_SpecialForm'):
+        Protocol = typing.cast(typing._SpecialForm, _Protocol)
+    else:
+        Protocol = _Protocol
     # Otherwise, Protocol has incompatible type "typing_extensions._SpecialForm"
 
 Message = typing.Dict[str, typing.Any]

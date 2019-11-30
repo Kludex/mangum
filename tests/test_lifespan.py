@@ -9,8 +9,9 @@ from mangum import Mangum
 
 # One (or more) of Quart's dependencies does not support Python 3.8, ignore this case.
 IS_PY38 = sys.version_info[:2] == (3, 8)
+IS_PY36 = sys.version_info[:2] == (3, 6)
 
-if not IS_PY38:
+if not (IS_PY38 or IS_PY36):
     from quart import Quart
 else:
     Quart = None
@@ -64,6 +65,7 @@ def test_starlette_response(mock_http_event) -> None:
 @pytest.mark.skipif(
     IS_PY38, reason="One (or more) of Quart's dependencies does not support Python 3.8."
 )
+@pytest.mark.skipif(IS_PY36, reason="Quart does not support Python 3.6.")
 @pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
 def test_quart_app(mock_http_event) -> None:
     startup_complete = False

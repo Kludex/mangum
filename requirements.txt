@@ -5,6 +5,7 @@ pytest-cov
 black
 starlette
 quart; python_version == '3.7'
+dataclasses; python_version < '3.7'
 boto3
 botocore
 moto
