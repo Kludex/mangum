@@ -2,10 +2,6 @@
 
 The adapter class `Mangum` accepts the following optional arguments:
 
-- `debug` : bool (default=False)
-    
-    Enable a simple error response if an unhandled exception is raised in the adapter.
-
 - `enable_lifespan` : bool (default=True)
     
     Specify whether or not to enable lifespan support.
@@ -28,8 +24,3 @@ async def app(scope, receive, send):
 
 handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
 ```
-
-
-## Frameworks
-
-Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will cause issues when deploying to a serverless platform.

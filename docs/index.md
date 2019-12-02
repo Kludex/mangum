@@ -13,7 +13,7 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 ## Requirements
 
-Python 3.7
+Python 3.6+
 
 ## Installation
 
@@ -55,7 +55,3 @@ The adapter currently provides some basic WebSocket support using `boto3` with [
 ```shell
 pip3 install mangum[full]
 ```
-
-## Frameworks
-
-Any ASGI framework should work with Mangum, however there are cases where certain non-ASGI behaviour of an application will cause issues when deploying to a serverless platform.

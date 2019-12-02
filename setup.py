@@ -7,7 +7,7 @@ def get_long_description():
 
 setup(
     name="mangum",
-    version="0.6.18",
+    version="0.6.19",
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
@@ -23,6 +23,8 @@ setup(
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
 )
