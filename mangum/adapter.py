@@ -42,7 +42,7 @@ class Mangum:
 
     app: ASGIApp
     enable_lifespan: bool = True
-    api_gateway_base_path: str = None
+    api_gateway_base_path: typing.Optional[str] = None
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -60,7 +60,7 @@ class Mangum:
             raise exc
         return response
 
-    def strip_base_path(self, event: dict):
+    def strip_base_path(self, event: dict) -> typing.Optional[str]:
         path_info = event["path"]
         if self.api_gateway_base_path:
             script_name = "/" + self.api_gateway_base_path
