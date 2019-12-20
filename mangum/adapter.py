@@ -60,7 +60,7 @@ class Mangum:
             raise exc
         return response
 
-    def strip_base_path(self, event: dict) -> typing.Optional[str]:
+    def strip_base_path(self, event: dict) -> str:
         path_info = event["path"]
         if self.api_gateway_base_path:
             script_name = "/" + self.api_gateway_base_path
