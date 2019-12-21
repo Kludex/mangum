@@ -35,6 +35,7 @@ def test_http_response(mock_http_event) -> None:
                     "path": "/test/hello",
                     "pathParameters": {"proxy": "hello"},
                     "queryStringParameters": {"name": "me"},
+                    "multiValueQueryStringParameters": {"name": ["me", "you"]},
                     "requestContext": {
                         "accountId": "123456789012",
                         "apiId": "123",
@@ -94,7 +95,7 @@ def test_http_response(mock_http_event) -> None:
             "http_version": "1.1",
             "method": "GET",
             "path": "/test/hello",
-            "query_string": b"name=me",
+            "query_string": b"name=me&name=you",
             "raw_path": None,
             "root_path": "",
             "scheme": "https",

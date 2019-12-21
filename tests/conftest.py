@@ -53,6 +53,7 @@ def mock_http_event(request):
         "resource": "/{proxy+}",
         "httpMethod": method,
         "queryStringParameters": {"name": "me"},
+        "multiValueQueryStringParameters": {"name": ["me", "you"]},
         "stageVariables": {"stageVarName": "stageVarValue"},
     }
     return event
