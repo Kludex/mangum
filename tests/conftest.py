@@ -8,6 +8,7 @@ import boto3
 def mock_http_event(request):
     method = request.param[0]
     body = request.param[1]
+    multi_value_query_parameters = request.param[2]
     event = {
         "path": "/test/hello",
         "body": body,
@@ -52,8 +53,12 @@ def mock_http_event(request):
         },
         "resource": "/{proxy+}",
         "httpMethod": method,
-        "queryStringParameters": {"name": "me"},
-        "multiValueQueryStringParameters": {"name": ["me", "you"]},
+        "queryStringParameters": {
+            k: v[0] for k, v in multi_value_query_parameters.items()
+        }
+        if multi_value_query_parameters
+        else None,
+        "multiValueQueryStringParameters": multi_value_query_parameters or None,
         "stageVariables": {"stageVarName": "stageVarValue"},
     }
     return event
