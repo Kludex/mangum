@@ -87,10 +87,10 @@ class Mangum:
         headers_key_value_pairs = [
             [k.lower().encode(), v.encode()] for k, v in headers.items()
         ]
-        query_string_params = event["queryStringParameters"]
+        multi_value_query_string_params = event["multiValueQueryStringParameters"]
         query_string = (
-            urllib.parse.urlencode(query_string_params).encode()
-            if query_string_params
+            urllib.parse.urlencode(multi_value_query_string_params, doseq=True).encode()
+            if multi_value_query_string_params
             else b""
         )
         scope = {

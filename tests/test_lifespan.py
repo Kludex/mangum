@@ -17,7 +17,7 @@ else:
     Quart = None
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
+@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
 def test_starlette_response(mock_http_event) -> None:
     startup_complete = False
     shutdown_complete = False
@@ -66,7 +66,7 @@ def test_starlette_response(mock_http_event) -> None:
     IS_PY38, reason="One (or more) of Quart's dependencies does not support Python 3.8."
 )
 @pytest.mark.skipif(IS_PY36, reason="Quart does not support Python 3.6.")
-@pytest.mark.parametrize("mock_http_event", [["GET", None]], indirect=True)
+@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
 def test_quart_app(mock_http_event) -> None:
     startup_complete = False
     shutdown_complete = False
