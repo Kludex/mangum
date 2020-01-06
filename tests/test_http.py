@@ -400,7 +400,7 @@ def test_http_cycle_state(mock_http_event) -> None:
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", ""]], indirect=True)
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
 def test_http_api_gateway_base_path(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
