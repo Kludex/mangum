@@ -60,13 +60,12 @@ class Mangum:
             raise exc
         return response
 
-    def strip_base_path(self, event: dict) -> str:
-        path_info = event["path"]
+    def strip_base_path(self, path: str) -> str:
         if self.api_gateway_base_path:
             script_name = "/" + self.api_gateway_base_path
-            if path_info.startswith(script_name):
-                path_info = path_info[len(script_name) :]
-        return urllib.parse.unquote(path_info or "/")
+            if path.startswith(script_name):
+                path = path[len(script_name) :]
+        return urllib.parse.unquote(path or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
         if "httpMethod" in event:
@@ -98,7 +97,7 @@ class Mangum:
             "http_version": "1.1",
             "method": event["httpMethod"],
             "headers": headers_key_value_pairs,
-            "path": self.strip_base_path(event),
+            "path": self.strip_base_path(event["path"]),
             "raw_path": None,
             "root_path": "",
             "scheme": headers.get("X-Forwarded-Proto", "https"),
@@ -106,7 +105,8 @@ class Mangum:
             "server": server,
             "client": client,
             "asgi": {"version": "3.0"},
-            "aws": {"event": event, "context": context},
+            "aws.event": event,
+            "aws.context": context,
         }
 
         is_binary = event.get("isBase64Encoded", False)

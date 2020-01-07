@@ -24,67 +24,65 @@ def test_http_request(mock_http_event, query_string) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws": {
-                "context": {},
-                "event": {
-                    "body": None,
-                    "headers": {
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                        "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
-                        "Accept-Language": "en-US,en;q=0.8",
-                        "CloudFront-Forwarded-Proto": "https",
-                        "CloudFront-Is-Desktop-Viewer": "true",
-                        "CloudFront-Is-Mobile-Viewer": "false",
-                        "CloudFront-Is-SmartTV-Viewer": "false",
-                        "CloudFront-Is-Tablet-Viewer": "false",
-                        "CloudFront-Viewer-Country": "US",
-                        "Host": "test.execute-api.us-west-2.amazonaws.com",
-                        "Upgrade-Insecure-Requests": "1",
-                        "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
-                        "X-Forwarded-Port": "443",
-                        "X-Forwarded-Proto": "https",
-                    },
-                    "httpMethod": "GET",
-                    "path": "/test/hello",
-                    "pathParameters": {"proxy": "hello"},
-                    "queryStringParameters": mock_http_event["queryStringParameters"],
-                    "multiValueQueryStringParameters": mock_http_event[
-                        "multiValueQueryStringParameters"
-                    ],
-                    "requestContext": {
-                        "accountId": "123456789012",
-                        "apiId": "123",
-                        "httpMethod": "GET",
-                        "identity": {
-                            "accountId": "",
-                            "apiKey": "",
-                            "caller": "",
-                            "cognitoAuthenticationProvider": "",
-                            "cognitoAuthenticationType": "",
-                            "cognitoIdentityId": "",
-                            "cognitoIdentityPoolId": "",
-                            "sourceIp": "192.168.100.1",
-                            "user": "",
-                            "userAgent": "Mozilla/5.0 "
-                            "(Macintosh; "
-                            "Intel Mac OS "
-                            "X 10_11_6) "
-                            "AppleWebKit/537.36 "
-                            "(KHTML, like "
-                            "Gecko) "
-                            "Chrome/52.0.2743.82 "
-                            "Safari/537.36 "
-                            "OPR/39.0.2256.48",
-                            "userArn": "",
-                        },
-                        "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
-                        "resourceId": "us4z18",
-                        "resourcePath": "/{proxy+}",
-                        "stage": "Prod",
-                    },
-                    "resource": "/{proxy+}",
-                    "stageVariables": {"stageVarName": "stageVarValue"},
+            "aws.context": {},
+            "aws.event": {
+                "body": None,
+                "headers": {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
+                    "Accept-Language": "en-US,en;q=0.8",
+                    "CloudFront-Forwarded-Proto": "https",
+                    "CloudFront-Is-Desktop-Viewer": "true",
+                    "CloudFront-Is-Mobile-Viewer": "false",
+                    "CloudFront-Is-SmartTV-Viewer": "false",
+                    "CloudFront-Is-Tablet-Viewer": "false",
+                    "CloudFront-Viewer-Country": "US",
+                    "Host": "test.execute-api.us-west-2.amazonaws.com",
+                    "Upgrade-Insecure-Requests": "1",
+                    "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
+                    "X-Forwarded-Port": "443",
+                    "X-Forwarded-Proto": "https",
                 },
+                "httpMethod": "GET",
+                "path": "/test/hello",
+                "pathParameters": {"proxy": "hello"},
+                "queryStringParameters": mock_http_event["queryStringParameters"],
+                "multiValueQueryStringParameters": mock_http_event[
+                    "multiValueQueryStringParameters"
+                ],
+                "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "123",
+                    "httpMethod": "GET",
+                    "identity": {
+                        "accountId": "",
+                        "apiKey": "",
+                        "caller": "",
+                        "cognitoAuthenticationProvider": "",
+                        "cognitoAuthenticationType": "",
+                        "cognitoIdentityId": "",
+                        "cognitoIdentityPoolId": "",
+                        "sourceIp": "192.168.100.1",
+                        "user": "",
+                        "userAgent": "Mozilla/5.0 "
+                        "(Macintosh; "
+                        "Intel Mac OS "
+                        "X 10_11_6) "
+                        "AppleWebKit/537.36 "
+                        "(KHTML, like "
+                        "Gecko) "
+                        "Chrome/52.0.2743.82 "
+                        "Safari/537.36 "
+                        "OPR/39.0.2256.48",
+                        "userArn": "",
+                    },
+                    "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
+                    "resourceId": "us4z18",
+                    "resourcePath": "/{proxy+}",
+                    "stage": "Prod",
+                },
+                "resource": "/{proxy+}",
+                "stageVariables": {"stageVarName": "stageVarValue"},
             },
             "client": ("192.168.100.1", 0),
             "headers": [
@@ -143,65 +141,63 @@ def test_http_response(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws": {
-                "context": {},
-                "event": {
-                    "body": None,
-                    "headers": {
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                        "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
-                        "Accept-Language": "en-US,en;q=0.8",
-                        "CloudFront-Forwarded-Proto": "https",
-                        "CloudFront-Is-Desktop-Viewer": "true",
-                        "CloudFront-Is-Mobile-Viewer": "false",
-                        "CloudFront-Is-SmartTV-Viewer": "false",
-                        "CloudFront-Is-Tablet-Viewer": "false",
-                        "CloudFront-Viewer-Country": "US",
-                        "Host": "test.execute-api.us-west-2.amazonaws.com",
-                        "Upgrade-Insecure-Requests": "1",
-                        "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
-                        "X-Forwarded-Port": "443",
-                        "X-Forwarded-Proto": "https",
-                    },
-                    "httpMethod": "GET",
-                    "path": "/test/hello",
-                    "pathParameters": {"proxy": "hello"},
-                    "queryStringParameters": {"name": "me"},
-                    "multiValueQueryStringParameters": {"name": ["me", "you"]},
-                    "requestContext": {
-                        "accountId": "123456789012",
-                        "apiId": "123",
-                        "httpMethod": "GET",
-                        "identity": {
-                            "accountId": "",
-                            "apiKey": "",
-                            "caller": "",
-                            "cognitoAuthenticationProvider": "",
-                            "cognitoAuthenticationType": "",
-                            "cognitoIdentityId": "",
-                            "cognitoIdentityPoolId": "",
-                            "sourceIp": "192.168.100.1",
-                            "user": "",
-                            "userAgent": "Mozilla/5.0 "
-                            "(Macintosh; "
-                            "Intel Mac OS "
-                            "X 10_11_6) "
-                            "AppleWebKit/537.36 "
-                            "(KHTML, like "
-                            "Gecko) "
-                            "Chrome/52.0.2743.82 "
-                            "Safari/537.36 "
-                            "OPR/39.0.2256.48",
-                            "userArn": "",
-                        },
-                        "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
-                        "resourceId": "us4z18",
-                        "resourcePath": "/{proxy+}",
-                        "stage": "Prod",
-                    },
-                    "resource": "/{proxy+}",
-                    "stageVariables": {"stageVarName": "stageVarValue"},
+            "aws.context": {},
+            "aws.event": {
+                "body": None,
+                "headers": {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
+                    "Accept-Language": "en-US,en;q=0.8",
+                    "CloudFront-Forwarded-Proto": "https",
+                    "CloudFront-Is-Desktop-Viewer": "true",
+                    "CloudFront-Is-Mobile-Viewer": "false",
+                    "CloudFront-Is-SmartTV-Viewer": "false",
+                    "CloudFront-Is-Tablet-Viewer": "false",
+                    "CloudFront-Viewer-Country": "US",
+                    "Host": "test.execute-api.us-west-2.amazonaws.com",
+                    "Upgrade-Insecure-Requests": "1",
+                    "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
+                    "X-Forwarded-Port": "443",
+                    "X-Forwarded-Proto": "https",
                 },
+                "httpMethod": "GET",
+                "path": "/test/hello",
+                "pathParameters": {"proxy": "hello"},
+                "queryStringParameters": {"name": "me"},
+                "multiValueQueryStringParameters": {"name": ["me", "you"]},
+                "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "123",
+                    "httpMethod": "GET",
+                    "identity": {
+                        "accountId": "",
+                        "apiKey": "",
+                        "caller": "",
+                        "cognitoAuthenticationProvider": "",
+                        "cognitoAuthenticationType": "",
+                        "cognitoIdentityId": "",
+                        "cognitoIdentityPoolId": "",
+                        "sourceIp": "192.168.100.1",
+                        "user": "",
+                        "userAgent": "Mozilla/5.0 "
+                        "(Macintosh; "
+                        "Intel Mac OS "
+                        "X 10_11_6) "
+                        "AppleWebKit/537.36 "
+                        "(KHTML, like "
+                        "Gecko) "
+                        "Chrome/52.0.2743.82 "
+                        "Safari/537.36 "
+                        "OPR/39.0.2256.48",
+                        "userArn": "",
+                    },
+                    "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
+                    "resourceId": "us4z18",
+                    "resourcePath": "/{proxy+}",
+                    "stage": "Prod",
+                },
+                "resource": "/{proxy+}",
+                "stageVariables": {"stageVarName": "stageVarValue"},
             },
             "client": ("192.168.100.1", 0),
             "headers": [
@@ -407,7 +403,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
         await send({"type": "http.response.start", "status": 200})
 
     handler = Mangum(app, enable_lifespan=False, api_gateway_base_path=None)
-    assert handler.strip_base_path(mock_http_event) == urllib.parse.unquote(
+    assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
         mock_http_event["path"]
     )
 
@@ -420,6 +416,6 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
     handler = Mangum(
         app, enable_lifespan=False, api_gateway_base_path=api_gateway_base_path
     )
-    assert handler.strip_base_path(mock_http_event) == urllib.parse.unquote(
+    assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
         mock_http_event["path"][len(script_name) :]
     )
