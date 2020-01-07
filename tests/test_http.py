@@ -1,4 +1,5 @@
 import base64
+import urllib.parse
 
 import pytest
 from starlette.applications import Starlette
@@ -397,3 +398,28 @@ def test_http_cycle_state(mock_http_event) -> None:
         "isBase64Encoded": False,
         "statusCode": 500,
     }
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_api_gateway_base_path(mock_http_event) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send({"type": "http.response.start", "status": 200})
+
+    handler = Mangum(app, enable_lifespan=False, api_gateway_base_path=None)
+    assert handler.strip_base_path(mock_http_event) == urllib.parse.unquote(
+        mock_http_event["path"]
+    )
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send({"type": "http.response.start", "status": 200})
+
+    api_gateway_base_path = "test"
+    script_name = "/" + api_gateway_base_path
+    handler = Mangum(
+        app, enable_lifespan=False, api_gateway_base_path=api_gateway_base_path
+    )
+    assert handler.strip_base_path(mock_http_event) == urllib.parse.unquote(
+        mock_http_event["path"][len(script_name) :]
+    )

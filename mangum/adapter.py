@@ -42,6 +42,7 @@ class Mangum:
 
     app: ASGIApp
     enable_lifespan: bool = True
+    api_gateway_base_path: typing.Optional[str] = None
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -58,6 +59,14 @@ class Mangum:
         except BaseException as exc:
             raise exc
         return response
+
+    def strip_base_path(self, event: dict) -> str:
+        path_info = event["path"]
+        if self.api_gateway_base_path:
+            script_name = "/" + self.api_gateway_base_path
+            if path_info.startswith(script_name):
+                path_info = path_info[len(script_name) :]
+        return urllib.parse.unquote(path_info or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
         if "httpMethod" in event:
@@ -89,7 +98,7 @@ class Mangum:
             "http_version": "1.1",
             "method": event["httpMethod"],
             "headers": headers_key_value_pairs,
-            "path": urllib.parse.unquote(event["path"]),
+            "path": self.strip_base_path(event),
             "raw_path": None,
             "root_path": "",
             "scheme": headers.get("X-Forwarded-Proto", "https"),
