@@ -29,6 +29,19 @@ The adapter class `Mangum` accepts the following optional arguments:
     
     Specify whether or not to enable lifespan support.
 
+- `api_gateway_base_path` : str (default=None)
+    
+    Base path to strip from URL when using a custom domain name.
+
+### Event and context
+
+The AWS Lambda handler has `event` and `context` parameters. These are available in the ASGI `scope` object:
+
+```python3
+scope['aws.event']
+scope['aws.context']
+```
+
 ### Example
 
 ```python3
