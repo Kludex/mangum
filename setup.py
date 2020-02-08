@@ -1,7 +1,6 @@
 from setuptools import find_packages, setup
 
-
-__version__ = "0.7.1"
+from mangum.__version__ import __version__
 
 
 def get_long_description():
