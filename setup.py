@@ -1,13 +1,16 @@
 from setuptools import find_packages, setup
 
 
+__version__ = "0.7.1"
+
+
 def get_long_description():
     return open("README.md", "r", encoding="utf8").read()
 
 
 setup(
     name="mangum",
-    version="0.7.0",
+    version=__version__,
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",
