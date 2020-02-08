@@ -1,7 +1,5 @@
 from setuptools import find_packages, setup
 
-from mangum.__version__ import __version__
-
 
 def get_long_description():
     return open("README.md", "r", encoding="utf8").read()
@@ -9,7 +7,7 @@ def get_long_description():
 
 setup(
     name="mangum",
-    version=__version__,
+    version="0.7.3",
     packages=find_packages(),
     license="MIT",
     url="https://github.com/erm/mangum",

@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-export VERSION=`cat mangum/__version__.py | grep __version__ | sed "s/__version__ = //" | sed "s/'//g"`
+
 export PREFIX=""
 if [ -d 'venv' ] ; then
     export PREFIX="venv/bin/"
@@ -19,7 +19,7 @@ ${PREFIX}python setup.py sdist
 ${PREFIX}twine upload dist/*
 
 echo "You probably want to also tag the version now:"
-echo "git tag -a ${VERSION} -m 'version ${VERSION}'"
+echo "git tag -a <version> -m 'version <version>'"
 echo "git push --tags"
 
 rm -r dist
