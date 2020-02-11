@@ -83,7 +83,7 @@ class Mangum:
 
     def handle_http(self, event: dict, context: dict) -> dict:
         server, client = get_server_and_client(event)
-        headers = event.get("headers", {})
+        headers = event.get("headers") or {}
         headers_key_value_pairs = [
             [k.lower().encode(), v.encode()] for k, v in headers.items()
         ]
@@ -142,7 +142,7 @@ class Mangum:
 
             # The scope headers must be JSON serializable to store in DynamoDB, but
             # they will be parsed on the MESSAGE event.
-            headers = event.get("headers", {})
+            headers = event.get("headers") or {}
 
             root_path = event["requestContext"]["stage"]
             scope = {
