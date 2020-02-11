@@ -21,7 +21,8 @@ def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
     client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
     client = (client_addr, 0)
 
-    server_addr = event.get("headers", {}).get("Host", None)
+    headers = event.get("headers") or {}
+    server_addr = headers.get("Host", None)
 
     if server_addr is not None:
         if ":" not in server_addr:
