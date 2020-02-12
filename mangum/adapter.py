@@ -180,8 +180,8 @@ class Mangum:
             # Ensure the scope definition complies with the ASGI spec.
             query_string = scope["query_string"]
             headers = scope["headers"]
-            headers = [[k.encode(), v.encode()] for k, v in headers.items()]
-            query_string = query_string.encode()
+            headers = [[k.encode(), v.encode()] for k, v in headers.items()]  # type: ignore
+            query_string = query_string.encode()  # type: ignore
             scope.update({"headers": headers, "query_string": query_string})
 
             asgi_cycle = ASGIWebSocketCycle(
