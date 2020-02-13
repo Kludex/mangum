@@ -1,8 +1,8 @@
 import typing
 from typing_extensions import Protocol
 
-Message = typing.Dict[str, typing.Any]
-Scope = typing.Dict[str, typing.Any]
+Message = typing.MutableMapping[str, typing.Any]
+Scope = typing.MutableMapping[str, typing.Any]
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 
