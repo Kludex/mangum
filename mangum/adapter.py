@@ -120,7 +120,9 @@ class Mangum:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        asgi_cycle = ASGIHTTPCycle(scope, text_mime_types=self.text_mime_types, logger=self.logger)
+        asgi_cycle = ASGIHTTPCycle(
+            scope, text_mime_types=self.text_mime_types, logger=self.logger
+        )
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
         )
