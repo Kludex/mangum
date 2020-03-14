@@ -287,7 +287,7 @@ def test_http_response_with_body(mock_http_event) -> None:
 @pytest.mark.parametrize(
     "mock_http_event", [["GET", base64.b64encode(b"123"), None]], indirect=True
 )
-def test_http_binary_response_with_body(mock_http_event) -> None:
+def test_http_binary_request_with_body(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
 
@@ -315,9 +315,9 @@ def test_http_binary_response_with_body(mock_http_event) -> None:
 
     assert response == {
         "statusCode": 200,
-        "isBase64Encoded": True,
+        "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": base64.b64encode(b"123").decode(),
+        "body": "123",
     }
 
 
