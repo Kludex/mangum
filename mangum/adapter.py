@@ -13,7 +13,7 @@ from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.connections import ConnectionTable, __ERR__
 
-TEXT_MIME_TYPES = ("text/*", r"*\bjson", r"*\bxml")
+TEXT_MIME_TYPES = ("text/.*", r".*\bjson", r".*\bxml")
 
 
 def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
