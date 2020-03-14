@@ -46,7 +46,7 @@ class Mangum:
     app: ASGIApp
     enable_lifespan: bool = True
     api_gateway_base_path: typing.Optional[str] = None
-    text_mime_types: typing.Tuple[str] = TEXT_MIME_TYPES
+    text_mime_types: typing.Tuple[str, ...] = TEXT_MIME_TYPES
     log_level: str = "info"
 
     def __post_init__(self) -> None:

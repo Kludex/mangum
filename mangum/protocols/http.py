@@ -21,7 +21,7 @@ class ASGIHTTPCycle:
     scope: Scope
     logger: logging.Logger
     state: ASGIState = ASGIState.REQUEST
-    text_mime_types: typing.Tuple[str]
+    text_mime_types: typing.Tuple[str, ...]
     body: bytes = b""
     response: dict = field(default_factory=dict)
 
