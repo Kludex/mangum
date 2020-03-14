@@ -93,7 +93,10 @@ class ASGIHTTPCycle:
 
             if not more_body:
                 body = self.body
-                content_type = self.response["headers"].get("Content-Type", "")
+                content_type = self.response["headers"].get(
+                    "Content-Type",
+                    self.response["headers"].get("content-type", "")
+                )
                 response_is_binary = not any(
                     re.fullmatch(text_mime_type, content_type)
                     for text_mime_type in self.text_mime_types
