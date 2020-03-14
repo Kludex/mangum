@@ -13,6 +13,8 @@ from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.connections import ConnectionTable, __ERR__
 
+TEXT_MIME_TYPES = ("text/*", r"*\bjson", r"*\bxml")
+
 
 def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
     """
@@ -44,6 +46,7 @@ class Mangum:
     app: ASGIApp
     enable_lifespan: bool = True
     api_gateway_base_path: typing.Optional[str] = None
+    text_mime_types: typing.Tuple[str] = TEXT_MIME_TYPES
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -117,7 +120,7 @@ class Mangum:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        asgi_cycle = ASGIHTTPCycle(scope, is_binary=is_binary, logger=self.logger)
+        asgi_cycle = ASGIHTTPCycle(scope, text_mime_types=self.text_mime_types, logger=self.logger)
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
         )

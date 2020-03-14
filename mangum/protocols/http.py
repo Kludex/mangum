@@ -2,6 +2,8 @@ import base64
 import enum
 import logging
 import asyncio
+import re
+import typing
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
@@ -19,14 +21,13 @@ class ASGIHTTPCycle:
     scope: Scope
     logger: logging.Logger
     state: ASGIState = ASGIState.REQUEST
-    is_binary: bool = False
+    text_mime_types: typing.Tuple[str]
     body: bytes = b""
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
-        self.response["isBase64Encoded"] = self.is_binary
 
     def __call__(self, app: ASGIApp) -> dict:
         asgi_instance = self.run(app)
@@ -92,8 +93,14 @@ class ASGIHTTPCycle:
 
             if not more_body:
                 body = self.body
-                if self.is_binary:
+                content_type = self.response["headers"].get("Content-Type", "")
+                response_is_binary = not any(
+                    re.fullmatch(text_mime_type, content_type)
+                    for text_mime_type in self.text_mime_types
+                )
+                if response_is_binary:
                     body = base64.b64encode(body)
+                    self.response["isBase64Encoded"] = True
                 self.response["body"] = body.decode()
                 self.put_message({"type": "http.disconnect"})
                 self.state = ASGIState.COMPLETE
