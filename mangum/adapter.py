@@ -16,15 +16,21 @@ from mangum.connections import ConnectionTable, __ERR__
 TEXT_MIME_TYPES = ("text/.*", r".*\bjson", r".*\bxml")
 
 
-def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
+def get_server_and_client(event: dict,
+                          is_http_api: bool = False) -> typing.Tuple:  # pragma: no cover
     """
     Parse the server and client for the scope definition, if possible.
     """
-    client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
+
+    if is_http_api:
+        client_addr = event["requestContext"]['http']['sourceIp']
+    else:
+        client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
+
     client = (client_addr, 0)
 
     headers = event.get("headers") or {}
-    server_addr = headers.get("Host", None)
+    server_addr = headers.get("host") if is_http_api else headers.get("Host")
 
     if server_addr is not None:
         if ":" not in server_addr:
@@ -72,7 +78,8 @@ class Mangum:
         return urllib.parse.unquote(path or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
-        if "httpMethod" in event:
+
+        if not 'eventType' in event['requestContext']:
             response = self.handle_http(event, context)
         else:
 
@@ -85,36 +92,45 @@ class Mangum:
         return response
 
     def handle_http(self, event: dict, context: dict) -> dict:
-        server, client = get_server_and_client(event)
+        is_http_api = 'multiValueQueryStringParameters' not in event
+        server, client = get_server_and_client(event, is_http_api)
         headers = event.get("headers") or {}
         headers_key_value_pairs = [
             [k.lower().encode(), v.encode()] for k, v in headers.items()
         ]
-        multi_value_query_string_params = event["multiValueQueryStringParameters"]
-        query_string = (
-            urllib.parse.urlencode(multi_value_query_string_params, doseq=True).encode()
-            if multi_value_query_string_params
-            else b""
-        )
+
+        if is_http_api:
+            query_string = event.get('rawQueryString')
+        else:
+            multi_value_query_string_params = event["multiValueQueryStringParameters"]
+            query_string = (
+                    urllib.parse.urlencode(multi_value_query_string_params, doseq=True).encode()
+                    if multi_value_query_string_params
+                    else b""
+            )
+
+        event_path = event['requestContext']['http']['path'] if is_http_api else event["path"]
+        http_method = event['requestContext']['http']['method'] if is_http_api else event["httpMethod"]
+
         scope = {
-            "type": "http",
-            "http_version": "1.1",
-            "method": event["httpMethod"],
-            "headers": headers_key_value_pairs,
-            "path": self.strip_base_path(event["path"]),
-            "raw_path": None,
-            "root_path": "",
-            "scheme": headers.get("X-Forwarded-Proto", "https"),
-            "query_string": query_string,
-            "server": server,
-            "client": client,
-            "asgi": {"version": "3.0"},
-            "aws.event": event,
-            "aws.context": context,
+                "type":         "http",
+                "http_version": "1.1",
+                "method":       http_method,
+                "headers":      headers_key_value_pairs,
+                "path":         self.strip_base_path(event_path),
+                "raw_path":     None,
+                "root_path":    "",
+                "scheme":       headers.get("X-Forwarded-Proto", "https"),
+                "query_string": query_string,
+                "server":       server,
+                "client":       client,
+                "asgi":         {"version": "3.0"},
+                "aws.event":    event,
+                "aws.context":  context,
         }
 
         is_binary = event.get("isBase64Encoded", False)
-        body = event["body"] or b""
+        body = event.get("body") or b""
         if is_binary:
             body = base64.b64decode(body)
         elif not isinstance(body, bytes):
