@@ -96,7 +96,7 @@ class ASGIHTTPCycle:
                 body = self.body
 
                 mimetype, _ = cgi.parse_header(
-                    self.response["headers"].get("content-type", ("text/plain", None))
+                    self.response["headers"].get("content-type", "text/plain")
                 )
                 response_is_binary = (
                     mimetype not in self.text_mime_types
