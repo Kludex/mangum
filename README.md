@@ -18,7 +18,7 @@ Python 3.6+
 ## Installation
 
 ```shell
-pip3 install mangum
+pip install mangum
 ```
 
 ## Usage
@@ -85,5 +85,5 @@ handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI exa
 The adapter currently provides some basic WebSocket support using `boto3` with [DynamoDB](https://aws.amazon.com/dynamodb/). To install Mangum with the optional dependency:
 
 ```shell
-pip3 install mangum[full]
+pip install mangum[full]
 ```
