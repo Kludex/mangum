@@ -2,8 +2,8 @@ import base64
 import enum
 import logging
 import asyncio
-import re
 import typing
+import cgi
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
@@ -20,7 +20,7 @@ class ASGIHTTPCycle:
 
     scope: Scope
     logger: logging.Logger
-    text_mime_types: typing.Tuple[str, ...]
+    text_mime_types: typing.List[str]
     state: ASGIState = ASGIState.REQUEST
     body: bytes = b""
     response: dict = field(default_factory=dict)
@@ -94,16 +94,18 @@ class ASGIHTTPCycle:
 
             if not more_body:
                 body = self.body
-                content_type = self.response["headers"].get(
-                    "Content-Type", self.response["headers"].get("content-type", "")
+
+                mimetype, _ = cgi.parse_header(
+                    self.response["headers"].get("content-type", ("text/plain", None))
                 )
-                response_is_binary = not any(
-                    re.fullmatch(text_mime_type, content_type)
-                    for text_mime_type in self.text_mime_types
-                )
+                response_is_binary = (
+                    mimetype not in self.text_mime_types
+                    and not mimetype.startswith("text/")
+                ) or self.response["headers"].get("content-encoding") == "gzip"
                 if response_is_binary:
                     body = base64.b64encode(body)
                     self.response["isBase64Encoded"] = True
+
                 self.response["body"] = body.decode()
                 self.put_message({"type": "http.disconnect"})
                 self.state = ASGIState.COMPLETE
