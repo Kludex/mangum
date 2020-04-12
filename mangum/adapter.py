@@ -13,7 +13,13 @@ from mangum.protocols.websockets import ASGIWebSocketCycle
 from mangum.exceptions import ASGIWebSocketCycleException
 from mangum.connections import ConnectionTable, __ERR__
 
-TEXT_MIME_TYPES = ("text/.*", r".*\bjson", r".*\bxml")
+
+DEFAULT_TEXT_MIME_TYPES = [
+    "application/json",
+    "application/javascript",
+    "application/xml",
+    "application/vnd.api+json",
+]
 
 
 def get_server_and_client(event: dict) -> typing.Tuple:  # pragma: no cover
@@ -46,7 +52,7 @@ class Mangum:
     app: ASGIApp
     enable_lifespan: bool = True
     api_gateway_base_path: typing.Optional[str] = None
-    text_mime_types: typing.Tuple[str, ...] = TEXT_MIME_TYPES
+    text_mime_types: typing.Optional[typing.List[str]] = None
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -81,7 +87,6 @@ class Mangum:
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.lifespan.wait_shutdown())
-
         return response
 
     def handle_http(self, event: dict, context: dict) -> dict:
@@ -120,8 +125,13 @@ class Mangum:
         elif not isinstance(body, bytes):
             body = body.encode()
 
+        if self.text_mime_types:
+            text_mime_types = self.text_mime_types + DEFAULT_TEXT_MIME_TYPES
+        else:
+            text_mime_types = DEFAULT_TEXT_MIME_TYPES
+
         asgi_cycle = ASGIHTTPCycle(
-            scope, text_mime_types=self.text_mime_types, logger=self.logger
+            scope, text_mime_types=text_mime_types, logger=self.logger
         )
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
@@ -185,7 +195,9 @@ class Mangum:
             # Ensure the scope definition complies with the ASGI spec.
             query_string = scope["query_string"]
             headers = scope["headers"]
-            headers = [[k.encode(), v.encode()] for k, v in headers.items()]  # type: ignore
+            headers = [
+                [k.encode(), v.encode()] for k, v in headers.items()  # type: ignore
+            ]
             query_string = query_string.encode()  # type: ignore
             scope.update({"headers": headers, "query_string": query_string})
 

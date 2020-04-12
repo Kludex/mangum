@@ -33,6 +33,25 @@ The adapter class `Mangum` accepts the following optional arguments:
     
     Base path to strip from URL when using a custom domain name.
 
+- `text_mime_types` : list (default=None)
+        
+    The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
+
+## Binary support
+
+Binary response support is available depending on the `Content-Type` and `Content-Encoding` headers. The default text mime types are the following:
+
+- `application/json`
+- `application/javascript`
+- `application/xml`
+- `application/vnd.api+json`
+
+All `Content-Type` headers starting with `text/` are included by default.
+
+If the `Content-Encoding` header is set to `gzip`, then a binary response will be returned regardless of mime type.
+
+Binary response bodies will be base64 encoded and `isBase64Encoded` will be `True`.
+
 ### Event and context
 
 The AWS Lambda handler has `event` and `context` parameters. These are available in the ASGI `scope` object:
