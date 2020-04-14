@@ -16,14 +16,15 @@ from mangum.connections import ConnectionTable, __ERR__
 TEXT_MIME_TYPES = ("text/.*", r".*\bjson", r".*\bxml")
 
 
-def get_server_and_client(event: dict,
-                          is_http_api: bool = False) -> typing.Tuple:  # pragma: no cover
+def get_server_and_client(
+    event: dict, is_http_api: bool = False
+) -> typing.Tuple:  # pragma: no cover
     """
     Parse the server and client for the scope definition, if possible.
     """
 
     if is_http_api:
-        client_addr = event["requestContext"]['http']['sourceIp']
+        client_addr = event["requestContext"]["http"]["sourceIp"]
     else:
         client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
 
@@ -79,7 +80,7 @@ class Mangum:
 
     def handler(self, event: dict, context: dict) -> dict:
 
-        if not 'eventType' in event['requestContext']:
+        if "eventType" not in event["requestContext"]:
             response = self.handle_http(event, context)
         else:
 
@@ -92,7 +93,7 @@ class Mangum:
         return response
 
     def handle_http(self, event: dict, context: dict) -> dict:
-        is_http_api = 'multiValueQueryStringParameters' not in event
+        is_http_api = "http" in event["requestContext"]
         server, client = get_server_and_client(event, is_http_api)
         headers = event.get("headers") or {}
         headers_key_value_pairs = [
@@ -100,33 +101,41 @@ class Mangum:
         ]
 
         if is_http_api:
-            query_string = event.get('rawQueryString')
+            query_string = event.get("rawQueryString")
         else:
             multi_value_query_string_params = event["multiValueQueryStringParameters"]
             query_string = (
-                    urllib.parse.urlencode(multi_value_query_string_params, doseq=True).encode()
-                    if multi_value_query_string_params
-                    else b""
+                urllib.parse.urlencode(
+                    multi_value_query_string_params, doseq=True
+                ).encode()
+                if multi_value_query_string_params
+                else b""
             )
 
-        event_path = event['requestContext']['http']['path'] if is_http_api else event["path"]
-        http_method = event['requestContext']['http']['method'] if is_http_api else event["httpMethod"]
+        event_path = (
+            event["requestContext"]["http"]["path"] if is_http_api else event["path"]
+        )
+        http_method = (
+            event["requestContext"]["http"]["method"]
+            if is_http_api
+            else event["httpMethod"]
+        )
 
         scope = {
-                "type":         "http",
-                "http_version": "1.1",
-                "method":       http_method,
-                "headers":      headers_key_value_pairs,
-                "path":         self.strip_base_path(event_path),
-                "raw_path":     None,
-                "root_path":    "",
-                "scheme":       headers.get("X-Forwarded-Proto", "https"),
-                "query_string": query_string,
-                "server":       server,
-                "client":       client,
-                "asgi":         {"version": "3.0"},
-                "aws.event":    event,
-                "aws.context":  context,
+            "type": "http",
+            "http_version": "1.1",
+            "method": http_method,
+            "headers": headers_key_value_pairs,
+            "path": self.strip_base_path(event_path),
+            "raw_path": None,
+            "root_path": "",
+            "scheme": headers.get("X-Forwarded-Proto", "https"),
+            "query_string": query_string,
+            "server": server,
+            "client": client,
+            "asgi": {"version": "3.0"},
+            "aws.event": event,
+            "aws.context": context,
         }
 
         is_binary = event.get("isBase64Encoded", False)
