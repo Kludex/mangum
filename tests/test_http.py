@@ -458,7 +458,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
         app, enable_lifespan=False, api_gateway_base_path=api_gateway_base_path
     )
     assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
-        mock_http_event["path"][len(script_name) :]
+        mock_http_event["path"][len(script_name):]
     )
 
 
