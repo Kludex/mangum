@@ -515,3 +515,107 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
         "vary": "Accept-Encoding",
     }
     assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
+
+
+@pytest.mark.parametrize(
+    "mock_http_api_event",
+    [
+        (["GET", None, None, b""]),
+        (["GET", None, {"name": ["me"]}, b"name=me"]),
+        (["GET", None, {"name": ["me", "you"]}, b"name=me&name=you"]),
+        (
+            [
+                "GET",
+                None,
+                {"name": ["me", "you"], "pet": ["dog"]},
+                b"name=me&name=you&pet=dog",
+            ]
+        ),
+    ],
+    indirect=["mock_http_api_event"],
+)
+def test_http_request(mock_http_api_event) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.context": {},
+            "aws.event": {
+                "version": "2.0",
+                "routeKey": "$default",
+                "rawPath": "/my/path",
+                "rawQueryString": mock_http_api_event["rawQueryString"],
+                "cookies": ["cookie1", "cookie2"],
+                "headers": {
+                    "accept-encoding": "gzip,deflate",
+                    "x-forwarded-port": "443",
+                    "x-forwarded-proto": "https",
+                    "host": "test.execute-api.us-west-2.amazonaws.com",
+                },
+                "queryStringParameters": mock_http_api_event["queryStringParameters"],
+                "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "api-id",
+                    "authorizer": {
+                        "jwt": {
+                            "claims": {"claim1": "value1", "claim2": "value2"},
+                            "scopes": ["scope1", "scope2"],
+                        }
+                    },
+                    "domainName": "id.execute-api.us-east-1.amazonaws.com",
+                    "domainPrefix": "id",
+                    "http": {
+                        "method": "GET",
+                        "path": "/my/path",
+                        "protocol": "HTTP/1.1",
+                        "sourceIp": "192.168.100.1",
+                        "userAgent": "agent",
+                    },
+                    "requestId": "id",
+                    "routeKey": "$default",
+                    "stage": "$default",
+                    "time": "12/Mar/2020:19:03:58 +0000",
+                    "timeEpoch": 1583348638390,
+                },
+                "body": None,
+                "pathParameters": {"parameter1": "value1"},
+                "isBase64Encoded": False,
+                "stageVariables": {
+                    "stageVariable1": "value1",
+                    "stageVariable2": "value2",
+                },
+            },
+            "client": ("192.168.100.1", 0),
+            "headers": [
+                [b"accept-encoding", b"gzip,deflate"],
+                [b"x-forwarded-port", b"443"],
+                [b"x-forwarded-proto", b"https"],
+                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/my/path",
+            "query_string": mock_http_api_event["rawQueryString"],
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "type": "http",
+        }
+
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, enable_lifespan=False)
+    response = handler(mock_http_api_event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
