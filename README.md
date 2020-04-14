@@ -18,7 +18,7 @@ Python 3.6+
 ## Installation
 
 ```shell
-pip3 install mangum
+pip install mangum
 ```
 
 ## Usage
@@ -32,6 +32,25 @@ The adapter class `Mangum` accepts the following optional arguments:
 - `api_gateway_base_path` : str (default=None)
     
     Base path to strip from URL when using a custom domain name.
+
+- `text_mime_types` : list (default=None)
+        
+    The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
+
+## Binary support
+
+Binary response support is available depending on the `Content-Type` and `Content-Encoding` headers. The default text mime types are the following:
+
+- `application/json`
+- `application/javascript`
+- `application/xml`
+- `application/vnd.api+json`
+
+All `Content-Type` headers starting with `text/` are included by default.
+
+If the `Content-Encoding` header is set to `gzip`, then a binary response will be returned regardless of mime type.
+
+Binary response bodies will be base64 encoded and `isBase64Encoded` will be `True`.
 
 ### Event and context
 
@@ -66,5 +85,5 @@ handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI exa
 The adapter currently provides some basic WebSocket support using `boto3` with [DynamoDB](https://aws.amazon.com/dynamodb/). To install Mangum with the optional dependency:
 
 ```shell
-pip3 install mangum[full]
+pip install mangum[full]
 ```

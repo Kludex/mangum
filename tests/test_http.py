@@ -1,8 +1,11 @@
 import base64
 import urllib.parse
+import json
+import gzip
 
 import pytest
 from starlette.applications import Starlette
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
 from mangum import Mangum
 
@@ -125,6 +128,7 @@ def test_http_request(mock_http_event, query_string) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, enable_lifespan=False)
+
     response = handler(mock_http_event, {})
     assert response == {
         "statusCode": 200,
@@ -456,6 +460,61 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
     assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
         mock_http_event["path"][len(script_name) :]
     )
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_text_mime_types(mock_http_event) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(
+        app, enable_lifespan=False, text_mime_types=["application/vnd.apple.pkpass"]
+    )
+    response = handler(mock_http_event, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_binary_gzip_response(mock_http_event) -> None:
+    body = json.dumps({"abc": "defg"})
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"application/json"]],
+            }
+        )
+
+        await send({"type": "http.response.body", "body": body.encode()})
+
+    handler = Mangum(GZipMiddleware(app, minimum_size=1), enable_lifespan=False)
+    response = handler(mock_http_event, {})
+
+    assert response["isBase64Encoded"]
+    assert response["headers"] == {
+        "content-encoding": "gzip",
+        "content-type": "application/json",
+        "content-length": "35",
+        "vary": "Accept-Encoding",
+    }
+    assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
 
 
 @pytest.mark.parametrize(
