@@ -231,7 +231,7 @@ def test_http_response(mock_http_event) -> None:
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
             "type": "http",
         }
         await send(
@@ -598,7 +598,7 @@ def test_http_request(mock_http_api_event) -> None:
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
             "type": "http",
         }
 

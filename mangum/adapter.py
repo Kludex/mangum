@@ -22,35 +22,15 @@ DEFAULT_TEXT_MIME_TYPES = [
 ]
 
 
-def get_server_and_client(
-    event: dict, is_http_api: bool = False
-) -> typing.Tuple:  # pragma: no cover
-    """
-    Parse the server and client for the scope definition, if possible.
-    """
-
-    if is_http_api:
-        client_addr = event["requestContext"]["http"]["sourceIp"]
+def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
+    server_name = headers.get("host", "mangum")
+    if ":" not in server_name:
+        server_port = headers.get("x-forwarded-port", 80)
     else:
-        client_addr = event["requestContext"].get("identity", {}).get("sourceIp", None)
+        server_name, server_port = server_name.split(":")
+    server = (server_name, int(server_port))
 
-    client = (client_addr, 0)
-
-    headers = event.get("headers") or {}
-    server_addr = headers.get("host") if is_http_api else headers.get("Host")
-
-    if server_addr is not None:
-        if ":" not in server_addr:
-            server_port = 80
-        else:
-            server_addr, server_port = server_addr.split(":")
-            server_port = int(server_port)
-
-        server = (server_addr, server_port)  # type: typing.Any
-    else:
-        server = None
-
-    return server, client
+    return server
 
 
 @dataclass
@@ -75,6 +55,7 @@ class Mangum:
             response = self.handler(event, context)
         except BaseException as exc:
             raise exc
+
         return response
 
     def strip_base_path(self, path: str) -> str:
@@ -82,32 +63,31 @@ class Mangum:
             script_name = "/" + self.api_gateway_base_path
             if path.startswith(script_name):
                 path = path[len(script_name) :]
+
         return urllib.parse.unquote(path or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
-
-        if "eventType" not in event["requestContext"]:
-            response = self.handle_http(event, context)
-        else:
-
+        event["headers"] = event.get("headers") or {}
+        if "eventType" in event["requestContext"]:
             response = self.handle_ws(event, context)
+        else:
+            is_http_api = "http" in event["requestContext"]
+            response = self.handle_http(event, context, is_http_api=is_http_api)
 
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.lifespan.wait_shutdown())
+
         return response
 
-    def handle_http(self, event: dict, context: dict) -> dict:
-        is_http_api = "http" in event["requestContext"]
-        server, client = get_server_and_client(event, is_http_api)
-        headers = event.get("headers") or {}
-        headers_key_value_pairs = [
-            [k.lower().encode(), v.encode()] for k, v in headers.items()
-        ]
-
+    def handle_http(self, event: dict, context: dict, *, is_http_api: bool) -> dict:
         if is_http_api:
+            source_ip = event["requestContext"]["http"]["sourceIp"]
             query_string = event.get("rawQueryString")
+            path = event["requestContext"]["http"]["path"]
+            http_method = event["requestContext"]["http"]["method"]
         else:
+            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             multi_value_query_string_params = event["multiValueQueryStringParameters"]
             query_string = (
                 urllib.parse.urlencode(
@@ -116,25 +96,22 @@ class Mangum:
                 if multi_value_query_string_params
                 else b""
             )
+            path = event["path"]
+            http_method = event["httpMethod"]
 
-        event_path = (
-            event["requestContext"]["http"]["path"] if is_http_api else event["path"]
-        )
-        http_method = (
-            event["requestContext"]["http"]["method"]
-            if is_http_api
-            else event["httpMethod"]
-        )
+        headers = {k.lower(): v for k, v in event["headers"].items()}
+        server = get_server(headers)
+        client = (source_ip, 0)
 
         scope = {
             "type": "http",
             "http_version": "1.1",
             "method": http_method,
-            "headers": headers_key_value_pairs,
-            "path": self.strip_base_path(event_path),
+            "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
+            "path": self.strip_base_path(path),
             "raw_path": None,
             "root_path": "",
-            "scheme": headers.get("X-Forwarded-Proto", "https"),
+            "scheme": event["headers"].get("x-forwarded-proto", "https"),
             "query_string": query_string,
             "server": server,
             "client": client,
@@ -162,6 +139,7 @@ class Mangum:
             {"type": "http.request", "body": body, "more_body": False}
         )
         response = asgi_cycle(self.app)
+
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
@@ -178,11 +156,10 @@ class Mangum:
         if event_type == "CONNECT":
             # The initial connect event. Parse and store the scope for the connection
             # in DynamoDB to be retrieved in subsequent message events for this request.
-            server, client = get_server_and_client(event)
-
-            # The scope headers must be JSON serializable to store in DynamoDB, but
-            # they will be parsed on the MESSAGE event.
-            headers = event.get("headers") or {}
+            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
+            headers = {k.lower(): v for k, v in event["headers"].items()}
+            server = get_server(headers)
+            client = (source_ip, 0)
 
             root_path = event["requestContext"]["stage"]
             scope = {
@@ -191,7 +168,7 @@ class Mangum:
                 "headers": headers,
                 "raw_path": None,
                 "root_path": root_path,
-                "scheme": headers.get("X-Forwarded-Proto", "wss"),
+                "scheme": headers.get("x-forwarded-proto", "wss"),
                 "query_string": "",
                 "server": server,
                 "client": client,
@@ -219,7 +196,7 @@ class Mangum:
 
             # Ensure the scope definition complies with the ASGI spec.
             query_string = scope["query_string"]
-            headers = scope["headers"]
+            headers = scope["headers"]  # type: ignore
             headers = [
                 [k.encode(), v.encode()] for k, v in headers.items()  # type: ignore
             ]
