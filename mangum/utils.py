@@ -1,5 +1,4 @@
 import logging
-import typing
 
 
 def make_response(content: str, status_code: int = 500) -> dict:
