@@ -231,7 +231,7 @@ def test_http_response(mock_http_event) -> None:
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
             "type": "http",
         }
         await send(
@@ -598,7 +598,7 @@ def test_http_request(mock_http_api_event) -> None:
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
             "type": "http",
         }
 
@@ -613,6 +613,32 @@ def test_http_request(mock_http_api_event) -> None:
 
     handler = Mangum(app, enable_lifespan=False)
     response = handler(mock_http_api_event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_empty_header(mock_http_event) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, enable_lifespan=False)
+
+    mock_http_event["headers"] = None
+
+    response = handler(mock_http_event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
