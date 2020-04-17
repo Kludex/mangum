@@ -67,7 +67,6 @@ class Mangum:
         return urllib.parse.unquote(path or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
-        event["headers"] = event.get("headers") or {}
         if "eventType" in event["requestContext"]:
             response = self.handle_ws(event, context)
         else:
@@ -99,7 +98,11 @@ class Mangum:
             path = event["path"]
             http_method = event["httpMethod"]
 
-        headers = {k.lower(): v for k, v in event["headers"].items()}
+        headers = (
+            {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
+            if event.get("headers")
+            else {}
+        )
         server = get_server(headers)
         client = (source_ip, 0)
 
@@ -111,7 +114,7 @@ class Mangum:
             "path": self.strip_base_path(path),
             "raw_path": None,
             "root_path": "",
-            "scheme": event["headers"].get("x-forwarded-proto", "https"),
+            "scheme": headers.get("x-forwarded-proto", "https"),
             "query_string": query_string,
             "server": server,
             "client": client,
@@ -156,16 +159,20 @@ class Mangum:
         if event_type == "CONNECT":
             # The initial connect event. Parse and store the scope for the connection
             # in DynamoDB to be retrieved in subsequent message events for this request.
-            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
-            headers = {k.lower(): v for k, v in event["headers"].items()}
+            headers = (
+                {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
+                if event.get("headers")
+                else {}
+            )
             server = get_server(headers)
+            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
 
             root_path = event["requestContext"]["stage"]
             scope = {
                 "type": "websocket",
                 "path": "/",
-                "headers": headers,
+                "headers": headers,  # The headers must be JSON serializable.
                 "raw_path": None,
                 "root_path": root_path,
                 "scheme": headers.get("x-forwarded-proto", "wss"),
