@@ -19,8 +19,8 @@ class Lifespan:
         self.shutdown_event: asyncio.Event = asyncio.Event()
 
     async def startup(self) -> None:
-        self.logger.info("Waiting for application startup.")
         if self.is_supported:
+            self.logger.info("Waiting for application startup.")
             await self.app_queue.put({"type": "lifespan.startup"})
             await self.startup_event.wait()
             if self.has_error:
@@ -61,7 +61,7 @@ class Lifespan:
             self.startup_event.set()
         elif message_type == "lifespan.shutdown.complete":
             self.shutdown_event.set()
-        else:  # pragma: no cover
+        else:
             raise RuntimeError(
                 f"Expected lifespan message type, received: {message_type}"
             )
