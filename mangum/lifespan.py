@@ -2,56 +2,66 @@ import logging
 import asyncio
 from dataclasses import dataclass
 
-from mangum.types import ASGIApp, Message, Send, Receive
+from mangum.types import ASGIApp, Message
+from mangum.exceptions import LifespanFailure
 
 
 @dataclass
 class Lifespan:
     app: ASGIApp
     logger: logging.Logger
-    startup_event: asyncio.Event = asyncio.Event()
-    shutdown_event: asyncio.Event = asyncio.Event()
-    app_queue: asyncio.Queue = asyncio.Queue()
+    is_supported: bool = False
+    has_error: bool = False
 
-    async def run(self) -> None:
-        receive, send = (self.receiver(), self.sender())
-        try:
-            await self.app({"type": "lifespan"}, receive, send)
-        except BaseException as exc:  # pragma: no cover
-            self.logger.error(f"Exception in 'lifespan' protocol: {exc}")
-        finally:
-            self.startup_event.set()
-            self.shutdown_event.set()
+    def __post_init__(self) -> None:
+        self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.startup_event: asyncio.Event = asyncio.Event()
+        self.shutdown_event: asyncio.Event = asyncio.Event()
 
-    def sender(self) -> Send:
-        # startup_event, shutdown_event = self.startup_event, self.shutdown_event
-
-        async def send(message: Message) -> None:
-            message_type = message["type"]
-            if message_type == "lifespan.startup.complete":
-                self.startup_event.set()
-            elif message_type == "lifespan.shutdown.complete":
-                self.shutdown_event.set()
-            else:  # pragma: no cover
-                raise RuntimeError(
-                    f"Expected lifespan message type, received: {message_type}"
-                )
-            return None
-
-        return send
-
-    def receiver(self) -> Receive:
-        async def receive() -> Message:
-            return await self.app_queue.get()
-
-        return receive
-
-    async def wait_startup(self) -> None:
+    async def startup(self) -> None:
         self.logger.info("Waiting for application startup.")
-        await self.app_queue.put({"type": "lifespan.startup"})
-        await self.startup_event.wait()
+        if self.is_supported:
+            await self.app_queue.put({"type": "lifespan.startup"})
+            await self.startup_event.wait()
+            if self.has_error:
+                self.logger.error("Application startup failed.")
+            else:
+                self.logger.info("Application startup complete.")
 
-    async def wait_shutdown(self) -> None:
+    async def shutdown(self) -> None:
+        if self.has_error:
+            return
         self.logger.info("Waiting for application shutdown.")
         await self.app_queue.put({"type": "lifespan.shutdown"})
         await self.shutdown_event.wait()
+
+    async def run(self) -> None:
+        try:
+            await self.app({"type": "lifespan"}, self.receive, self.send)
+        except BaseException as exc:
+            self.startup_event.set()
+            self.shutdown_event.set()
+            self.has_error = True
+            if not self.is_supported:
+                self.logger.info("ASGI 'lifespan' protocol appears unsupported.")
+            else:
+                self.logger.error("Exception in 'lifespan' protocol.", exc_info=exc)
+
+    async def receive(self) -> Message:
+        self.is_supported = True
+
+        return await self.app_queue.get()
+
+    async def send(self, message: Message) -> None:
+        if not self.is_supported:
+            raise LifespanFailure("Lifespan unsupported.")
+
+        message_type = message["type"]
+        if message_type == "lifespan.startup.complete":
+            self.startup_event.set()
+        elif message_type == "lifespan.shutdown.complete":
+            self.shutdown_event.set()
+        else:  # pragma: no cover
+            raise RuntimeError(
+                f"Expected lifespan message type, received: {message_type}"
+            )

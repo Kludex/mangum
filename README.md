@@ -77,7 +77,7 @@ async def app(scope, receive, send):
     await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 
-handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
+handler = Mangum(app)
 ```
 
 ## WebSockets (experimental)
