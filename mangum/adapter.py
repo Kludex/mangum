@@ -48,7 +48,7 @@ class Mangum:
             loop = asyncio.get_event_loop()
             self.lifespan = Lifespan(self.app, logger=self.logger)
             loop.create_task(self.lifespan.run())
-            loop.run_until_complete(self.lifespan.wait_startup())
+            loop.run_until_complete(self.lifespan.startup())
 
     def __call__(self, event: dict, context: dict) -> dict:
         try:
@@ -74,8 +74,9 @@ class Mangum:
             response = self.handle_http(event, context, is_http_api=is_http_api)
 
         if self.enable_lifespan:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.lifespan.wait_shutdown())
+            if self.lifespan.is_supported:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(self.lifespan.shutdown())
 
         return response
 
