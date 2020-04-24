@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 
 from mangum.exceptions import WebSocketError
+from mangum.types import Scope
 
 try:
     import boto3
@@ -21,7 +22,7 @@ class WebSocket:
     client_id_field: str = os.environ.get("WS_CLIENT_ID_FIELD", "client_id")
     region_name: str = os.environ.get("WS_REGION_NAME", "ap-southeast-1")
     table_name: str = os.environ.get("WS_TABLE_NAME", "mangum")
-    scope: typing.Optional[dict] = None
+    endpoint_url: typing.Optional[str] = None
 
     def __post_init__(self) -> None:
         try:
@@ -35,7 +36,7 @@ class WebSocket:
     def client_key(self) -> dict:
         return {self.client_id_field: self.client_id}
 
-    def accept(self, initial_scope: dict) -> None:
+    def accept(self, initial_scope: Scope) -> None:
         client = {"initial_scope": json.dumps(initial_scope)}
         client.update(self.client_key)
         try:
@@ -60,17 +61,16 @@ class WebSocket:
         scope.update({"headers": headers, "query_string": query_string.encode()})
         self.scope = scope
 
-    def send(self, data: dict) -> None:  # pragma: no cover
+    def send(self, text_data: str) -> None:  # pragma: no cover
         try:
             apigw_client = boto3.client(
-                "apigatewaymanagementapi",
-                endpoint_url=self.scope["aws"]["endpoint_url"],
+                "apigatewaymanagementapi", endpoint_url=self.endpoint_url
             )
-            apigw_client.post_to_connection(ConnectionId=self.client_id, Data=data)
+            apigw_client.post_to_connection(ConnectionId=self.client_id, Data=text_data)
         except ClientError as exc:
             status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code == 410:
-                self.disconnect(self.client_id)
+                self.disconnect()
             else:
                 raise WebSocketError(exc)
 

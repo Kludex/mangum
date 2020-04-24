@@ -1,5 +1,6 @@
 import enum
 import asyncio
+import logging
 from dataclasses import dataclass, field
 
 from mangum.connections import WebSocket
@@ -10,11 +11,13 @@ from mangum.types import ASGIApp, Message
 class WebSocketCycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
+    CLOSED = enum.auto()
 
 
 @dataclass
 class WebSocketCycle:
     websocket: WebSocket
+    logger: logging.Logger
     state: WebSocketCycleState = WebSocketCycleState.REQUEST
     response: dict = field(default_factory=dict)
 
@@ -24,7 +27,7 @@ class WebSocketCycle:
         self.response["statusCode"] = 200
 
     def __call__(self, app: ASGIApp) -> dict:
-        asgi_instance = app(self.websocket.scope, self.receive, self.send)
+        asgi_instance = self.run(app)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
 
@@ -32,15 +35,15 @@ class WebSocketCycle:
 
     async def run(self, app: ASGIApp) -> None:
         try:
-            await app(self.scope, self.receive, self.send)
+            await app(self.websocket.scope, self.receive, self.send)
         except BaseException as exc:
             msg = "Exception in ASGI application\n"
             self.logger.error(msg, exc_info=exc)
-            if self.state is not WebSocketCycleState.COMPLETE:
-                self.state = WebSocketCycleState.COMPLETE
+            if self.state is not WebSocketCycleState.CLOSED:
+                self.state = WebSocketCycleState.CLOSED
             self.response["statusCode"] = 500
 
-    async def receive(self) -> Message:
+    async def receive(self) -> Message:  # pragma: no cover
         message = await self.app_queue.get()
 
         return message
@@ -54,6 +57,6 @@ class WebSocketCycle:
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
-            data = message.get("text", "")
+            text_data = message.get("text", "")
             if message["type"] == "websocket.send":
-                self.websocket.send(data)
+                self.websocket.send(text_data)

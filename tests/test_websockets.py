@@ -6,7 +6,8 @@ from moto import mock_dynamodb2
 from starlette.applications import Starlette
 
 from mangum import Mangum
-from mangum.connections import WebSocketError
+from mangum.connections import WebSocket, WebSocketError
+from mangum.protocols.websockets import WebSocketCycle
 
 
 def create_dynamo_db_table(

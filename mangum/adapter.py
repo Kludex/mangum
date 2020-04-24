@@ -163,9 +163,7 @@ class Mangum:
             server = get_server(headers)
             source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
-            stage = event["requestContext"]["stage"]
-            domain_name = event["requestContext"]["domainName"]
-            endpoint_url = f"https://{domain_name}/{stage}"
+
             # root_path = event["requestContext"]["stage"]
             initial_scope = {
                 "type": "websocket",
@@ -177,11 +175,7 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {
-                    "event": event,
-                    "context": context,
-                    "endpoint_url": endpoint_url,
-                },
+                "aws": {"event": event, "context": context},
             }
 
             websocket = WebSocket(client_id)
@@ -189,10 +183,14 @@ class Mangum:
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-            websocket = WebSocket(client_id)
+            stage = event["requestContext"]["stage"]
+            domain_name = event["requestContext"]["domainName"]
+            endpoint_url = f"https://{domain_name}/{stage}"
+
+            websocket = WebSocket(client_id, endpoint_url=endpoint_url)
             websocket.connect()
 
-            asgi_cycle = WebSocketCycle(websocket)
+            asgi_cycle = WebSocketCycle(websocket, logger=self.logger)
             asgi_cycle.app_queue.put_nowait({"type": "websocket.connect"})
             asgi_cycle.app_queue.put_nowait(
                 {
