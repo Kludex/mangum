@@ -6,18 +6,15 @@ from moto import mock_dynamodb2
 from starlette.applications import Starlette
 
 from mangum import Mangum
-from mangum.connections import WebSocket, WebSocketError
-from mangum.protocols.websockets import WebSocketCycle
+from mangum.connections import WebSocketError
 
 
-def create_dynamo_db_table(
-    table_name: str = "mangum", client_id_field: str = "client_id"
-):
+def create_dynamo_db_table(table_name: str = "mangum"):
     dynamodb_resource = boto3.resource("dynamodb", region_name="ap-southeast-1")
     dynamodb_resource.meta.client.create_table(
         TableName=table_name,
-        KeySchema=[{"AttributeName": client_id_field, "KeyType": "HASH"}],
-        AttributeDefinitions=[{"AttributeName": client_id_field, "AttributeType": "S"}],
+        KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
         ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
     )
     dynamodb_table = dynamodb_resource.Table(table_name)
@@ -83,7 +80,7 @@ def test_websocket_table_does_not_exist(mock_ws_connect_event) -> None:
 @mock_dynamodb2
 def test_websocket_client_already_exists(mock_ws_connect_event) -> None:
     table = create_dynamo_db_table()
-    table.put_item(Item={"client_id": "d4NsecoByQ0CH-Q="})
+    table.put_item(Item={"connectionId": "d4NsecoByQ0CH-Q="})
 
     async def app(scope, receive, send):
         await send({"type": "websocket.send", "text": "Hello world!"})
@@ -98,7 +95,7 @@ def test_websocket_client_does_not_exist(
     mock_ws_send_event, mock_ws_disconnect_event
 ) -> None:
     table = create_dynamo_db_table()
-    table.delete_item(Key={"client_id": "d4NsecoByQ0CH-Q="})
+    table.delete_item(Key={"connectionId": "d4NsecoByQ0CH-Q="})
 
     async def app(scope, receive, send):
         await send({"type": "websocket.send", "text": "Hello world!"})

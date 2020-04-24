@@ -19,7 +19,6 @@ except ImportError:  # pragma: no cover
 class WebSocket:
 
     client_id: str
-    client_id_field: str = os.environ.get("WS_CLIENT_ID_FIELD", "client_id")
     region_name: str = os.environ.get("WS_REGION_NAME", "ap-southeast-1")
     table_name: str = os.environ.get("WS_TABLE_NAME", "mangum")
     endpoint_url: typing.Optional[str] = None
@@ -34,15 +33,14 @@ class WebSocket:
 
     @property
     def client_key(self) -> dict:
-        return {self.client_id_field: self.client_id}
+        return {"connectionId": self.client_id}
 
     def accept(self, initial_scope: Scope) -> None:
         client = {"initial_scope": json.dumps(initial_scope)}
         client.update(self.client_key)
         try:
             self.dynamodb_table.put_item(
-                Item=client,
-                ConditionExpression=f"attribute_not_exists({self.client_id_field})",
+                Item=client, ConditionExpression=f"attribute_not_exists(connectionId)"
             )
         except ClientError as exc:
             raise WebSocketError(exc)
