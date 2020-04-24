@@ -2,83 +2,58 @@ import enum
 import asyncio
 from dataclasses import dataclass, field
 
-from mangum.connections import ConnectionTable
-from mangum.types import ASGIApp, Message, Scope
-from mangum.exceptions import ASGIWebSocketCycleException
+from mangum.connections import WebSocket
+from mangum.exceptions import WebSocketError
+from mangum.types import ASGIApp, Message
 
 
-class ASGIState(enum.Enum):
+class WebSocketCycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
 
 
 @dataclass
-class ASGIWebSocketCycle:
-
-    scope: Scope
-    endpoint_url: str
-    connection_id: str
-    connection_table: ConnectionTable
-    state: ASGIState = ASGIState.REQUEST
+class WebSocketCycle:
+    websocket: WebSocket
+    state: WebSocketCycleState = WebSocketCycleState.REQUEST
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.response["statusCode"] = 200
 
     def __call__(self, app: ASGIApp) -> dict:
-        asgi_instance = app(self.scope, self.receive, self.send)
+        asgi_instance = app(self.websocket.scope, self.receive, self.send)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
+
         return self.response
 
-    async def receive(self) -> Message:  # pragma: no cover
+    async def run(self, app: ASGIApp) -> None:
+        try:
+            await app(self.scope, self.receive, self.send)
+        except BaseException as exc:
+            msg = "Exception in ASGI application\n"
+            self.logger.error(msg, exc_info=exc)
+            if self.state is not WebSocketCycleState.COMPLETE:
+                self.state = WebSocketCycleState.COMPLETE
+            self.response["statusCode"] = 500
+
+    async def receive(self) -> Message:
         message = await self.app_queue.get()
+
         return message
 
     async def send(self, message: Message) -> None:
-        if self.state is ASGIState.REQUEST:
+        if self.state is WebSocketCycleState.REQUEST:
             if message["type"] in ("websocket.accept", "websocket.close"):
-                self.state = ASGIState.RESPONSE
+                self.state = WebSocketCycleState.RESPONSE
             else:
-                raise RuntimeError(
+                raise WebSocketError(
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
             data = message.get("text", "")
             if message["type"] == "websocket.send":
-                group = message.get("group", None)
-                self.send_data(data=data, group=group)
-
-    def send_data(self, *, data: str, group: str = None) -> None:  # pragma: no cover
-        """
-        Send a data message to a client or group of clients using the connection table.
-        """
-        item = self.connection_table.get_item(self.connection_id)
-        if not item:
-            raise ASGIWebSocketCycleException("Connection not found")
-
-        if group:
-            # Retrieve the existing groups for the current connection, or create a new
-            # groups entry if one does not exist.
-            groups = item.get("groups", [])
-            if group not in groups:
-                # Ensure the group specified in the message is included.
-                groups.append(group)
-                status_code = self.connection_table.update_item(
-                    self.connection_id, groups=groups
-                )
-                if status_code != 200:
-                    raise ASGIWebSocketCycleException("Error updating groups")
-
-            # Retrieve all items associated with the current group.
-            items = self.connection_table.get_group_items(group)
-            if items is None:
-                raise ASGIWebSocketCycleException("No connections found")
-        else:
-            # Single send, add the current item to a list to be iterated by the
-            # connection table.
-            items = [item]
-        self.connection_table.send_data(
-            items, endpoint_url=self.endpoint_url, data=data
-        )
+                self.websocket.send(data)

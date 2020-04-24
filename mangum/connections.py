@@ -1,83 +1,81 @@
 import typing
 import os
+import json
+from dataclasses import dataclass
+
+from mangum.exceptions import WebSocketError
 
 try:
     import boto3
-    import botocore
-    from boto3.dynamodb.conditions import Attr
+    from botocore.exceptions import ClientError
 
     __ERR__ = ""
 except ImportError:  # pragma: no cover
     __ERR__ = "boto3 must be installed for WebSocket support."
 
 
-class ConnectionTable:
-    """
-    Represents a DynamoDB resource that contains the WebSocket connection table.
-    """
+@dataclass
+class WebSocket:
 
-    def __init__(self) -> None:
-        dynamodb = boto3.resource("dynamodb", region_name=os.environ["REGION_NAME"])
-        self.table = dynamodb.Table(os.environ["TABLE_NAME"])
+    client_id: str
+    client_id_field: str = os.environ.get("WS_CLIENT_ID_FIELD", "client_id")
+    region_name: str = os.environ.get("WS_REGION_NAME", "ap-southeast-1")
+    table_name: str = os.environ.get("WS_TABLE_NAME", "mangum")
+    scope: typing.Optional[dict] = None
 
-    def get_item(self, connection_id: str) -> typing.Union[typing.Dict, None]:
-        """
-        Retrieve an item in the connection table by id.
-        """
-        item = self.table.get_item(Key={"connectionId": connection_id}).get(
-            "Item", None
-        )
-        return item
+    def __post_init__(self) -> None:
+        try:
+            dynamodb_resource = boto3.resource("dynamodb", region_name=self.region_name)
+            dynamodb_resource.meta.client.describe_table(TableName=self.table_name)
+        except ClientError as exc:
+            raise WebSocketError(exc)
+        self.dynamodb_table = dynamodb_resource.Table(self.table_name)
 
-    def update_item(self, connection_id: str, **kwargs: typing.Any) -> int:
-        """
-        Update an item in the connection table by id.
-        """
-        result = self.table.put_item(Item={**{"connectionId": connection_id}, **kwargs})
-        return result.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    @property
+    def client_key(self) -> dict:
+        return {self.client_id_field: self.client_id}
 
-    def delete_item(self, connection_id: str) -> int:
-        """
-        Delete an item in the connection table by id.
-        """
-        result = self.table.delete_item(Key={"connectionId": connection_id})
-        return result.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    def accept(self, initial_scope: dict) -> None:
+        client = {"initial_scope": json.dumps(initial_scope)}
+        client.update(self.client_key)
+        try:
+            self.dynamodb_table.put_item(
+                Item=client,
+                ConditionExpression=f"attribute_not_exists({self.client_id_field})",
+            )
+        except ClientError as exc:
+            raise WebSocketError(exc)
 
-    def get_group_items(
-        self, group: str
-    ) -> typing.Union[typing.List[typing.Dict], None]:
-        """
-        Retrieve a list of items in the connection table by group.
-        """
-        items = self.table.scan(
-            ProjectionExpression="connectionId",
-            FilterExpression=Attr("groups").contains(group),
-        ).get("Items", None)
-        return items
+    def connect(self) -> None:
+        try:
+            client = self.dynamodb_table.get_item(Key=self.client_key)["Item"]
+        except (ClientError, KeyError) as exc:
+            raise WebSocketError(exc)
 
-    def send_data(
-        self, items: typing.List[typing.Dict], *, endpoint_url: str, data: str
-    ) -> None:  # pragma: no cover
-        """
-        Send data to one or more items in the connection table.
-        """
+        scope = json.loads(client["initial_scope"])
+        query_string = scope["query_string"]
+        headers = scope["headers"]
+        if headers:
+            headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
+        scope.update({"headers": headers, "query_string": query_string.encode()})
+        self.scope = scope
 
-        apigw_management = boto3.client(
-            "apigatewaymanagementapi", endpoint_url=endpoint_url
-        )
-        for item in items:
+    def send(self, data: dict) -> None:  # pragma: no cover
+        try:
+            apigw_client = boto3.client(
+                "apigatewaymanagementapi",
+                endpoint_url=self.scope["aws"]["endpoint_url"],
+            )
+            apigw_client.post_to_connection(ConnectionId=self.client_id, Data=data)
+        except ClientError as exc:
+            status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status_code == 410:
+                self.disconnect(self.client_id)
+            else:
+                raise WebSocketError(exc)
 
-            connection_id = item["connectionId"]
-            try:
-                apigw_management.post_to_connection(
-                    ConnectionId=connection_id, Data=data
-                )
-            except botocore.exceptions.ClientError as exc:
-                status_code = exc.response.get("ResponseMetadata", {}).get(
-                    "HTTPStatusCode"
-                )
-                if status_code == 410:
-                    # Delete stale connection
-                    self.delete_item(connection_id)
-                else:
-                    raise exc
+    def disconnect(self) -> None:
+        try:
+            self.dynamodb_table.delete_item(Key=self.client_key)
+        except ClientError as exc:  # pragma: no cover
+            raise WebSocketError(exc)
