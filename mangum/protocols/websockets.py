@@ -10,7 +10,6 @@ from mangum.utils import get_logger
 class WebSocketCycleState(enum.Enum):
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
-    CLOSED = enum.auto()
 
 
 @dataclass
@@ -40,8 +39,6 @@ class WebSocketCycle:
         except BaseException as exc:
             msg = "Exception in ASGI application\n"
             self.logger.error(msg, exc_info=exc)
-            if self.state is not WebSocketCycleState.CLOSED:
-                self.state = WebSocketCycleState.CLOSED
             self.response["statusCode"] = 500
 
     async def receive(self) -> Message:
