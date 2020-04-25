@@ -42,18 +42,15 @@ class Mangum:
     log_level: str = "info"
 
     def __post_init__(self) -> None:
-        self.logger = get_logger(log_level=self.log_level)
+        self.logger = get_logger("mangum", log_level=self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app, logger=self.logger)
+            self.lifespan = Lifespan(self.app)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.startup())
 
     def __call__(self, event: dict, context: dict) -> dict:
-        try:
-            response = self.handler(event, context)
-        except BaseException as exc:
-            raise exc
+        response = self.handler(event, context)
 
         return response
 
@@ -136,7 +133,7 @@ class Mangum:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
         asgi_cycle = HTTPCycle(
-            scope, text_mime_types=text_mime_types, logger=self.logger
+            scope, text_mime_types=text_mime_types, log_level=self.log_level
         )
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
@@ -146,10 +143,14 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
+        if __ERR__:  # pragma: no cover
+            raise ImportError(__ERR__)
+
         event_type = event["requestContext"]["eventType"]
-        client_id = event["requestContext"][
-            os.environ.get("WS_CLIENT_ID_FIELD", "client_id")
-        ]
+        connection_id = event["requestContext"]["connectionId"]
+        response = {"statusCode": 200}
+
+        self.logger.debug("Received WebSocket event: %s", event_type)
 
         if event_type == "CONNECT":
 
@@ -165,9 +166,10 @@ class Mangum:
             client = (source_ip, 0)
 
             # root_path = event["requestContext"]["stage"]
+
             initial_scope = {
                 "type": "websocket",
-                "path": "/",  # todo
+                "path": "/ws",
                 "headers": headers,  # The headers must be JSON serializable.
                 "raw_path": None,
                 "root_path": "",
@@ -175,43 +177,44 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": context},
+                "aws": {"event": event, "context": None},
             }
 
-            websocket = WebSocket(client_id)
-            websocket.accept(initial_scope)
-            response = {"statusCode": 200}
+            try:
+                websocket = WebSocket(connection_id)
+                websocket.accept(initial_scope)
+            except WebSocketError as exc:
+                self.logger.error(exc)
+                response = {"statusCode": 500}
 
         elif event_type == "MESSAGE":
             stage = event["requestContext"]["stage"]
             domain_name = event["requestContext"]["domainName"]
-            endpoint_url = f"https://{domain_name}/{stage}"
-
-            websocket = WebSocket(client_id, endpoint_url=endpoint_url)
-            websocket.connect()
-
-            asgi_cycle = WebSocketCycle(websocket, logger=self.logger)
-            asgi_cycle.app_queue.put_nowait({"type": "websocket.connect"})
-            asgi_cycle.app_queue.put_nowait(
-                {
-                    "type": "websocket.receive",
-                    "path": "/",
-                    "bytes": None,
-                    "text": event["body"],
-                }
+            endpoint_url = os.environ.get(
+                "APIGW_ENDPOINT_URL", f"http://{domain_name}/{stage}"
             )
-            asgi_cycle.app_queue.put_nowait(
-                {"type": "websocket.disconnect", "code": 1001}
-            )
-
             try:
-                response = asgi_cycle(self.app)
-            except WebSocketError:  # pragma: no cover
+                websocket = WebSocket(connection_id, endpoint_url=endpoint_url)
+                websocket.connect()
+            except WebSocketError as exc:
+                self.logger.error(exc)
                 response = {"statusCode": 500}
+            else:
+                asgi_cycle = WebSocketCycle(websocket, self.log_level)
+                asgi_cycle.put_message({"type": "websocket.connect"})
+                asgi_cycle.put_message(
+                    {
+                        "type": "websocket.receive",
+                        "path": "/",
+                        "bytes": None,
+                        "text": event["body"],
+                    }
+                )
+                asgi_cycle.put_message({"type": "websocket.disconnect", "code": 1001})
+                response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
-            websocket = WebSocket(client_id)
+            websocket = WebSocket(connection_id)
             websocket.disconnect()
-            response = {"statusCode": 200}
 
         return response

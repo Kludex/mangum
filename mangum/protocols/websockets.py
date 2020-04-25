@@ -1,11 +1,10 @@
 import enum
 import asyncio
-import logging
 from dataclasses import dataclass, field
 
 from mangum.connections import WebSocket
-from mangum.exceptions import WebSocketError
 from mangum.types import ASGIApp, Message
+from mangum.utils import get_logger
 
 
 class WebSocketCycleState(enum.Enum):
@@ -17,14 +16,16 @@ class WebSocketCycleState(enum.Enum):
 @dataclass
 class WebSocketCycle:
     websocket: WebSocket
-    logger: logging.Logger
+    log_level: str
     state: WebSocketCycleState = WebSocketCycleState.REQUEST
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        self.logger = get_logger("mangum.websocket", log_level=self.log_level)
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["statusCode"] = 200
+        self.logger.debug("WebSocket cycle initialized!")
 
     def __call__(self, app: ASGIApp) -> dict:
         asgi_instance = self.run(app)
@@ -43,7 +44,7 @@ class WebSocketCycle:
                 self.state = WebSocketCycleState.CLOSED
             self.response["statusCode"] = 500
 
-    async def receive(self) -> Message:  # pragma: no cover
+    async def receive(self) -> Message:
         message = await self.app_queue.get()
 
         return message
@@ -53,10 +54,13 @@ class WebSocketCycle:
             if message["type"] in ("websocket.accept", "websocket.close"):
                 self.state = WebSocketCycleState.RESPONSE
             else:
-                raise WebSocketError(
+                raise RuntimeError(
                     f"Expected 'websocket.accept' or 'websocket.close', received: {message['type']}"
                 )
         else:
-            text_data = message.get("text", "")
+            msg_data = message.get("text", "").encode()
             if message["type"] == "websocket.send":
-                self.websocket.send(text_data)
+                self.websocket.send(msg_data)
+
+    def put_message(self, message: Message) -> None:
+        self.app_queue.put_nowait(message)

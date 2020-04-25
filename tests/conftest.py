@@ -168,7 +168,7 @@ def mock_ws_connect_event() -> dict:
         "requestContext": {
             "apiId": "test",
             "connectedAt": 1564892342293,
-            "client_id": "d4NsecoByQ0CH-Q=",
+            "connectionId": "d4NsecoByQ0CH-Q=",
             "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
             "eventType": "CONNECT",
             "extendedRequestId": "d4NseGc4yQ0FsSA=",
@@ -209,7 +209,7 @@ def mock_ws_send_event() -> dict:
         "requestContext": {
             "apiId": "test",
             "connectedAt": 1564984321285,
-            "client_id": "d4NsecoByQ0CH-Q=",
+            "connectionId": "d4NsecoByQ0CH-Q=",
             "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
             "eventType": "MESSAGE",
             "extendedRequestId": "d7uRtFvnyQ0FYmw=",
@@ -255,7 +255,7 @@ def mock_ws_disconnect_event() -> dict:
         "requestContext": {
             "apiId": "test",
             "connectedAt": 1565140098258,
-            "client_id": "d4NsecoByQ0CH-Q=",
+            "connectionId": "d4NsecoByQ0CH-Q=",
             "domainName": "test.execute-api.ap-southeast-1.amazonaws.com",
             "eventType": "DISCONNECT",
             "extendedRequestId": "eBql1FJmSQ0FrjA=",
@@ -300,12 +300,12 @@ def mock_ws_disconnect_event() -> dict:
 #         client = boto3.client("dynamodb", region_name="ap-southeast-1")
 #         client.create_table(
 #             TableName="mangum",
-#             KeySchema=[{"AttributeName": "client_id", "KeyType": "HASH"}],
-#             AttributeDefinitions=[{"AttributeName": "client_id", "AttributeType": "S"}],
+#             KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+#             AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
 #             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
 #         )
 
 
 def pytest_generate_tests(metafunc):
-    os.environ["WS_TABLE_NAME"] = "mangum"
-    os.environ["WS_REGION_NAME"] = "ap-southeast-1"
+    os.environ["TABLE_NAME"] = "mangum"
+    os.environ["TABLE_REGION"] = "ap-southeast-1"

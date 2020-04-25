@@ -1,12 +1,11 @@
 import mock
 
-import pytest
+import os
 import boto3
 from moto import mock_dynamodb2
 from starlette.applications import Starlette
 
 from mangum import Mangum
-from mangum.connections import WebSocketError
 
 
 def create_dynamo_db_table(table_name: str = "mangum"):
@@ -73,8 +72,8 @@ def test_websocket_table_does_not_exist(mock_ws_connect_event) -> None:
         await send({"type": "websocket.send", "text": "Hello world!"})
 
     handler = Mangum(app)
-    with pytest.raises(WebSocketError):
-        handler(mock_ws_connect_event, {})
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 500}
 
 
 @mock_dynamodb2
@@ -86,8 +85,8 @@ def test_websocket_client_already_exists(mock_ws_connect_event) -> None:
         await send({"type": "websocket.send", "text": "Hello world!"})
 
     handler = Mangum(app)
-    with pytest.raises(WebSocketError):
-        handler(mock_ws_connect_event, {})
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 500}
 
 
 @mock_dynamodb2
@@ -102,8 +101,8 @@ def test_websocket_client_does_not_exist(
         await send({"type": "websocket.close", "code": 1000})
 
     handler = Mangum(app)
-    with pytest.raises(WebSocketError):
-        handler(mock_ws_send_event, {})
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 500}
 
 
 @mock_dynamodb2
@@ -119,6 +118,16 @@ def test_websocket_cycle_exception(mock_ws_connect_event, mock_ws_send_event) ->
     handler = Mangum(app)
     response = handler(mock_ws_send_event, {})
     assert response == {"statusCode": 500}
+
+
+def test_websocket_env_vars(mock_ws_connect_event) -> None:
+    async def app(scope, receive, send):
+        await send({"type": "websocket.send", "text": "Hello world!"})
+
+    os.environ.pop("TABLE_NAME")
+    handler = Mangum(app)
+    handler(mock_ws_connect_event, {})
+    os.environ["TABLE_NAME"] = "mangum"
 
 
 @mock_dynamodb2

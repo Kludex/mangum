@@ -18,40 +18,51 @@ except ImportError:  # pragma: no cover
 @dataclass
 class WebSocket:
 
-    client_id: str
-    region_name: str = os.environ.get("WS_REGION_NAME", "ap-southeast-1")
-    table_name: str = os.environ.get("WS_TABLE_NAME", "mangum")
+    connection_id: str
     endpoint_url: typing.Optional[str] = None
 
     def __post_init__(self) -> None:
         try:
-            dynamodb_resource = boto3.resource("dynamodb", region_name=self.region_name)
-            dynamodb_resource.meta.client.describe_table(TableName=self.table_name)
+            region_name = os.environ["TABLE_REGION"]
+            table_name = os.environ["TABLE_NAME"]
+            dynamodb_resource = boto3.resource(
+                "dynamodb",
+                region_name=region_name,
+                endpoint_url=os.environ.get("TABLE_ENDPOINT_URL", None),
+            )
+            dynamodb_resource.meta.client.describe_table(TableName=table_name)
+        except KeyError as exc:
+            raise WebSocketError(f"You must set {exc} in the environment variables.")
         except ClientError as exc:
             raise WebSocketError(exc)
-        self.dynamodb_table = dynamodb_resource.Table(self.table_name)
+        self.dynamodb_table = dynamodb_resource.Table(table_name)
 
     @property
-    def client_key(self) -> dict:
-        return {"connectionId": self.client_id}
+    def connection_key(self) -> dict:
+        return {"connectionId": self.connection_id}
 
     def accept(self, initial_scope: Scope) -> None:
-        client = {"initial_scope": json.dumps(initial_scope)}
-        client.update(self.client_key)
+        connection = {"initial_scope": json.dumps(initial_scope)}
+        connection.update(self.connection_key)
         try:
             self.dynamodb_table.put_item(
-                Item=client, ConditionExpression=f"attribute_not_exists(connectionId)"
+                Item=connection,
+                ConditionExpression=f"attribute_not_exists(connectionId)",
             )
         except ClientError as exc:
             raise WebSocketError(exc)
 
     def connect(self) -> None:
         try:
-            client = self.dynamodb_table.get_item(Key=self.client_key)["Item"]
-        except (ClientError, KeyError) as exc:
+            connection = self.dynamodb_table.get_item(
+                Key={"connectionId": self.connection_id}
+            )["Item"]
+        except ClientError as exc:  # pragma: no cover
             raise WebSocketError(exc)
+        except KeyError:
+            raise WebSocketError(f"Connection not found: {self.connection_key}")
 
-        scope = json.loads(client["initial_scope"])
+        scope = json.loads(connection["initial_scope"])
         query_string = scope["query_string"]
         headers = scope["headers"]
         if headers:
@@ -59,12 +70,14 @@ class WebSocket:
         scope.update({"headers": headers, "query_string": query_string.encode()})
         self.scope = scope
 
-    def send(self, text_data: str) -> None:  # pragma: no cover
+    def send(self, msg_data: bytes) -> None:  # pragma: no cover
         try:
             apigw_client = boto3.client(
                 "apigatewaymanagementapi", endpoint_url=self.endpoint_url
             )
-            apigw_client.post_to_connection(ConnectionId=self.client_id, Data=text_data)
+            apigw_client.post_to_connection(
+                ConnectionId=self.connection_id, Data=msg_data
+            )
         except ClientError as exc:
             status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code == 410:
@@ -74,6 +87,6 @@ class WebSocket:
 
     def disconnect(self) -> None:
         try:
-            self.dynamodb_table.delete_item(Key=self.client_key)
+            self.dynamodb_table.delete_item(Key=self.connection_key)
         except ClientError as exc:  # pragma: no cover
             raise WebSocketError(exc)

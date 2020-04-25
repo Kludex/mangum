@@ -7,6 +7,7 @@ import cgi
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
+from mangum.utils import get_logger
 
 
 class HTTPCycleState(enum.Enum):
@@ -19,16 +20,18 @@ class HTTPCycleState(enum.Enum):
 class HTTPCycle:
 
     scope: Scope
-    logger: logging.Logger
     text_mime_types: typing.List[str]
+    log_level: str
     state: HTTPCycleState = HTTPCycleState.REQUEST
     body: bytes = b""
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        self.logger = get_logger("mangum.http", log_level=self.log_level)
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["isBase64Encoded"] = False
+        self.logger.debug("HTTP cycle initialized!")
 
     def __call__(self, app: ASGIApp) -> dict:
         asgi_instance = self.run(app)
@@ -63,6 +66,7 @@ class HTTPCycle:
 
     async def receive(self) -> Message:
         message = await self.app_queue.get()
+
         return message
 
     async def send(self, message: Message) -> None:
