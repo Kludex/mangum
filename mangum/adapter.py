@@ -9,8 +9,7 @@ from mangum.utils import get_logger
 from mangum.types import ASGIApp
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.ws import WebSocketCycle
-from mangum.exceptions import WebSocketError
-from mangum.websockets import WebSocket, __ERR__
+from mangum.websockets import WebSocket
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -37,11 +36,11 @@ class Mangum:
 
     app: ASGIApp
     enable_lifespan: bool = True
+    log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
     api_gateway_endpoint_url: typing.Optional[str] = None
     ws_config: typing.Optional[dict] = None
-    log_level: str = "info"
 
     def __post_init__(self) -> None:
         self.logger = get_logger("mangum", log_level=self.log_level)
@@ -145,9 +144,6 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        if __ERR__:  # pragma: no cover
-            raise ImportError(__ERR__)
-
         event_type = event["requestContext"]["eventType"]
         connection_id = event["requestContext"]["connectionId"]
         stage = event["requestContext"]["stage"]

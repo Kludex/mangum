@@ -6,13 +6,9 @@ from mangum.types import Scope
 from mangum.exceptions import WebSocketError
 from mangum.utils import get_logger
 
-try:
-    import boto3
-    from botocore.exceptions import ClientError
 
-    __ERR__ = ""
-except ImportError:  # pragma: no cover
-    __ERR__ = "boto3 must be installed for WebSocket support."
+import boto3
+from botocore.exceptions import ClientError
 
 
 @dataclass
@@ -31,16 +27,20 @@ class WebSocket:
         backend = self.ws_config.pop("backend")
         if backend == "sqlite3":
             self.logger.info(
-                "The `SQLiteBackend` should be only be used for local debugging. ",
-                "It will not work in a deployed environment.",
+                "The `SQLiteBackend` (without s3) should be only be used for local "
+                "debugging. It will not work in a deployed environment."
             )
             from mangum.backends.sqlite3 import SQLite3Backend
 
             self._backend = SQLite3Backend(**self.ws_config)  # type: ignore
-        if backend == "dynamodb":
+        elif backend == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
             self._backend = DynamoDBBackend(**self.ws_config)  # type: ignore
+        elif backend == "s3":
+            from mangum.backends.s3 import S3Backend
+
+            self._backend = S3Backend(**self.ws_config)
         else:
             raise WebSocketError(f"Invalid backend specified: {backend}")
 
