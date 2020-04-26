@@ -24,7 +24,8 @@ class WebSocket:
                 "A `ws_config` argument is required to configure WebSocket support."
             )
         self.logger = get_logger("mangum.websocket")
-        backend = self.ws_config.pop("backend")
+        config = self.ws_config.copy()
+        backend = config.pop("backend")
         if backend == "sqlite3":
             self.logger.info(
                 "The `SQLiteBackend` (without s3) should be only be used for local "
@@ -32,15 +33,15 @@ class WebSocket:
             )
             from mangum.backends.sqlite3 import SQLite3Backend
 
-            self._backend = SQLite3Backend(**self.ws_config)  # type: ignore
+            self._backend = SQLite3Backend(**config)  # type: ignore
         elif backend == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._backend = DynamoDBBackend(**self.ws_config)  # type: ignore
+            self._backend = DynamoDBBackend(**config)  # type: ignore
         elif backend == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._backend = S3Backend(**self.ws_config)
+            self._backend = S3Backend(**config)  # type: ignore
         else:
             raise WebSocketError(f"Invalid backend specified: {backend}")
 
@@ -61,7 +62,7 @@ class WebSocket:
     def delete(self) -> None:
         self._backend.delete(self.connection_id)
 
-    def post_to_connection(self, msg_data: bytes) -> None:
+    def post_to_connection(self, msg_data: bytes) -> None:  # pragma: no cover
         try:
             apigw_client = boto3.client(
                 "apigatewaymanagementapi", endpoint_url=self.api_gateway_endpoint_url

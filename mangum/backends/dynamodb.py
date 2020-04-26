@@ -32,23 +32,18 @@ class DynamoDBBackend(WebSocketBackend):
         self.table = dynamodb_resource.Table(self.table_name)
 
     def create(self, connection_id: str, initial_scope: str) -> None:
-        try:
-            self.table.put_item(
-                Item={"connectionId": connection_id, "initial_scope": initial_scope},
-                ConditionExpression=f"attribute_not_exists(connectionId)",
-            )
-        except ClientError as exc:
-            raise WebSocketError(exc)
+        self.table.put_item(
+            Item={"connectionId": connection_id, "initial_scope": initial_scope},
+            ConditionExpression=f"attribute_not_exists(connectionId)",
+        )
 
     def fetch(self, connection_id: str) -> str:
         try:
-            initial_scope = (
-                self.table.get_item(Key={"connectionId": connection_id})
-                .get("Item", {})
-                .get("initial_scope", None)
-            )
-        except ClientError as exc:
-            raise WebSocketError(exc)
+            item = self.table.get_item(Key={"connectionId": connection_id})["Item"]
+        except KeyError:
+            raise WebSocketError(f"Connection not found: {connection_id}")
+
+        initial_scope = item["initial_scope"]
 
         return initial_scope
 

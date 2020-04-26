@@ -37,11 +37,10 @@ class WebSocketCycle:
         try:
             await app(self.websocket.scope, self.receive, self.send)
         except BaseException as exc:
-            msg = "Exception in ASGI application\n"
-            self.logger.error(msg, exc_info=exc)
+            self.logger.error("Exception in ASGI application", exc_info=exc)
             self.response["statusCode"] = 500
 
-    async def receive(self) -> Message:
+    async def receive(self) -> Message:  # pragma: no cover
         message = await self.app_queue.get()
 
         return message
