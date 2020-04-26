@@ -19,23 +19,24 @@ except ImportError:  # pragma: no cover
 class WebSocket:
 
     connection_id: str
-    endpoint_url: typing.Optional[str] = None
+    api_gateway_endpoint_url: typing.Optional[str]
+    dynamodb_region: typing.Optional[str]
+    dynamodb_table_name: typing.Optional[str]
+    dynamodb_endpoint: typing.Optional[str]
 
     def __post_init__(self) -> None:
         try:
-            region_name = os.environ["TABLE_REGION"]
-            table_name = os.environ["TABLE_NAME"]
             dynamodb_resource = boto3.resource(
                 "dynamodb",
-                region_name=region_name,
-                endpoint_url=os.environ.get("TABLE_ENDPOINT_URL", None),
+                region_name=self.dynamodb_region,
+                endpoint_url=self.dynamodb_endpoint,
             )
-            dynamodb_resource.meta.client.describe_table(TableName=table_name)
-        except KeyError as exc:
-            raise WebSocketError(f"You must set {exc} in the environment variables.")
+            dynamodb_resource.meta.client.describe_table(
+                TableName=self.dynamodb_table_name
+            )
         except ClientError as exc:
             raise WebSocketError(exc)
-        self.dynamodb_table = dynamodb_resource.Table(table_name)
+        self.dynamodb_table = dynamodb_resource.Table(self.dynamodb_table_name)
 
     @property
     def connection_key(self) -> dict:

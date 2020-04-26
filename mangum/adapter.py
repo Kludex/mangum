@@ -39,6 +39,12 @@ class Mangum:
     enable_lifespan: bool = True
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
+    app_ws_path: typing.Optional[str] = None
+    api_gateway_endpoint_url: typing.Optional[str] = None
+    dynamodb_region: typing.Optional[str] = None
+    dynamodb_table_name: typing.Optional[str] = None
+    dynamodb_endpoint: typing.Optional[str] = None
+
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -146,6 +152,12 @@ class Mangum:
         if __ERR__:  # pragma: no cover
             raise ImportError(__ERR__)
 
+        dynamodb_region = self.dynamodb_region or os.environ.get("AWS_REGION", None)
+        dynamodb_table_name = self.dynamodb_table_name
+        if not any([dynamodb_region, dynamodb_table_name]):
+            raise WebSocketError(
+                "The `dynamodb_region` and `dynamodb_table_name` are required."
+            )
         event_type = event["requestContext"]["eventType"]
         connection_id = event["requestContext"]["connectionId"]
         response = {"statusCode": 200}
@@ -165,12 +177,10 @@ class Mangum:
             source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
 
-            # root_path = event["requestContext"]["stage"]
-
             initial_scope = {
                 "type": "websocket",
-                "path": "/ws",
-                "headers": headers,  # The headers must be JSON serializable.
+                "path": self.app_ws_path or "/",
+                "headers": headers,
                 "raw_path": None,
                 "root_path": "",
                 "scheme": headers.get("x-forwarded-proto", "wss"),
@@ -181,7 +191,12 @@ class Mangum:
             }
 
             try:
-                websocket = WebSocket(connection_id)
+                websocket = WebSocket(
+                    connection_id,
+                    dynamodb_region=self.dynamodb_region,
+                    dynamodb_table_name=self.dynamodb_table_name,
+                    dynamodb_endpoint=self.dynamodb_endpoint,
+                )
                 websocket.accept(initial_scope)
             except WebSocketError as exc:
                 self.logger.error(exc)
@@ -190,11 +205,18 @@ class Mangum:
         elif event_type == "MESSAGE":
             stage = event["requestContext"]["stage"]
             domain_name = event["requestContext"]["domainName"]
-            endpoint_url = os.environ.get(
-                "APIGW_ENDPOINT_URL", f"http://{domain_name}/{stage}"
+            api_gateway_endpoint_url = (
+                self.api_gateway_endpoint_url or f"http://{domain_name}/{stage}"
             )
+
             try:
-                websocket = WebSocket(connection_id, endpoint_url=endpoint_url)
+                websocket = WebSocket(
+                    connection_id,
+                    dynamodb_region=self.dynamodb_region,
+                    dynamodb_table_name=self.dynamodb_table_name,
+                    dynamodb_endpoint=self.dynamodb_endpoint,
+                    api_gateway_endpoint_url=self.api_gateway_endpoint_url,
+                )
                 websocket.connect()
             except WebSocketError as exc:
                 self.logger.error(exc)
@@ -205,7 +227,7 @@ class Mangum:
                 asgi_cycle.put_message(
                     {
                         "type": "websocket.receive",
-                        "path": "/",
+                        "path": self.app_ws_path or "/",
                         "bytes": None,
                         "text": event["body"],
                     }
@@ -213,7 +235,13 @@ class Mangum:
                 response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
-            websocket = WebSocket(connection_id)
+            websocket = WebSocket(
+                connection_id,
+                dynamodb_region=self.dynamodb_region,
+                dynamodb_table_name=self.dynamodb_table_name,
+                dynamodb_endpoint=self.dynamodb_endpoint,
+                api_gateway_endpoint_url=self.api_gateway_endpoint_url,
+            )
             websocket.disconnect()
 
         return response
