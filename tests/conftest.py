@@ -286,26 +286,3 @@ def mock_ws_disconnect_event() -> dict:
             "stage": "Prod",
         },
     }
-
-
-# @pytest.fixture(scope="function")
-# def dynamodb():
-#     with mock_dynamodb2():
-#         yield boto3.client("dynamodb", region_name="ap-southeast-1")
-
-
-# @pytest.fixture(scope="function")
-# def dynamodb():
-#     with mock_dynamodb2():
-#         client = boto3.client("dynamodb", region_name="ap-southeast-1")
-#         client.create_table(
-#             TableName="mangum",
-#             KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
-#             AttributeDefinitions=[{"AttributeName": "connectionId", "AttributeType": "S"}],
-#             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-#         )
-
-
-def pytest_generate_tests(metafunc):
-    os.environ["TABLE_NAME"] = "mangum"
-    os.environ["TABLE_REGION"] = "ap-southeast-1"
