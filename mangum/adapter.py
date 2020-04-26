@@ -149,7 +149,7 @@ class Mangum:
         stage = event["requestContext"]["stage"]
         domain_name = event["requestContext"]["domainName"]
         api_gateway_endpoint_url = (
-            self.api_gateway_endpoint_url or f"http://{domain_name}/{stage}"
+            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
         )
         websocket = WebSocket(connection_id, api_gateway_endpoint_url, self.ws_config)
 
