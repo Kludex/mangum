@@ -2,15 +2,15 @@ import base64
 import asyncio
 import urllib.parse
 import typing
-import os
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
 from mangum.utils import get_logger
 from mangum.types import ASGIApp
 from mangum.protocols.http import HTTPCycle
-from mangum.protocols.websockets import WebSocketCycle
-from mangum.connections import WebSocket, WebSocketError, __ERR__
+from mangum.protocols.ws import WebSocketCycle
+from mangum.exceptions import WebSocketError
+from mangum.websockets import WebSocket, __ERR__
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -39,12 +39,8 @@ class Mangum:
     enable_lifespan: bool = True
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
-    app_ws_path: typing.Optional[str] = None
     api_gateway_endpoint_url: typing.Optional[str] = None
-    dynamodb_region: typing.Optional[str] = None
-    dynamodb_table_name: typing.Optional[str] = None
-    dynamodb_endpoint: typing.Optional[str] = None
-
+    ws_config: typing.Optional[dict] = None
     log_level: str = "info"
 
     def __post_init__(self) -> None:
@@ -152,22 +148,16 @@ class Mangum:
         if __ERR__:  # pragma: no cover
             raise ImportError(__ERR__)
 
-        dynamodb_region = self.dynamodb_region or os.environ.get("AWS_REGION", None)
-        dynamodb_table_name = self.dynamodb_table_name
-        if not any([dynamodb_region, dynamodb_table_name]):
-            raise WebSocketError(
-                "The `dynamodb_region` and `dynamodb_table_name` are required."
-            )
         event_type = event["requestContext"]["eventType"]
         connection_id = event["requestContext"]["connectionId"]
-        response = {"statusCode": 200}
-
-        self.logger.debug("Received WebSocket event: %s", event_type)
+        stage = event["requestContext"]["stage"]
+        domain_name = event["requestContext"]["domainName"]
+        api_gateway_endpoint_url = (
+            self.api_gateway_endpoint_url or f"http://{domain_name}/{stage}"
+        )
+        websocket = WebSocket(connection_id, api_gateway_endpoint_url, self.ws_config)
 
         if event_type == "CONNECT":
-
-            # The initial connect event. Parse and store the scope for the connection
-            # in DynamoDB to be retrieved in subsequent message events for this request.
             headers = (
                 {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
                 if event.get("headers")
@@ -179,7 +169,7 @@ class Mangum:
 
             initial_scope = {
                 "type": "websocket",
-                "path": self.app_ws_path or "/",
+                "path": "/ws",
                 "headers": headers,
                 "raw_path": None,
                 "root_path": "",
@@ -189,59 +179,20 @@ class Mangum:
                 "client": client,
                 "aws": {"event": event, "context": None},
             }
-
-            try:
-                websocket = WebSocket(
-                    connection_id,
-                    dynamodb_region=self.dynamodb_region,
-                    dynamodb_table_name=self.dynamodb_table_name,
-                    dynamodb_endpoint=self.dynamodb_endpoint,
-                )
-                websocket.accept(initial_scope)
-            except WebSocketError as exc:
-                self.logger.error(exc)
-                response = {"statusCode": 500}
+            websocket.create(initial_scope)
+            response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-            stage = event["requestContext"]["stage"]
-            domain_name = event["requestContext"]["domainName"]
-            api_gateway_endpoint_url = (
-                self.api_gateway_endpoint_url or f"http://{domain_name}/{stage}"
+            websocket.fetch()
+            asgi_cycle = WebSocketCycle(websocket, log_level=self.log_level)
+            asgi_cycle.put_message({"type": "websocket.connect"})
+            asgi_cycle.put_message(
+                {"type": "websocket.receive", "bytes": None, "text": event["body"]}
             )
-
-            try:
-                websocket = WebSocket(
-                    connection_id,
-                    dynamodb_region=self.dynamodb_region,
-                    dynamodb_table_name=self.dynamodb_table_name,
-                    dynamodb_endpoint=self.dynamodb_endpoint,
-                    api_gateway_endpoint_url=self.api_gateway_endpoint_url,
-                )
-                websocket.connect()
-            except WebSocketError as exc:
-                self.logger.error(exc)
-                response = {"statusCode": 500}
-            else:
-                asgi_cycle = WebSocketCycle(websocket, self.log_level)
-                asgi_cycle.put_message({"type": "websocket.connect"})
-                asgi_cycle.put_message(
-                    {
-                        "type": "websocket.receive",
-                        "path": self.app_ws_path or "/",
-                        "bytes": None,
-                        "text": event["body"],
-                    }
-                )
-                response = asgi_cycle(self.app)
+            response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
-            websocket = WebSocket(
-                connection_id,
-                dynamodb_region=self.dynamodb_region,
-                dynamodb_table_name=self.dynamodb_table_name,
-                dynamodb_endpoint=self.dynamodb_endpoint,
-                api_gateway_endpoint_url=self.api_gateway_endpoint_url,
-            )
-            websocket.disconnect()
+            websocket.delete()
+            response = {"statusCode": 200}
 
         return response

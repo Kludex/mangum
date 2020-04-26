@@ -2,7 +2,7 @@ import enum
 import asyncio
 from dataclasses import dataclass, field
 
-from mangum.connections import WebSocket
+from mangum.websockets import WebSocket
 from mangum.types import ASGIApp, Message
 from mangum.utils import get_logger
 
@@ -57,7 +57,7 @@ class WebSocketCycle:
         else:
             msg_data = message.get("text", "").encode()
             if message["type"] == "websocket.send":
-                self.websocket.send(msg_data)
+                self.websocket.post_to_connection(msg_data)
 
     def put_message(self, message: Message) -> None:
         self.app_queue.put_nowait(message)

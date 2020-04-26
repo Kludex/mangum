@@ -27,7 +27,9 @@ The adapter class `Mangum` accepts the following optional arguments:
 
 - `enable_lifespan` : bool (default=True)
     
-    Specify whether or not to enable lifespan support.
+    Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
+
+- `log_level` : str (default="info")
 
 - `api_gateway_base_path` : str (default=None)
     
@@ -36,6 +38,12 @@ The adapter class `Mangum` accepts the following optional arguments:
 - `text_mime_types` : list (default=None)
         
     The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
+
+- `ws_path` : dict (default=None)
+
+- `api_gateway_endpoint_url` : str (default=None)
+
+- 
 
 ### Binary support
 
@@ -81,8 +89,6 @@ handler = Mangum(app)
 ```
 
 ## WebSockets (experimental)
-
-The adapter currently provides some basic WebSocket support using `boto3` with [DynamoDB](https://aws.amazon.com/dynamodb/). To install Mangum with the optional dependency:
 
 ```shell
 pip install mangum[full]

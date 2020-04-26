@@ -1,6 +1,5 @@
 import base64
 import enum
-import logging
 import asyncio
 import typing
 import cgi
@@ -44,8 +43,7 @@ class HTTPCycle:
         try:
             await app(self.scope, self.receive, self.send)
         except BaseException as exc:
-            msg = "Exception in ASGI application\n"
-            self.logger.error(msg, exc_info=exc)
+            self.logger.error("Exception in ASGI application", exc_info=exc)
             if self.state is HTTPCycleState.REQUEST:
                 await self.send(
                     {
@@ -99,7 +97,6 @@ class HTTPCycle:
 
             if not more_body:
                 body = self.body
-
                 mimetype, _ = cgi.parse_header(
                     self.response["headers"].get("content-type", "text/plain")
                 )

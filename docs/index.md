@@ -37,7 +37,7 @@ The adapter class `Mangum` accepts the following optional arguments:
         
     The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
 
-## Binary support
+### Binary support
 
 Binary response support is available depending on the `Content-Type` and `Content-Encoding` headers. The default text mime types are the following:
 
@@ -61,7 +61,7 @@ scope['aws.event']
 scope['aws.context']
 ```
 
-### Example
+## Example
 
 ```python3
 from mangum import Mangum
@@ -77,7 +77,7 @@ async def app(scope, receive, send):
     await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 
-handler = Mangum(app, enable_lifespan=False) # disable lifespan for raw ASGI example
+handler = Mangum(app)
 ```
 
 ## WebSockets (experimental)
