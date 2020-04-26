@@ -39,11 +39,9 @@ The adapter class `Mangum` accepts the following optional arguments:
         
     The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
 
-- `ws_path` : dict (default=None)
+- `ws_config` : dict (default=None)
 
 - `api_gateway_endpoint_url` : str (default=None)
-
-- 
 
 ### Binary support
 
