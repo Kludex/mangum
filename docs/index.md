@@ -37,6 +37,7 @@ The adapter class `Mangum` accepts the following optional arguments:
         
     The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
 
+
 ### Binary support
 
 Binary response support is available depending on the `Content-Type` and `Content-Encoding` headers. The default text mime types are the following:
