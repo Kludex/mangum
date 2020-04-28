@@ -175,6 +175,7 @@ class Mangum:
                 "client": client,
                 "aws": {"event": event, "context": None},
             }
+
             websocket.create(initial_scope)
             response = {"statusCode": 200}
 

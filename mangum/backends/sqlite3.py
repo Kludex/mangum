@@ -13,35 +13,35 @@ class SQLite3Backend(WebSocketBackend):
 
     def __post_init__(self) -> None:
         if not os.path.exists(self.file_path):
-            database = sqlite3.connect(self.file_path)
-            database.execute(
-                f"CREATE TABLE {self.table_name} (id VARCHAR(64) PRIMARY KEY, initial_scope TEXT)"
+            db = sqlite3.connect(self.file_path)
+            db.execute(
+                f"create table {self.table_name} (id varchar(64) primary key, initial_scope text)"
             )
         else:
-            database = sqlite3.connect(self.file_path)
+            db = sqlite3.connect(self.file_path)
 
-        self.database: sqlite3.Connection = database
+        self.db: sqlite3.Connection = db
 
     def create(self, connection_id: str, initial_scope: str) -> None:
-        self.database.execute(
-            f"INSERT INTO {self.table_name} VALUES (?, ?)",
+        self.db.execute(
+            f"insert into {self.table_name} values (?, ?)",
             (connection_id, initial_scope),
         )
-        self.database.commit()
-        self.database.close()
+        self.db.commit()
+        self.db.close()
 
     def fetch(self, connection_id: str) -> str:
-        initial_scope = self.database.execute(
-            f"SELECT initial_scope FROM {self.table_name} WHERE id = ?",
+        initial_scope = self.db.execute(
+            f"select initial_scope from {self.table_name} where id = ?",
             (connection_id,),
         ).fetchone()[0]
-        self.database.close()
+        self.db.close()
 
         return initial_scope
 
     def delete(self, connection_id: str) -> None:
-        self.database.execute(
-            f"DELETE FROM {self.table_name} WHERE id = ?", (connection_id,)
+        self.db.execute(
+            f"delete from {self.table_name} where id = ?", (connection_id,)
         ).fetchone()
-        self.database.commit()
-        self.database.close()
+        self.db.commit()
+        self.db.close()

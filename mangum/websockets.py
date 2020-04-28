@@ -42,11 +42,20 @@ class WebSocket:
             from mangum.backends.s3 import S3Backend
 
             self._backend = S3Backend(**config)  # type: ignore
+
+        elif backend == "postgres":
+            from mangum.backends.postgres import PostgreSQLBackend
+
+            self._backend = PostgreSQLBackend(**config)  # type: ignore
+            print(self._backend)
         else:
             raise WebSocketError(f"Invalid backend specified: {backend}")
 
     def create(self, initial_scope: dict) -> None:
         initial_scope_json = json.dumps(initial_scope)
+        print(self._backend)
+        print("OK")
+        print(self._backend.create)
         self._backend.create(self.connection_id, initial_scope_json)
 
     def fetch(self) -> None:

@@ -1,3 +1,4 @@
+import typing
 from dataclasses import dataclass
 
 import boto3
@@ -9,8 +10,11 @@ from mangum.backends.base import WebSocketBackend
 class S3Backend(WebSocketBackend):
 
     bucket_name: str
+    region_name: typing.Optional[str] = None
 
     def __post_init__(self) -> None:
+        # if region_name:
+        #     region_name = self.region_name or os.environ.get("AWS_REGION", None)
         self.s3_client = boto3.client("s3")
 
     def create(self, connection_id: str, initial_scope: str) -> None:
