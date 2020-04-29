@@ -2,7 +2,7 @@
 
 Mangum provides support for [WebSocket API](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) events in API Gateway. The adapter class handles parsing the incoming requests and managing the ASGI cycle using a configured storage backend.
 
-## EVENTS
+## Events
 
 There are three events that are handled by the adapter:
 
@@ -19,7 +19,7 @@ A connected client has sent a message. The adapter will retrieve the initial req
 The client or the server disconnects from the API. The adapter will remove the connection from the backend.
 
 
-## BACKENDS
+## Backends
 
 A data store, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data store can be used as long as it is accessible remotely to the AWS Lambda function.
 
