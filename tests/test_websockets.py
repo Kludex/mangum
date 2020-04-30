@@ -2,8 +2,6 @@ import pytest
 
 import os
 
-from starlette.applications import Starlette
-
 from mangum import Mangum
 from mangum.exceptions import WebSocketError
 

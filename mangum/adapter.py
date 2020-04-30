@@ -2,14 +2,16 @@ import base64
 import asyncio
 import urllib.parse
 import typing
-from dataclasses import dataclass
+import logging
+import traceback
+from dataclasses import dataclass, field
 
 from mangum.lifespan import Lifespan
-from mangum.utils import get_logger
 from mangum.types import ASGIApp
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.ws import WebSocketCycle
 from mangum.websockets import WebSocket
+from mangum.exceptions import WebSocketError
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -31,19 +33,36 @@ def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
     return server
 
 
+def get_logger(log_level: str) -> logging.Logger:
+    level = {
+        "critical": logging.CRITICAL,
+        "error": logging.ERROR,
+        "warning": logging.WARNING,
+        "info": logging.INFO,
+        "debug": logging.DEBUG,
+    }[log_level]
+    logging.basicConfig(
+        format="[%(asctime)s] %(message)s", level=level, datefmt="%d-%b-%y %H:%M:%S"
+    )
+    logger = logging.getLogger("mangum")
+    logger.setLevel(level)
+
+    return logger
+
+
 @dataclass
 class Mangum:
 
     app: ASGIApp
     enable_lifespan: bool = True
     log_level: str = "info"
+    debug: bool = False
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
-    api_gateway_endpoint_url: typing.Optional[str] = None
     ws_config: typing.Optional[dict] = None
 
     def __post_init__(self) -> None:
-        self.logger = get_logger("mangum", log_level=self.log_level)
+        self.logger = get_logger(self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
             self.lifespan = Lifespan(self.app)
@@ -51,7 +70,12 @@ class Mangum:
             loop.run_until_complete(self.lifespan.startup())
 
     def __call__(self, event: dict, context: dict) -> dict:
-        response = self.handler(event, context)
+        try:
+            response = self.handler(event, context)
+        except BaseException as exc:
+            if not self.debug:
+                raise exc
+            response = {"statusCode": 500, "body": traceback.format_exc()}
 
         return response
 
@@ -144,13 +168,21 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
+        if self.ws_config is None:
+            raise WebSocketError(
+                "A `ws_config` configuration mapping is required for WebSocket support."
+            )
+
         event_type = event["requestContext"]["eventType"]
         connection_id = event["requestContext"]["connectionId"]
         stage = event["requestContext"]["stage"]
         domain_name = event["requestContext"]["domainName"]
-        api_gateway_endpoint_url = (
-            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
-        )
+
+        if "api_gateway_endpoint_url" in self.ws_config:
+            api_gateway_endpoint_url = self.ws_config.pop("api_gateway_endpoint_url")
+        else:
+            api_gateway_endpoint_url = f"https://{domain_name}/{stage}"
+
         websocket = WebSocket(connection_id, api_gateway_endpoint_url, self.ws_config)
 
         if event_type == "CONNECT":

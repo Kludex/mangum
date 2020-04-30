@@ -1,10 +1,10 @@
 import typing
 import json
+import logging
 from dataclasses import dataclass
 
 from mangum.types import Scope
 from mangum.exceptions import WebSocketError
-from mangum.utils import get_logger
 
 
 import boto3
@@ -23,7 +23,7 @@ class WebSocket:
             raise WebSocketError(
                 "A `ws_config` argument is required to configure WebSocket support."
             )
-        self.logger = get_logger("mangum.websocket")
+        self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         config = self.ws_config.copy()
         backend = config.pop("backend")
         if backend == "sqlite3":

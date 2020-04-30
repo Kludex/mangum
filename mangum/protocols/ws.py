@@ -1,10 +1,10 @@
 import enum
 import asyncio
+import logging
 from dataclasses import dataclass, field
 
 from mangum.websockets import WebSocket
 from mangum.types import ASGIApp, Message
-from mangum.utils import get_logger
 
 
 class WebSocketCycleState(enum.Enum):
@@ -20,7 +20,7 @@ class WebSocketCycle:
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        self.logger = get_logger("mangum.websocket", log_level=self.log_level)
+        self.logger: logging.Logger = logging.getLogger("mangum.asgi.websocket")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["statusCode"] = 200

@@ -3,10 +3,10 @@ import enum
 import asyncio
 import typing
 import cgi
+import logging
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
-from mangum.utils import get_logger
 
 
 class HTTPCycleState(enum.Enum):
@@ -26,7 +26,7 @@ class HTTPCycle:
     response: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        self.logger = get_logger("mangum.http", log_level=self.log_level)
+        self.logger: logging.Logger = logging.getLogger("mangum.asgi.http")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["isBase64Encoded"] = False

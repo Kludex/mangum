@@ -1,10 +1,9 @@
-import logging
 import asyncio
+import logging
 from dataclasses import dataclass
 
 from mangum.types import ASGIApp, Message
 from mangum.exceptions import LifespanFailure
-from mangum.utils import get_logger
 
 
 @dataclass
@@ -14,7 +13,7 @@ class Lifespan:
     has_error: bool = False
 
     def __post_init__(self) -> None:
-        self.logger: logging.Logger = get_logger("mangum.lifespan")
+        self.logger: logging.Logger = logging.getLogger("mangum.lifespan")
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()

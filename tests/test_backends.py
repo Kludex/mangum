@@ -9,30 +9,6 @@ from mangum import Mangum
 from mangum.exceptions import WebSocketError
 
 
-def test_ws_config_missing(mock_ws_connect_event):
-    async def app(scope, receive, send):
-        await send({"type": "websocket.accept", "subprotocol": None})
-        await send({"type": "websocket.send", "text": "Hello world!"})
-        await send({"type": "websocket.send", "bytes": b"Hello world!"})
-        await send({"type": "websocket.close", "code": 1000})
-
-    handler = Mangum(app, ws_config=None)
-    with pytest.raises(WebSocketError):
-        handler(mock_ws_connect_event, {})
-
-
-def test_ws_config_unknown_backend(mock_ws_connect_event):
-    async def app(scope, receive, send):
-        await send({"type": "websocket.accept", "subprotocol": None})
-        await send({"type": "websocket.send", "text": "Hello world!"})
-        await send({"type": "websocket.send", "bytes": b"Hello world!"})
-        await send({"type": "websocket.close", "code": 1000})
-
-    handler = Mangum(app, ws_config={"backend": "unknown"})
-    with pytest.raises(WebSocketError):
-        handler(mock_ws_connect_event, {})
-
-
 def test_sqlite_3_backend(
     tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
 ) -> None:

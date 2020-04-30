@@ -28,11 +28,18 @@ All supported backends require a `ws_config` configuration mapping. The configur
 ```python
 mangum = Mangum(app, ws_config={"sqlite3": ...})
 ```
+
 The following backends are currently supported:
 
  - `dynamodb`
  - `s3`
  - `sqlite3` (for local debugging)
+
+
+Optional configuration arguments:
+
+- `api_gateway_endpoint_url`
+
 
 ### DynamoDB
 

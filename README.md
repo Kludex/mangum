@@ -41,7 +41,6 @@ The adapter class `Mangum` accepts the following optional arguments:
 
 - `ws_config` : dict (default=None)
 
-- `api_gateway_endpoint_url` : str (default=None)
 
 ### Binary support
 
