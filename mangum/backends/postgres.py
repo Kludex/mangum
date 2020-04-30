@@ -30,22 +30,15 @@ class PostgreSQLBackend(WebSocketBackend):
             port=self.port,
             connect_timeout=self.connect_timeout,
         )
+
         self.logger.debug("Connection established.")
         self.cursor = self.db.cursor()
-        if self.create_table:
-            self.cursor.execute(
-                "select exists(select * from information_schema.tables where table_name={})".format(
-                    sql.Identifier(self.table_name)
-                )
-            )
-            if not self.cursor.fetchone()[0]:
-                self.logger.debug("Creating database table %s", self.table_name)
-                self.cursor.execute(
-                    "create table {} (id varchar(64) primary key, initial_scope text)".format(
-                        sql.Identifier(self.table_name)
-                    )
-                )
-                self.db.commit()
+        self.cursor.execute(
+            sql.SQL(
+                "create table if not exists {} (id varchar(64) primary key, initial_scope text)"
+            ).format(sql.Identifier(self.table_name))
+        )
+        self.db.commit()
 
     def create(self, connection_id: str, initial_scope: str) -> None:
         self.logger.debug("Creating database entry for %s", connection_id)
@@ -68,6 +61,7 @@ class PostgreSQLBackend(WebSocketBackend):
             (connection_id,),
         )
         initial_scope = self.cursor.fetchone()[0]
+        self.cursor.close()
         self.db.close()
 
         return initial_scope
@@ -80,5 +74,7 @@ class PostgreSQLBackend(WebSocketBackend):
             ),
             (connection_id,),
         )
+
         self.db.commit()
+        self.cursor.close()
         self.db.close()

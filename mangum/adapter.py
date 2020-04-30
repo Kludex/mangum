@@ -3,8 +3,7 @@ import asyncio
 import urllib.parse
 import typing
 import logging
-import traceback
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
 from mangum.types import ASGIApp
@@ -56,7 +55,6 @@ class Mangum:
     app: ASGIApp
     enable_lifespan: bool = True
     log_level: str = "info"
-    debug: bool = False
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
     ws_config: typing.Optional[dict] = None
@@ -70,12 +68,7 @@ class Mangum:
             loop.run_until_complete(self.lifespan.startup())
 
     def __call__(self, event: dict, context: dict) -> dict:
-        try:
-            response = self.handler(event, context)
-        except BaseException as exc:
-            if not self.debug:
-                raise exc
-            response = {"statusCode": 500, "body": traceback.format_exc()}
+        response = self.handler(event, context)
 
         return response
 
