@@ -15,7 +15,6 @@ class PostgreSQLBackend(WebSocketBackend):
     password: str
     host: str
     port: str = "5432"
-    create_table: bool = False
     connect_timeout: int = 5
     table_name: str = "connection"
 

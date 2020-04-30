@@ -99,3 +99,10 @@ The AWS Lambda handler has `event` and `context` parameters. These are available
 scope['aws.event']
 scope['aws.context']
 ```
+
+## WebSockets
+
+Mangum provides support for [WebSocket API](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) events in API Gateway. The adapter class handles parsing the incoming requests and managing the ASGI cycle using a configured storage backend. 
+
+You can learn more about WebSocket support in the [documentation](https://erm.github.io/mangum/websockets)
+

@@ -4,7 +4,7 @@ Mangum provides support for [WebSocket API](https://docs.aws.amazon.com/apigatew
 
 ## Events
 
-There are three events that are handled by the adapter:
+There are WebSocket events sent by API Gateway for a WebSocket API connection. Each event requires returning a response and the initial scope information is only available in connect event, so a storage backend is required to persist the connection details.
 
 #### CONNECT
 
@@ -33,6 +33,7 @@ The following backends are currently supported:
 
  - `dynamodb`
  - `s3`
+ - `postgres`
  - `sqlite3` (for local debugging)
 
 
@@ -69,6 +70,67 @@ handler = Mangum(
 ### S3
 
 The `S3StorageBackend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
+
+#### Configuration
+
+- `bucket_name` : **str** *(required)*
+    
+    The name of the bucket in S3.
+
+```python
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "s3",
+        "bucket_name": "connections",
+    },
+)
+```
+
+### PostgreSQL
+
+The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2] and access to a remote PostgreSQL database.
+
+- `database` : **str** *(required)*
+    
+    The name of the database.
+
+- `user` : **str** *(required)*
+    
+    Postgres user username.
+
+- `password` : **str** *(required)*
+    
+    Postgres user password.
+
+- `host` : **str** *(required)*
+    
+    Host for Postgres database connection.
+
+- `port` : **str** (default="5432")
+    
+    Port number for Postgres database connection.
+
+- `connect_timeout` **int** (default=5)
+    
+    Timeout for database connection.
+
+- `table_name` **str (default="connection")
+    
+    Table name to use to store WebSocket connections. 
+
+```python
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "postgres",
+        "database": "mangum",
+        "user": "postgres",
+        "password": "correct horse battery staple",
+        "host": "mydb.12345678910.ap-southeast-1.rds.amazonaws.com",
+    },
+)
+```
 
 #### Configuration
 
