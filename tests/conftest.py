@@ -286,3 +286,7 @@ def mock_ws_disconnect_event() -> dict:
             "stage": "Prod",
         },
     }
+
+
+def pytest_generate_tests(metafunc):
+    os.environ["AWS_REGION"] = "ap-southeast-1"

@@ -17,10 +17,7 @@ class DynamoDBBackend(WebSocketBackend):
     endpoint_url: typing.Optional[str] = None
 
     def __post_init__(self) -> None:
-        region_name = self.region_name or os.environ.get("AWS_REGION", None)
-        if not region_name:
-            raise WebSocketError("Could not determine region for DynamoDB resource.")
-
+        region_name = self.region_name or os.environ["AWS_REGION"]
         try:
             dynamodb_resource = boto3.resource(
                 "dynamodb", region_name=region_name, endpoint_url=self.endpoint_url

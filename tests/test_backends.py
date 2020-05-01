@@ -63,11 +63,6 @@ def test_dynamodb_backend(
         "table_name": "does-not-exist",
         "region_name": region_name,
     }
-    missing_region_name = {
-        "backend": "dynamodb",
-        "table_name": table_name,
-        "region_name": None,
-    }
 
     async def app(scope, receive, send):
         await send({"type": "websocket.accept", "subprotocol": None})
@@ -92,11 +87,6 @@ def test_dynamodb_backend(
 
     # Test table does not exist
     handler = Mangum(app, ws_config=table_does_not_exist)
-    with pytest.raises(WebSocketError):
-        response = handler(mock_ws_connect_event, {})
-
-    # Test missing region name
-    handler = Mangum(app, ws_config=missing_region_name)
     with pytest.raises(WebSocketError):
         response = handler(mock_ws_connect_event, {})
 

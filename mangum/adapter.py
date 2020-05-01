@@ -3,6 +3,7 @@ import asyncio
 import urllib.parse
 import typing
 import logging
+import os
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
@@ -57,6 +58,8 @@ class Mangum:
     log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
+    api_gateway_endpoint_url: typing.Optional[str] = None
+    api_gateway_region_name: typing.Optional[str] = None
     ws_config: typing.Optional[dict] = None
 
     def __post_init__(self) -> None:
@@ -171,12 +174,19 @@ class Mangum:
         stage = event["requestContext"]["stage"]
         domain_name = event["requestContext"]["domainName"]
 
-        if "api_gateway_endpoint_url" in self.ws_config:
-            api_gateway_endpoint_url = self.ws_config.pop("api_gateway_endpoint_url")
-        else:
-            api_gateway_endpoint_url = f"https://{domain_name}/{stage}"
+        api_gateway_endpoint_url = (
+            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
+        )
+        api_gateway_region_name = (
+            self.api_gateway_region_name or os.environ["AWS_REGION"]
+        )
 
-        websocket = WebSocket(connection_id, api_gateway_endpoint_url, self.ws_config)
+        websocket = WebSocket(
+            connection_id,
+            ws_config=self.ws_config,
+            api_gateway_endpoint_url=api_gateway_endpoint_url,
+            api_gateway_region_name=api_gateway_region_name,
+        )
 
         if event_type == "CONNECT":
             headers = (

@@ -1,4 +1,3 @@
-import typing
 import json
 import logging
 from dataclasses import dataclass
@@ -15,20 +14,17 @@ from botocore.exceptions import ClientError
 class WebSocket:
 
     connection_id: str
+    ws_config: dict
+    api_gateway_region_name: str
     api_gateway_endpoint_url: str
-    ws_config: typing.Optional[dict]
 
     def __post_init__(self) -> None:
-        if self.ws_config is None:
-            raise WebSocketError(
-                "A `ws_config` argument is required to configure WebSocket support."
-            )
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         config = self.ws_config.copy()
         backend = config.pop("backend")
         if backend == "sqlite3":
             self.logger.info(
-                "The `SQLiteBackend` (without s3) should be only be used for local "
+                "The `SQLiteBackend` should be only be used for local "
                 "debugging. It will not work in a deployed environment."
             )
             from mangum.backends.sqlite3 import SQLite3Backend
@@ -47,6 +43,7 @@ class WebSocket:
             from mangum.backends.postgres import PostgreSQLBackend
 
             self._backend = PostgreSQLBackend(**config)  # type: ignore
+
         else:
             raise WebSocketError(f"Invalid backend specified: {backend}")
 
@@ -70,7 +67,9 @@ class WebSocket:
     def post_to_connection(self, msg_data: bytes) -> None:  # pragma: no cover
         try:
             apigw_client = boto3.client(
-                "apigatewaymanagementapi", endpoint_url=self.api_gateway_endpoint_url
+                "apigatewaymanagementapi",
+                endpoint_url=self.api_gateway_endpoint_url,
+                region_name=self.api_gateway_region_name,
             )
             apigw_client.post_to_connection(
                 ConnectionId=self.connection_id, Data=msg_data
