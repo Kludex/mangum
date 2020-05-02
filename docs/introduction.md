@@ -32,6 +32,13 @@ Python 3.6+
 pip install mangum
 ```
 
+You can install the required dependencies for the WebSocket backends with one the following:
+
+```shell
+pip install mangum[aws]
+pip install mangum[postgresql]
+```
+
 ## Examples
 
 The examples below are "raw" ASGI applications with minimal configurations. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websockets/) docs for more details about configuration.
@@ -60,11 +67,67 @@ handler = Mangum(app)
 ```python
 from mangum import Mangum
 
+html = b"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket("ws://localhost:3001");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+
+
+        </script>
+    </body>
+</html>
+"""
+
 async def app(scope, receive, send):
-    await send({"type": "websocket.accept", "subprotocol": None})
-    await send({"type": "websocket.send", "text": "Hello world!"})
-    await send({"type": "websocket.send", "bytes": b"Hello world!"})
-    await send({"type": "websocket.close", "code": 1000})
+    assert scope["type"] in ("http", "websocket")
+    if scope["type"] == "http":
+        message = await receive()
+        if message["type"] == "http.request":
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/html; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": html})
+    if scope["type"] == "websocket":
+        while True:
+            message = await receive()
+            if message["type"] == "websocket.connect":
+                await send({"type": "websocket.accept"})
+
+            if message["type"] == "websocket.receive":
+                text = f"Received message: {message['text']}"
+                await send({"type": "websocket.send", "text": text})
+
+            if message["type"] == "websocket.disconnect":
+                await send({"type": "websocket.close", "code": 1000})
 
 handler = Mangum(
     app,

@@ -8,10 +8,7 @@
 </a>
 <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
 
-
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
-
-**Documentation**: [https://erm.github.io/mangum](https://erm.github.io/mangum)
 
 ## Features
 
@@ -35,9 +32,20 @@ Python 3.6+
 pip install mangum
 ```
 
-## Example
+You can install the required dependencies for the WebSocket backends with one the following:
 
-```python3
+```shell
+pip install mangum[aws]
+pip install mangum[postgresql]
+```
+
+## Examples
+
+The examples below are "raw" ASGI applications with minimal configuration. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websockets/) docs for more details about configuration.
+
+### HTTP
+
+```python
 from mangum import Mangum
 
 async def app(scope, receive, send):
@@ -54,57 +62,24 @@ async def app(scope, receive, send):
 handler = Mangum(app)
 ```
 
-## Usage
+### WebSocket
 
-The adapter class `Mangum` accepts the following optional arguments:
+```python
+from mangum import Mangum
 
-- `enable_lifespan` : bool (default=True)
-    
-    Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
+async def app(scope, receive, send):
+    await send({"type": "websocket.accept", "subprotocol": None})
+    await send({"type": "websocket.send", "text": "Hello world!"})
+    await send({"type": "websocket.send", "bytes": b"Hello world!"})
+    await send({"type": "websocket.close", "code": 1000})
 
-- `log_level` : str (default="info")
-    
-    Level parameter for the logger.
-
-- `api_gateway_base_path` : str (default=None)
-    
-    Base path to strip from URL when using a custom domain name.
-
-- `text_mime_types` : list (default=None)
-        
-    The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
-
-- `ws_config` : dict (default=None)
-
-    Configuration mapping for a supported WebSocket backend.
-
-### Binary support
-
-Binary response support is available depending on the `Content-Type` and `Content-Encoding` headers. The default text mime types are the following:
-
-- `application/json`
-- `application/javascript`
-- `application/xml`
-- `application/vnd.api+json`
-
-All `Content-Type` headers starting with `text/` are included by default.
-
-If the `Content-Encoding` header is set to `gzip`, then a binary response will be returned regardless of mime type.
-
-Binary response bodies will be base64 encoded and `isBase64Encoded` will be `True`.
-
-### Event and context
-
-The AWS Lambda handler has `event` and `context` parameters. These are available in the ASGI `scope` object:
-
-```python3
-scope['aws.event']
-scope['aws.context']
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "s3",
+        "params": {
+            "bucket": "connections"
+        }
+    }
+)
 ```
-
-## WebSockets
-
-Mangum provides support for [WebSocket API](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) events in API Gateway. The adapter class handles parsing the incoming requests and managing the ASGI cycle using a configured storage backend. 
-
-You can learn more about WebSocket support in the [documentation](https://erm.github.io/mangum/websockets)
-
