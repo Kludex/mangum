@@ -3,7 +3,7 @@ import pytest
 import os
 
 from mangum import Mangum
-from mangum.exceptions import WebSocketError, ConfigurationError
+from mangum.exceptions import ConfigurationError
 
 
 @pytest.mark.parametrize(

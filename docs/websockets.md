@@ -21,26 +21,50 @@ The client or the server disconnects from the API. The adapter will remove the c
 
 ## Backends
 
-A data store, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data store can be used as long as it is accessible remotely to the AWS Lambda function.
+A data source, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data source can be used as long as it is accessible remotely to the AWS Lambda function.
 
-All supported backends require a `ws_config` configuration mapping. The configuration must contain the identifier for a backend along with any additional required arguments for the selected backend:
+
+All supported backends require a `params` configuration mapping. The `ws_config` configuration must contain the name of a backend along with any required `params` for the selected backend.
+
+#### Configuration
 
 ```python
-mangum = Mangum(app, ws_config={"sqlite3": ...})
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "postgresql",
+        "params": {"uri": "postgresql://user:secret@host.com:5432/db"},
+
+    }
+)
 ```
 
-The following backends are currently supported:
+##### Required
 
- - `dynamodb`
- - `s3`
- - `postgres`
- - `sqlite3` (for local debugging)
+- `ws_config` : ***dict*** (default=None)
 
+    Configuration mapping for a supported WebSocket backend.
 
-Optional configuration arguments:
+The following required values need to be defined inside the `ws_config`:
 
-- `api_gateway_endpoint_url`
+- `backend` : **str** *(required)*
 
+    Name of data source backend to use. The following backends are currently supported:
+
+     - `dynamodb`
+     - `s3`
+     - `postgresql`
+     - `sqlite3` (for local debugging)
+
+- `params` : **str** *(required)*
+
+##### Optional
+
+The following optional values may be defined inside the `ws_config`:
+
+- `api_gateway_endpoint_url` : **str**
+
+- `api_gateway_region_name` : **str**
 
 ### DynamoDB
 
@@ -48,48 +72,92 @@ The `DynamoDBStorageBackend` uses a [DynamoDB](https://aws.amazon.com/dynamodb/)
 
 #### Configuration
 
-- `table_name` : **str** *(required)*
-
-    The name of the table in DynamoDB.
-    
-- `endpoint_url`: **str**
-
-    The endpoint url to use in DynamoDB calls. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
-
 ```python
 handler = Mangum(
     app,
     ws_config={
         "backend": "dynamodb",
-        "table_name": "connections",
+        "params":{
+            "table_name": "connections"
+        }
     },
 )
 ```
 
+##### Required
+
+- `table_name` : **str** *(required)*
+
+    The name of the table in DynamoDB.
+
+##### Optional
+
+- `region_name` : **str**
+    
+    The region name of the DyanmoDB table.
+
+- `endpoint_url`: **str**
+
+    The endpoint url to use in DynamoDB calls. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
 
 ### S3
 
-The `S3StorageBackend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
+The `S3Backend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
 
 #### Configuration
-
-- `bucket_name` : **str** *(required)*
-    
-    The name of the bucket in S3.
 
 ```python
 handler = Mangum(
     app,
     ws_config={
         "backend": "s3",
-        "bucket_name": "connections",
+        "params": {
+            "bucket": "connections"
+        }
     },
 )
 ```
 
+##### Required
+
+- `bucket` : **str** *(required)*
+    
+    The name of the bucket in S3.
+
+##### Optional
+
+- `region_name` : **str**
+    
+    The region name of the S3 bucket.
+
 ### PostgreSQL
 
 The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2] and access to a remote PostgreSQL database.
+
+#### Configuration
+
+
+```python
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "postgresql",
+        "params": {
+            "database": "mangum",
+            "user": "postgres",
+            "password": "correct horse battery staple",
+            "host": "mydb.12345678910.ap-southeast-1.rds.amazonaws.com"
+        }
+    },
+)
+```
+
+##### Required
+
+- `uri`: ***str*** *(required)*
+    The connection string for the remote database.
+
+If a `uri` is not supplied, then the following parameters are required:
 
 - `database` : **str** *(required)*
     
@@ -107,6 +175,8 @@ The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2]
     
     Host for Postgres database connection.
 
+##### Optional
+
 - `port` : **str** (default="5432")
     
     Port number for Postgres database connection.
@@ -119,58 +189,37 @@ The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2]
     
     Table name to use to store WebSocket connections. 
 
-```python
-handler = Mangum(
-    app,
-    ws_config={
-        "backend": "postgres",
-        "database": "mangum",
-        "user": "postgres",
-        "password": "correct horse battery staple",
-        "host": "mydb.12345678910.ap-southeast-1.rds.amazonaws.com",
-    },
-)
-```
-
-#### Configuration
-
-- `bucket_name` : **str** *(required)*
-    
-    The name of the bucket in S3.
-
-```python
-handler = Mangum(
-    app,
-    ws_config={
-        "backend": "s3",
-        "bucket_name": "connections",
-    },
-)
-```
-
 ### SQlite3
 
 The `sqlite3` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
 
 #### Configuration
 
-- `file_path` : **str** *(required)*
-
-    The file name or path to a sqlite3 file. If one does not exist, then it will be created automatically.
-
-- `table_name` : **str** (default=`"connection"`)
-
-    The name of the table to use for the connections in an sqlite3 database.
- 
 ```python
 handler = Mangum(
     app,
     ws_config={
         "backend": "sqlite3",
-        "file_path": "mangum.sqlite3",
-        "table_name": "connection",
+        "params": {
+            "file_path": "mangum.sqlite3",
+            "table_name": "connection",
+        }
     },
 )
 ```
 
-### Other Databases (todo)
+##### Required
+
+- `file_path` : **str** *(required)*
+
+    The file name or path to a sqlite3 file. If one does not exist, then it will be created automatically.
+
+##### Optional
+
+- `table_name` : **str** (default=`"connection"`)
+
+    The name of the table to use for the connections in an sqlite3 database.
+
+### Other backends
+
+If you'd like to see a specific data source supported as a backend, please open an [issue](https://github.com/erm/mangum/issues).

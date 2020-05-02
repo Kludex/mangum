@@ -1,7 +1,5 @@
 import os
 import pytest
-from moto import mock_dynamodb2
-import boto3
 
 
 @pytest.fixture

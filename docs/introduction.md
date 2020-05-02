@@ -32,9 +32,13 @@ Python 3.6+
 pip install mangum
 ```
 
-## Example
+## Examples
 
-```python3
+The examples below are "raw" ASGI applications with minimal configurations. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websockets/) docs for more details about configuration.
+
+### HTTP
+
+```python
 from mangum import Mangum
 
 async def app(scope, receive, send):
@@ -49,4 +53,26 @@ async def app(scope, receive, send):
 
 
 handler = Mangum(app)
+```
+
+### WebSocket
+
+```python
+from mangum import Mangum
+
+async def app(scope, receive, send):
+    await send({"type": "websocket.accept", "subprotocol": None})
+    await send({"type": "websocket.send", "text": "Hello world!"})
+    await send({"type": "websocket.send", "bytes": b"Hello world!"})
+    await send({"type": "websocket.close", "code": 1000})
+
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "s3",
+        "params": {
+            "bucket": "connections"
+        }
+    },
+)
 ```

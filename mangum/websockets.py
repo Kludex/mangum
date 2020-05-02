@@ -42,8 +42,8 @@ class WebSocket:
 
             self._backend = S3Backend(params)  # type: ignore
 
-        elif backend == "postgres":
-            from mangum.backends.postgres import PostgreSQLBackend
+        elif backend == "postgresql":
+            from mangum.backends.postgresql import PostgreSQLBackend
 
             self._backend = PostgreSQLBackend(params)  # type: ignore
 
