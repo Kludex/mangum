@@ -1,7 +1,13 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class WebSocketBackend:
     """
     Base class for implementing WebSocket backends to store APIGateway connections.
     """
+
+    params: dict
 
     def create(self, connection_id: str, initial_scope: str) -> None:
         """

@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 
 from mangum.types import Scope
-from mangum.exceptions import WebSocketError
+from mangum.exceptions import WebSocketError, ConfigurationError
 
 
 import boto3
@@ -20,32 +20,35 @@ class WebSocket:
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
-        config = self.ws_config.copy()
-        backend = config.pop("backend")
+        try:
+            backend = self.ws_config["backend"]
+            params = self.ws_config["params"]
+        except KeyError as exc:
+            raise ConfigurationError(f"WebSocket config {exc} missing.")
         if backend == "sqlite3":
             self.logger.info(
                 "The `SQLiteBackend` should be only be used for local "
                 "debugging. It will not work in a deployed environment."
             )
-            from mangum.backends.sqlite3 import SQLite3Backend
+            from mangum.backends.sqlite3 import SQLiteBackend
 
-            self._backend = SQLite3Backend(**config)  # type: ignore
+            self._backend = SQLiteBackend(params)  # type: ignore
         elif backend == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._backend = DynamoDBBackend(**config)  # type: ignore
+            self._backend = DynamoDBBackend(params)  # type: ignore
         elif backend == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._backend = S3Backend(**config)  # type: ignore
+            self._backend = S3Backend(params)  # type: ignore
 
         elif backend == "postgres":
             from mangum.backends.postgres import PostgreSQLBackend
 
-            self._backend = PostgreSQLBackend(**config)  # type: ignore
+            self._backend = PostgreSQLBackend(params)  # type: ignore
 
         else:
-            raise WebSocketError(f"Invalid backend specified: {backend}")
+            raise ConfigurationError(f"{backend} is not a supported backend.")
 
     def create(self, initial_scope: dict) -> None:
         initial_scope_json = json.dumps(initial_scope)

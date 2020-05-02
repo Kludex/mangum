@@ -5,39 +5,45 @@ import psycopg2
 from psycopg2 import sql
 
 from mangum.backends.base import WebSocketBackend
+from mangum.exceptions import ConfigurationError
 
 
 @dataclass
 class PostgreSQLBackend(WebSocketBackend):
-
-    database: str
-    user: str
-    password: str
-    host: str
-    port: str = "5432"
-    connect_timeout: int = 5
-    table_name: str = "connection"
-
     def __post_init__(self) -> None:
-        self.logger: logging.Logger = logging.getLogger("mangum.websocket.postgres")
+        self.logger = logging.getLogger("mangum.websocket.postgres")
         self.logger.debug("Connecting to PostgreSQL database.")
-        self.db = psycopg2.connect(
-            database=self.database,
-            user=self.user,
-            password=self.password,
-            host=self.host,
-            port=self.port,
-            connect_timeout=self.connect_timeout,
-        )
-
-        self.logger.debug("Connection established.")
-        self.cursor = self.db.cursor()
+        connect_timeout = self.params.get("connect_timeout", 5)
+        if "uri" in self.params:
+            self.connection = psycopg2.connect(
+                self.params["uri"], connect_timeout=connect_timeout
+            )
+        else:
+            try:
+                database = self.params["database"]
+                user = self.params["user"]
+                password = self.params["password"]
+                host = self.params["host"]
+            except KeyError:
+                raise ConfigurationError("PostgreSQL connection details missing.")
+            port = self.params.get("port", "5432")
+            self.connection = psycopg2.connect(
+                database=database,
+                user=user,
+                password=password,
+                host=host,
+                port=port,
+                connect_timeout=connect_timeout,
+            )
+        self.table_name = self.params.get("table_name", "mangum")
+        self.cursor = self.connection.cursor()
         self.cursor.execute(
             sql.SQL(
                 "create table if not exists {} (id varchar(64) primary key, initial_scope text)"
             ).format(sql.Identifier(self.table_name))
         )
-        self.db.commit()
+        self.connection.commit()
+        self.logger.debug("Connection established.")
 
     def create(self, connection_id: str, initial_scope: str) -> None:
         self.logger.debug("Creating database entry for %s", connection_id)
@@ -48,11 +54,12 @@ class PostgreSQLBackend(WebSocketBackend):
             (connection_id, initial_scope),
         )
 
-        self.db.commit()
-        self.db.close()
+        self.connection.commit()
+        self.connection.close()
+        self.logger.debug("Database entry created.")
 
     def fetch(self, connection_id: str) -> str:
-        self.logger.debug("Fetching database entry for %s", connection_id)
+        self.logger.debug("Fetching initial scope for %s", connection_id)
         self.cursor.execute(
             sql.SQL("select initial_scope from {} where id = %s").format(
                 sql.Identifier(self.table_name)
@@ -61,7 +68,8 @@ class PostgreSQLBackend(WebSocketBackend):
         )
         initial_scope = self.cursor.fetchone()[0]
         self.cursor.close()
-        self.db.close()
+        self.connection.close()
+        self.logger.debug("Initial scope fetched.")
 
         return initial_scope
 
@@ -73,7 +81,7 @@ class PostgreSQLBackend(WebSocketBackend):
             ),
             (connection_id,),
         )
-
-        self.db.commit()
+        self.connection.commit()
         self.cursor.close()
-        self.db.close()
+        self.connection.close()
+        self.logger.debug("Database entry deleted.")

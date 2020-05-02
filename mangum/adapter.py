@@ -11,7 +11,7 @@ from mangum.types import ASGIApp
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.ws import WebSocketCycle
 from mangum.websockets import WebSocket
-from mangum.exceptions import WebSocketError
+from mangum.exceptions import ConfigurationError
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -165,7 +165,7 @@ class Mangum:
 
     def handle_ws(self, event: dict, context: dict) -> dict:
         if self.ws_config is None:
-            raise WebSocketError(
+            raise ConfigurationError(
                 "A `ws_config` configuration mapping is required for WebSocket support."
             )
 

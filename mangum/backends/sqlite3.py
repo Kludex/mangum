@@ -1,35 +1,38 @@
 import os
 import sqlite3
+
 from dataclasses import dataclass
 
 from mangum.backends.base import WebSocketBackend
+from mangum.exceptions import ConfigurationError
 
 
 @dataclass
-class SQLite3Backend(WebSocketBackend):
-
-    file_path: str
-    table_name: str = "connection"
-
+class SQLiteBackend(WebSocketBackend):
     def __post_init__(self) -> None:
-        if not os.path.exists(self.file_path):
-            self.db = sqlite3.connect(self.file_path)
-            self.cursor = self.db.cursor()
+        try:
+            file_path = self.params["file_path"]
+        except KeyError:
+            raise ConfigurationError(f"SQLite3 database 'file_path' missing.")
+        self.table_name = self.params.get("table_name", "mangum")
+        if not os.path.exists(file_path):
+            self.connection = sqlite3.connect(file_path)
+            self.cursor = self.connection.cursor()
             self.cursor.execute(
                 f"create table {self.table_name} (id varchar(64) primary key, initial_scope text)"
             )
         else:
-            self.db = sqlite3.connect(self.file_path)
-            self.cursor = self.db.cursor()
+            self.connection = sqlite3.connect(file_path)
+            self.cursor = self.connection.cursor()
 
     def create(self, connection_id: str, initial_scope: str) -> None:
         self.cursor.execute(
             f"insert into {self.table_name} values (?, ?)",
             (connection_id, initial_scope),
         )
-        self.db.commit()
+        self.connection.commit()
         self.cursor.close()
-        self.db.close()
+        self.connection.close()
 
     def fetch(self, connection_id: str) -> str:
         initial_scope = self.cursor.execute(
@@ -37,7 +40,7 @@ class SQLite3Backend(WebSocketBackend):
             (connection_id,),
         ).fetchone()[0]
         self.cursor.close()
-        self.db.close()
+        self.connection.close()
 
         return initial_scope
 
@@ -45,6 +48,6 @@ class SQLite3Backend(WebSocketBackend):
         self.cursor.execute(
             f"delete from {self.table_name} where id = ?", (connection_id,)
         ).fetchone()
-        self.db.commit()
+        self.connection.commit()
         self.cursor.close()
-        self.db.close()
+        self.connection.close()

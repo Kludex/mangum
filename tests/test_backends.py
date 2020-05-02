@@ -6,16 +6,18 @@ import boto3
 from moto import mock_dynamodb2, mock_s3
 
 from mangum import Mangum
-from mangum.exceptions import WebSocketError
+from mangum.exceptions import WebSocketError, ConfigurationError
 
 
 def test_sqlite_3_backend(
     tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
 ) -> None:
-    ws_config = {
+    valid = {
         "backend": "sqlite3",
-        "file_path": os.path.join(tmp_path, "db.sqlite3"),
+        "params": {"file_path": os.path.join(tmp_path, "db.sqlite3")},
     }
+
+    missing_file_path = {"backend": "sqlite3", "params": {}}
 
     async def app(scope, receive, send):
         await send({"type": "websocket.accept", "subprotocol": None})
@@ -23,19 +25,24 @@ def test_sqlite_3_backend(
         await send({"type": "websocket.send", "bytes": b"Hello world!"})
         await send({"type": "websocket.close", "code": 1000})
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
         send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     response = handler(mock_ws_disconnect_event, {})
     assert response == {"statusCode": 200}
+
+    # Missing file path
+    with pytest.raises(ConfigurationError):
+        handler = Mangum(app, ws_config=missing_file_path)
+        response = handler(mock_ws_connect_event, {})
 
 
 @mock_dynamodb2
@@ -55,14 +62,13 @@ def test_dynamodb_backend(
 
     valid = {
         "backend": "dynamodb",
-        "table_name": table_name,
-        "region_name": region_name,
+        "params": {"table_name": table_name, "region_name": region_name},
     }
     table_does_not_exist = {
         "backend": "dynamodb",
-        "table_name": "does-not-exist",
-        "region_name": region_name,
+        "params": {"table_name": "does-not-exist", "region_name": region_name},
     }
+    missing_table_name = {"backend": "dynamodb", "params": {"region_name": region_name}}
 
     async def app(scope, receive, send):
         await send({"type": "websocket.accept", "subprotocol": None})
@@ -85,12 +91,17 @@ def test_dynamodb_backend(
     response = handler(mock_ws_disconnect_event, {})
     assert response == {"statusCode": 200}
 
-    # Test table does not exist
+    # Table does not exist
     handler = Mangum(app, ws_config=table_does_not_exist)
     with pytest.raises(WebSocketError):
         response = handler(mock_ws_connect_event, {})
 
-    # Test missing connection
+    # Missing table name
+    handler = Mangum(app, ws_config=missing_table_name)
+    with pytest.raises(ConfigurationError):
+        response = handler(mock_ws_connect_event, {})
+
+    # Missing connection
     table.delete_item(Key={"connectionId": "d4NsecoByQ0CH-Q="})
     handler = Mangum(app, ws_config=valid)
     with pytest.raises(WebSocketError):
@@ -101,11 +112,11 @@ def test_dynamodb_backend(
 def test_s3_backend(
     tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
 ) -> None:
-    bucket_name = "mangum"
+    bucket = "mangum"
     conn = boto3.resource("s3")
-    conn.create_bucket(Bucket=bucket_name)
-
-    ws_config = {"backend": "s3", "bucket_name": bucket_name}
+    conn.create_bucket(Bucket=bucket)
+    valid = {"backend": "s3", "params": {"bucket": bucket}}
+    missing_bucket = {"backend": "s3", "params": {}}
 
     async def app(scope, receive, send):
         await send({"type": "websocket.accept", "subprotocol": None})
@@ -113,16 +124,21 @@ def test_s3_backend(
         await send({"type": "websocket.send", "bytes": b"Hello world!"})
         await send({"type": "websocket.close", "code": 1000})
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
         send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
 
-    handler = Mangum(app, ws_config=ws_config)
+    handler = Mangum(app, ws_config=valid)
     response = handler(mock_ws_disconnect_event, {})
     assert response == {"statusCode": 200}
+
+    # Missing bucket
+    with pytest.raises(ConfigurationError):
+        handler = Mangum(app, ws_config=missing_bucket)
+        response = handler(mock_ws_connect_event, {})
