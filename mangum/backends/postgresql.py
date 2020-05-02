@@ -24,9 +24,9 @@ class PostgreSQLBackend(WebSocketBackend):
                 user = self.params["user"]
                 password = self.params["password"]
                 host = self.params["host"]
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 raise ConfigurationError("PostgreSQL connection details missing.")
-            port = self.params.get("port", "5432")
+            port = self.params.get("port", "5432")  # pragma: no cover
             self.connection = psycopg2.connect(
                 database=database,
                 user=user,

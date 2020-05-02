@@ -10,6 +10,8 @@ boto3
 botocore
 moto
 mypy
+psycopg2
+testing.postgresql
 
 # Docs
 mkdocs

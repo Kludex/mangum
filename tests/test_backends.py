@@ -3,6 +3,8 @@ import mock
 
 import pytest
 import boto3
+import testing.postgresql
+from sqlalchemy import create_engine
 from moto import mock_dynamodb2, mock_s3
 
 from mangum import Mangum
@@ -142,3 +144,39 @@ def test_s3_backend(
     with pytest.raises(ConfigurationError):
         handler = Mangum(app, ws_config=missing_bucket)
         response = handler(mock_ws_connect_event, {})
+
+
+def test_postgresql_backend(
+    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
+):
+    async def app(scope, receive, send):
+        await send({"type": "websocket.accept", "subprotocol": None})
+        await send({"type": "websocket.send", "text": "Hello world!"})
+        await send({"type": "websocket.send", "bytes": b"Hello world!"})
+        await send({"type": "websocket.close", "code": 1000})
+
+    with testing.postgresql.Postgresql() as postgresql:
+        create_engine(postgresql.url())
+
+        dsn = postgresql.dsn()
+        params = {
+            "uri": f"postgresql://{dsn['user']}:postgres@{dsn['host']}:{dsn['port']}/{dsn['database']}"
+        }
+        handler = Mangum(app, ws_config={"backend": "postgresql", "params": params})
+        response = handler(mock_ws_connect_event, {})
+        assert response == {"statusCode": 200}
+
+        handler = Mangum(app, ws_config={"backend": "postgresql", "params": params})
+        with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
+            send.return_value = None
+            response = handler(mock_ws_send_event, {})
+            assert response == {"statusCode": 200}
+
+        handler = Mangum(app, ws_config={"backend": "postgresql", "params": params})
+        response = handler(mock_ws_disconnect_event, {})
+        assert response == {"statusCode": 200}
+
+        dsn["password"] = "postgres"
+        handler = Mangum(app, ws_config={"backend": "postgresql", "params": dsn})
+        response = handler(mock_ws_connect_event, {})
+        assert response == {"statusCode": 200}
