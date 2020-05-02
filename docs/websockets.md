@@ -18,7 +18,6 @@ A connected client has sent a message. The adapter will retrieve the initial req
 
 The client or the server disconnects from the API. The adapter will remove the connection from the backend.
 
-
 ## Backends
 
 A data source, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data source can be used as long as it is accessible remotely to the AWS Lambda function.
@@ -34,8 +33,7 @@ handler = Mangum(
     ws_config={
         "backend": "postgresql",
         "params": {"uri": "postgresql://user:secret@host.com:5432/db"},
-
-    }
+    },
 )
 ```
 
@@ -49,22 +47,30 @@ The following required values need to be defined inside the `ws_config`:
 
 - `backend` : **str** *(required)*
 
-    Name of data source backend to use. The following backends are currently supported:
+    Name of data source backend to use. 
 
-     - `dynamodb`
-     - `s3`
-     - `postgresql`
-     - `sqlite3` (for local debugging)
+The following backends are currently supported:
+
+ - `dynamodb`
+ - `s3`
+ - `postgresql`
+ - `sqlite3` (for local debugging)
 
 - `params` : **str** *(required)*
+    
+    The required and optional arguments provided to a specific backend.
 
 ##### Optional
 
 The following optional values may be defined inside the `ws_config`:
 
 - `api_gateway_endpoint_url` : **str**
+    
+    The endpoint url to use in API Gateway Management API calls.. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
 
 - `api_gateway_region_name` : **str**
+    
+    The region name of the API Gateway that is managing the API connections.
 
 ### DynamoDB
 
@@ -79,7 +85,7 @@ handler = Mangum(
         "backend": "dynamodb",
         "params":{
             "table_name": "connections"
-        }
+        },
     },
 )
 ```
@@ -113,7 +119,7 @@ handler = Mangum(
         "backend": "s3",
         "params": {
             "bucket": "connections"
-        }
+        },
     },
 )
 ```
@@ -147,7 +153,7 @@ handler = Mangum(
             "user": "postgres",
             "password": "correct horse battery staple",
             "host": "mydb.12345678910.ap-southeast-1.rds.amazonaws.com"
-        }
+        },
     },
 )
 ```
@@ -203,7 +209,7 @@ handler = Mangum(
         "params": {
             "file_path": "mangum.sqlite3",
             "table_name": "connection",
-        }
+        },
     },
 )
 ```
@@ -220,6 +226,6 @@ handler = Mangum(
 
     The name of the table to use for the connections in an sqlite3 database.
 
-### Other backends
+### Alternative backends
 
 If you'd like to see a specific data source supported as a backend, please open an [issue](https://github.com/erm/mangum/issues).
