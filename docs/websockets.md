@@ -139,7 +139,7 @@ handler = Mangum(
 
 ### PostgreSQL
 
-The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2] and access to a remote PostgreSQL database.
+The `PostgreSQLBackend` requires [psycopg2](https://github.com/psycopg/psycopg2) and access to a remote PostgreSQL database.
 
 #### Configuration
 
@@ -231,7 +231,7 @@ handler = Mangum(
     
     Password for Redis server.
 
-### SQlite3
+### SQLite
 
 The `sqlite3` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
 
