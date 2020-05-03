@@ -49,9 +49,9 @@ The following required values need to be defined inside the `ws_config`:
     Name of data source backend to use. 
 
 
-- `params` : **str** *(required)*
+- `params` : **dict** *(required)*
     
-    The required and optional arguments provided to a specific backend.
+    Parameter mapping of required and optional arguments for the specified backend.
 
 The following backends are currently supported:
 
@@ -183,15 +183,15 @@ If a `uri` is not supplied, then the following parameters are required:
 
 ##### Optional
 
-- `port` : **str** (default="5432")
+- `port` : **str** (default=`5432`)
     
     Port number for Postgres database connection.
 
-- `connect_timeout` **int** (default=5)
+- `connect_timeout` **int** (default=`5`)
     
     Timeout for database connection.
 
-- `table_name` **str (default="connection")
+- `table_name` **str (default=`"connection"`)
     
     Table name to use to store WebSocket connections. 
 
@@ -223,7 +223,7 @@ handler = Mangum(
 
 ##### Optional
 
-- `port` : **str** (default="6379")
+- `port` : **str** (default=`6379`)
     
     Port number for Redis server.
 
