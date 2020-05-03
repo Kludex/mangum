@@ -142,7 +142,6 @@ The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2]
 
 #### Configuration
 
-
 ```python
 handler = Mangum(
     app,
@@ -200,7 +199,6 @@ If a `uri` is not supplied, then the following parameters are required:
 The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
 
 #### Configuration
-
 
 ```python
 handler = Mangum(
