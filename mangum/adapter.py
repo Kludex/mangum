@@ -96,6 +96,7 @@ class Mangum:
         return response
 
     def handle_http(self, event: dict, context: dict, *, is_http_api: bool) -> dict:
+        self.logger.info("HTTP event received.")
         if is_http_api:
             source_ip = event["requestContext"]["http"]["sourceIp"]
             query_string = event.get("rawQueryString")
@@ -186,7 +187,11 @@ class Mangum:
             api_gateway_region_name=api_gateway_region_name,
         )
 
+        self.logger.info(
+            "%s event received for WebSocket connection %s", event_type, connection_id
+        )
         if event_type == "CONNECT":
+
             headers = (
                 {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
                 if event.get("headers")
@@ -198,7 +203,7 @@ class Mangum:
 
             initial_scope = {
                 "type": "websocket",
-                "path": "/ws",
+                "path": "/",
                 "headers": headers,
                 "raw_path": None,
                 "root_path": "",
@@ -219,7 +224,7 @@ class Mangum:
             asgi_cycle.put_message(
                 {"type": "websocket.receive", "bytes": None, "text": event["body"]}
             )
-            asgi_cycle.put_message({"type": "websocket.disconnect", "code": "1000"})
+            # asgi_cycle.put_message({"type": "websocket.disconnect", "code": "1000"})
             response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
