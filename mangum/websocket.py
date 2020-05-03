@@ -47,6 +47,11 @@ class WebSocket:
 
             self._backend = PostgreSQLBackend(params)  # type: ignore
 
+        elif backend == "redis":
+            from mangum.backends.redis import RedisBackend
+
+            self._backend = RedisBackend(params)  # type: ignore
+
         else:
             raise ConfigurationError(f"{backend} is not a supported backend.")
 
