@@ -203,7 +203,7 @@ class Mangum:
 
             initial_scope = {
                 "type": "websocket",
-                "path": "/",
+                "path": "/dev",
                 "headers": headers,
                 "raw_path": None,
                 "root_path": "",
