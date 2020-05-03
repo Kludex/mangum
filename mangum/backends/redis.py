@@ -12,17 +12,13 @@ class RedisBackend(WebSocketBackend):
     def __post_init__(self) -> None:
         self.logger = logging.getLogger("mangum.websocket.redis")
         self.logger.debug("Connecting to Redis host.")
-
-        if "uri" in self.params:
-            self.connection = redis.Redis(self.params["uri"])
-        else:
-            try:
-                host = self.params["host"]
-            except KeyError:  # pragma: no cover
-                raise ConfigurationError("PostgreSQL connection details missing.")
-            password = self.params.get("password")
-            port = self.params.get("port", "5432")  # pragma: no cover
-            self.connection = redis.Redis(host, port, password=password)
+        try:
+            host = self.params["host"]
+        except KeyError:  # pragma: no cover
+            raise ConfigurationError("Redis 'host' parameter missing.")
+        password = self.params.get("password")
+        port = self.params.get("port", "5432")  # pragma: no cover
+        self.connection = redis.Redis(host, port, password=password)
         self.logger.debug("Connection established.")
 
     def create(self, connection_id: str, initial_scope: str) -> None:
