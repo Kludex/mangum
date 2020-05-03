@@ -38,7 +38,7 @@ handler = Mangum(
 
 ##### Required
 
-- `ws_config` : **dict**
+- `ws_config` : **dict** *(required)*
 
     Configuration mapping for a supported WebSocket backend.
 
@@ -67,7 +67,7 @@ The following optional values may be defined inside the `ws_config`:
 
 - `api_gateway_endpoint_url` : **str**
     
-    The endpoint url to use in API Gateway Management API calls.. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
+    The endpoint url to use in API Gateway Management API calls. This is useful if you are debugging locally with a package such as [serverless-offline](https://github.com/dherault/serverless-offline).
 
 - `api_gateway_region_name` : **str**
     
@@ -75,7 +75,7 @@ The following optional values may be defined inside the `ws_config`:
 
 ### DynamoDB
 
-The `DynamoDBStorageBackend` uses a [DynamoDB](https://aws.amazon.com/dynamodb/) table to store the connection details.
+The `DynamoDBackend` uses a [DynamoDB](https://aws.amazon.com/dynamodb/) table to store the connection details.
 
 #### Configuration
 
@@ -109,7 +109,7 @@ handler = Mangum(
 
 ### S3
 
-The `S3Backend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
+The `S3Backend` uses an [Amazon S3](https://aws.amazon.com/s3/](https://aws.amazon.com/s3/) bucket as a key-value store to store the connection details.
 
 #### Configuration
 

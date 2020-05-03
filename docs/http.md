@@ -20,7 +20,7 @@ The adapter class accepts the following optional arguments:
     
     Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
 
-- `log_level` : **str** (default="info")
+- `log_level` : **str** (default=`"info"`)
     
     Level parameter for the logger.
 
