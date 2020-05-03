@@ -3,6 +3,8 @@ import mock
 
 import pytest
 import boto3
+import redis
+import testing.redis
 import testing.postgresql
 from sqlalchemy import create_engine
 from moto import mock_dynamodb2, mock_s3
@@ -32,7 +34,7 @@ def test_sqlite_3_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(app, ws_config=valid)
-    with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
+    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
         send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
@@ -84,7 +86,7 @@ def test_dynamodb_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(app, ws_config=valid)
-    with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
+    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
         send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
@@ -119,6 +121,7 @@ def test_s3_backend(
     conn.create_bucket(Bucket=bucket)
     valid = {"backend": "s3", "params": {"bucket": bucket}}
     missing_bucket = {"backend": "s3", "params": {}}
+    create_new_bucket = {"backend": "s3", "params": {"bucket": "new_bucket"}}
 
     async def app(scope, receive, send):
         await send({"type": "websocket.accept", "subprotocol": None})
@@ -131,7 +134,7 @@ def test_s3_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(app, ws_config=valid)
-    with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
+    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
         send.return_value = None
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
@@ -144,6 +147,11 @@ def test_s3_backend(
     with pytest.raises(ConfigurationError):
         handler = Mangum(app, ws_config=missing_bucket)
         response = handler(mock_ws_connect_event, {})
+
+    # Create bucket
+    handler = Mangum(app, ws_config=create_new_bucket)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
 
 
 def test_postgresql_backend(
@@ -167,7 +175,7 @@ def test_postgresql_backend(
         assert response == {"statusCode": 200}
 
         handler = Mangum(app, ws_config={"backend": "postgresql", "params": params})
-        with mock.patch("mangum.websockets.WebSocket.post_to_connection") as send:
+        with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
             send.return_value = None
             response = handler(mock_ws_send_event, {})
             assert response == {"statusCode": 200}
@@ -179,4 +187,31 @@ def test_postgresql_backend(
         dsn["password"] = "postgres"
         handler = Mangum(app, ws_config={"backend": "postgresql", "params": dsn})
         response = handler(mock_ws_connect_event, {})
+        assert response == {"statusCode": 200}
+
+
+def test_redis_backend(
+    mock_ws_connect_event, mock_ws_send_event, mock_ws_disconnect_event
+):
+    async def app(scope, receive, send):
+        await send({"type": "websocket.accept", "subprotocol": None})
+        await send({"type": "websocket.send", "text": "Hello world!"})
+        await send({"type": "websocket.send", "bytes": b"Hello world!"})
+        await send({"type": "websocket.close", "code": 1000})
+
+    with testing.redis.RedisServer() as redis_server:
+        dsn = redis_server.dsn()
+
+        handler = Mangum(app, ws_config={"backend": "redis", "params": dsn})
+        response = handler(mock_ws_connect_event, {})
+        assert response == {"statusCode": 200}
+
+        handler = Mangum(app, ws_config={"backend": "redis", "params": dsn})
+        with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
+            send.return_value = None
+            response = handler(mock_ws_send_event, {})
+            assert response == {"statusCode": 200}
+
+        handler = Mangum(app, ws_config={"backend": "redis", "params": dsn})
+        response = handler(mock_ws_disconnect_event, {})
         assert response == {"statusCode": 200}

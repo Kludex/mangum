@@ -25,12 +25,11 @@ class S3Backend(WebSocketBackend):
             config=Config(connect_timeout=5, retries={"max_attempts": 0}),
         )
         create_bucket = False
-
         try:
             self.connection.head_bucket(Bucket=self.bucket)
         except ClientError as exc:
             error_code = int(exc.response["Error"]["Code"])
-            if error_code == 403:
+            if error_code == 403:  # pragma: no cover
                 self.logger.error("S3 bucket access forbidden!")
             elif error_code == 404:
                 self.logger.info(f"Bucket {self.bucket} not found, creating.")

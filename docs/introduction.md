@@ -18,6 +18,8 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
+- Support for binary media types and payload compression in API Gateway.
+
 - Works with existing deployment and configuration tools, including [Serverless Framework](https://www.serverless.com/) and [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html).
 
 - Startup and shutdown [lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html) events.
@@ -37,11 +39,39 @@ You can install the required dependencies for the WebSocket backends with one th
 ```shell
 pip install mangum[aws]
 pip install mangum[postgresql]
+pip install mangum[redis]
 ```
+
+## Usage
+
+The `Mangum` adapter class designed to wrap any ASGI application (while accepting various configuration options) and return a callable. It can be used as simply as:
+
+```python
+from mangum import Mangum
+
+# Define an ASGI application
+
+handler = Mangum(app)
+```
+
+However, this is just one convention, you may also use it like this:
+
+```python
+def handler(event, context):
+    if event.get("some-key"):
+        # Do something or return, etc.
+
+    asgi_handler = Mangum(app)
+    response = asgi_handler(event, context) # Call the instance with the event arguments
+
+    return response
+```
+
+This may be useful if you need to intercept events to handle specifically.
 
 ## Examples
 
-The examples below are "raw" ASGI applications with minimal configurations. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websockets/) docs for more details about configuration.
+The examples below are "raw" ASGI applications with minimal configurations. You are more likely than not going to be using a framework, but you should be able to replace the `app` in these example with most ASGI framework applications. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websocket/) docs for more detailed configuration information.
 
 ### HTTP
 
@@ -82,7 +112,7 @@ html = b"""
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket("ws://localhost:3001");
+            var ws = new WebSocket("%s");
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')
                 var message = document.createElement('li')
@@ -101,7 +131,7 @@ html = b"""
         </script>
     </body>
 </html>
-"""
+""" % os.environ.get("WEBSOCKET_URL", "ws://localhost:3000")
 
 async def app(scope, receive, send):
     assert scope["type"] in ("http", "websocket")
@@ -134,7 +164,7 @@ handler = Mangum(
     ws_config={
         "backend": "s3",
         "params": {
-            "bucket": "connections"
+            "bucket": "<s3-bucket-to-store-connections>"
         }
     }
 )

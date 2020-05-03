@@ -22,7 +22,6 @@ The client or the server disconnects from the API. The adapter will remove the c
 
 A data source, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data source can be used as long as it is accessible remotely to the AWS Lambda function.
 
-
 All supported backends require a `params` configuration mapping. The `ws_config` configuration must contain the name of a backend along with any required `params` for the selected backend.
 
 #### Configuration
@@ -31,8 +30,8 @@ All supported backends require a `params` configuration mapping. The `ws_config`
 handler = Mangum(
     app,
     ws_config={
-        "backend": "postgresql",
-        "params": {"uri": "postgresql://user:secret@host.com:5432/db"},
+        "backend": "postgresql|redis|dynamodb|s3|sqlite3",
+        "params": {...},
     },
 )
 ```
@@ -54,6 +53,7 @@ The following backends are currently supported:
  - `dynamodb`
  - `s3`
  - `postgresql`
+ - `redis`
  - `sqlite3` (for local debugging)
 
 - `params` : **str** *(required)*
@@ -118,7 +118,7 @@ handler = Mangum(
     ws_config={
         "backend": "s3",
         "params": {
-            "bucket": "connections"
+            "bucket": "asgi-websocket-connections-12345"
         },
     },
 )
@@ -194,6 +194,43 @@ If a `uri` is not supplied, then the following parameters are required:
 - `table_name` **str (default="connection")
     
     Table name to use to store WebSocket connections. 
+
+### Redis
+
+The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
+
+#### Configuration
+
+
+```python
+handler = Mangum(
+    app,
+    ws_config={
+        "backend": "redis",
+        "params": {
+            "host": "my.redis.host",
+            "port": 6379
+            "password": "correct horse battery staple",
+        },
+    },
+)
+```
+
+##### Required
+
+- `host` : **str** *(required)*
+    
+    Host for Redis server.
+
+##### Optional
+
+- `port` : **str** (default="6379")
+    
+    Port number for Redis server.
+
+- `password` : **str**
+    
+    Password for Redis server.
 
 ### SQlite3
 

@@ -18,6 +18,8 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
+- Support for binary media types and payload compression in API Gateway.
+
 - Works with existing deployment and configuration tools, including [Serverless Framework](https://www.serverless.com/) and [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html).
 
 - Startup and shutdown [lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html) events.
@@ -37,11 +39,39 @@ You can install the required dependencies for the WebSocket backends with one th
 ```shell
 pip install mangum[aws]
 pip install mangum[postgresql]
+pip install mangum[redis]
 ```
+
+## Usage
+
+The `Mangum` adapter class designed to wrap any ASGI application (while accepting various configuration options) and return a callable. It can be used as simply as:
+
+```python
+from mangum import Mangum
+
+# Define an ASGI application
+
+handler = Mangum(app)
+```
+
+However, this is just one convention, you may also use it like this:
+
+```python
+def handler(event, context):
+    if event.get("some-key"):
+        # Do something or return, etc.
+
+    asgi_handler = Mangum(app)
+    response = asgi_handler(event, context) # Call the instance with the event arguments
+
+    return response
+```
+
+This may be useful if you need to intercept events to handle specifically.
 
 ## Examples
 
-The examples below are "raw" ASGI applications with minimal configuration. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websockets/) docs for more details about configuration.
+The examples below are "raw" ASGI applications with minimal configurations. You are more likely than not going to be using a framework, but you should be able to replace the `app` in these example with most ASGI framework applications. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websocket/) docs for more detailed configuration information.
 
 ### HTTP
 
@@ -67,18 +97,74 @@ handler = Mangum(app)
 ```python
 from mangum import Mangum
 
+html = b"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket("%s");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+
+
+        </script>
+    </body>
+</html>
+""" % os.environ.get("WEBSOCKET_URL", "ws://localhost:3000")
+
 async def app(scope, receive, send):
-    await send({"type": "websocket.accept", "subprotocol": None})
-    await send({"type": "websocket.send", "text": "Hello world!"})
-    await send({"type": "websocket.send", "bytes": b"Hello world!"})
-    await send({"type": "websocket.close", "code": 1000})
+    assert scope["type"] in ("http", "websocket")
+    if scope["type"] == "http":
+        message = await receive()
+        if message["type"] == "http.request":
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/html; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": html})
+    if scope["type"] == "websocket":
+        while True:
+            message = await receive()
+            if message["type"] == "websocket.connect":
+                await send({"type": "websocket.accept"})
+
+            if message["type"] == "websocket.receive":
+                text = f"Received message: {message['text']}"
+                await send({"type": "websocket.send", "text": text})
+
+            if message["type"] == "websocket.disconnect":
+                await send({"type": "websocket.close", "code": 1000})
 
 handler = Mangum(
     app,
     ws_config={
         "backend": "s3",
         "params": {
-            "bucket": "connections"
+            "bucket": "<s3-bucket-to-store-connections>"
         }
     }
 )

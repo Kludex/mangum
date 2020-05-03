@@ -15,7 +15,11 @@ setup(
     long_description=get_long_description(),
     python_requires=">=3.6",
     install_requires=["typing_extensions", "dataclasses; python_version < '3.7'"],
-    extras_require={"aws": ["boto3"], "postgresql": ["psycopg2", "boto3"]},
+    extras_require={
+        "aws": ["boto3"],
+        "postgresql": ["psycopg2", "boto3"],
+        "redis": ["redis", "boto3"],
+    },
     package_data={"mangum": ["py.typed"]},
     long_description_content_type="text/markdown",
     author="Jordan Eremieff",
