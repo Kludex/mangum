@@ -44,7 +44,7 @@ pip install mangum[redis]
 
 ## Usage
 
-The `Mangum` adapter class designed to wrap any ASGI application (while accepting various configuration options) and return a callable. It can be used as simply as:
+The `Mangum` adapter class is designed to wrap any ASGI application, accepting various configuration options, returning a callable. It can wrap an application and be assigned to the handler:
 
 ```python
 from mangum import Mangum
@@ -54,7 +54,7 @@ from mangum import Mangum
 handler = Mangum(app)
 ```
 
-However, this is just one convention, you may also use it like this:
+However, this is just one convention, you may also intercept events and construct the adapter instance separately:
 
 ```python
 def handler(event, context):
@@ -66,8 +66,6 @@ def handler(event, context):
 
     return response
 ```
-
-This may be useful if you need to intercept events to handle specifically.
 
 ## Examples
 
