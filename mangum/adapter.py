@@ -10,7 +10,7 @@ from mangum.lifespan import Lifespan
 from mangum.types import ASGIApp
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.ws import WebSocketCycle
-from mangum.websockets import WebSocket
+from mangum.websocket import WebSocket
 from mangum.exceptions import ConfigurationError
 
 
@@ -203,7 +203,7 @@ class Mangum:
 
             initial_scope = {
                 "type": "websocket",
-                "path": "/dev",
+                "path": "/",
                 "headers": headers,
                 "raw_path": None,
                 "root_path": "",
@@ -224,7 +224,7 @@ class Mangum:
             asgi_cycle.put_message(
                 {"type": "websocket.receive", "bytes": None, "text": event["body"]}
             )
-            # asgi_cycle.put_message({"type": "websocket.disconnect", "code": "1000"})
+
             response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":

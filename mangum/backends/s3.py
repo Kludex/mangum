@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 
 import boto3
+from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from mangum.backends.base import WebSocketBackend
@@ -18,7 +19,11 @@ class S3Backend(WebSocketBackend):
         except KeyError:
             raise ConfigurationError("S3 'bucket' parameter missing.")
         region_name = self.params.get("region_name", os.environ["AWS_REGION"])
-        self.connection = boto3.client("s3", region_name=region_name)
+        self.connection = boto3.client(
+            "s3",
+            region_name=region_name,
+            config=Config(connect_timeout=5, retries={"max_attempts": 0}),
+        )
         create_bucket = False
 
         try:

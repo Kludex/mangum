@@ -3,7 +3,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 
-from mangum.websockets import WebSocket
+from mangum.websocket import WebSocket
 from mangum.types import ASGIApp, Message
 
 
@@ -57,6 +57,7 @@ class WebSocketCycle:
             msg_data = message.get("text", "").encode()
             if message["type"] == "websocket.send":
                 self.websocket.post_to_connection(msg_data)
+            await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 
     def put_message(self, message: Message) -> None:
         self.app_queue.put_nowait(message)
