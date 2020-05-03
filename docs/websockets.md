@@ -196,7 +196,7 @@ If a `uri` is not supplied, then the following parameters are required:
 
 ### Redis
 
-The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
+The `RedisBackend` requires [redis-py](https://github.com/andymccurdy/redis-py) and access to a Redis server.
 
 #### Configuration
 
