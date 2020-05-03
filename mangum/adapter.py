@@ -1,17 +1,17 @@
 import base64
 import asyncio
 import urllib.parse
-import json
 import typing
+import logging
+import os
 from dataclasses import dataclass
 
 from mangum.lifespan import Lifespan
-from mangum.utils import get_logger, make_response
 from mangum.types import ASGIApp
-from mangum.protocols.http import ASGIHTTPCycle
-from mangum.protocols.websockets import ASGIWebSocketCycle
-from mangum.exceptions import ASGIWebSocketCycleException
-from mangum.connections import ConnectionTable, __ERR__
+from mangum.protocols.http import HTTPCycle
+from mangum.protocols.ws import WebSocketCycle
+from mangum.websocket import WebSocket
+from mangum.exceptions import ConfigurationError
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -33,28 +33,43 @@ def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
     return server
 
 
+def get_logger(log_level: str) -> logging.Logger:
+    level = {
+        "critical": logging.CRITICAL,
+        "error": logging.ERROR,
+        "warning": logging.WARNING,
+        "info": logging.INFO,
+        "debug": logging.DEBUG,
+    }[log_level]
+    logging.basicConfig(
+        format="[%(asctime)s] %(message)s", level=level, datefmt="%d-%b-%y %H:%M:%S"
+    )
+    logger = logging.getLogger("mangum")
+    logger.setLevel(level)
+
+    return logger
+
+
 @dataclass
 class Mangum:
 
     app: ASGIApp
     enable_lifespan: bool = True
+    log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
-    log_level: str = "info"
+    ws_config: typing.Optional[dict] = None
 
     def __post_init__(self) -> None:
-        self.logger = get_logger(log_level=self.log_level)
+        self.logger = get_logger(self.log_level)
         if self.enable_lifespan:
             loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app, logger=self.logger)
+            self.lifespan = Lifespan(self.app)
             loop.create_task(self.lifespan.run())
             loop.run_until_complete(self.lifespan.startup())
 
     def __call__(self, event: dict, context: dict) -> dict:
-        try:
-            response = self.handler(event, context)
-        except BaseException as exc:
-            raise exc
+        response = self.handler(event, context)
 
         return response
 
@@ -81,6 +96,7 @@ class Mangum:
         return response
 
     def handle_http(self, event: dict, context: dict, *, is_http_api: bool) -> dict:
+        self.logger.info("HTTP event received.")
         if is_http_api:
             source_ip = event["requestContext"]["http"]["sourceIp"]
             query_string = event.get("rawQueryString")
@@ -136,8 +152,8 @@ class Mangum:
         else:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
-        asgi_cycle = ASGIHTTPCycle(
-            scope, text_mime_types=text_mime_types, logger=self.logger
+        asgi_cycle = HTTPCycle(
+            scope, text_mime_types=text_mime_types, log_level=self.log_level
         )
         asgi_cycle.put_message(
             {"type": "http.request", "body": body, "more_body": False}
@@ -147,19 +163,35 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        if __ERR__:  # pragma: no cover
-            raise ImportError(__ERR__)
+        if self.ws_config is None:
+            raise ConfigurationError(
+                "A `ws_config` configuration mapping is required for WebSocket support."
+            )
 
-        request_context = event["requestContext"]
-        connection_id = request_context.get("connectionId")
-        domain_name = request_context.get("domainName")
-        stage = request_context.get("stage")
-        event_type = request_context["eventType"]
-        endpoint_url = f"https://{domain_name}/{stage}"
+        event_type = event["requestContext"]["eventType"]
+        connection_id = event["requestContext"]["connectionId"]
+        stage = event["requestContext"]["stage"]
+        domain_name = event["requestContext"]["domainName"]
 
+        api_gateway_endpoint_url = self.ws_config.get(
+            "api_gateway_endpoint_url", f"https://{domain_name}/{stage}"
+        )
+        api_gateway_region_name = self.ws_config.get(
+            "api_gateway_region_name", os.environ["AWS_REGION"]
+        )
+
+        websocket = WebSocket(
+            connection_id,
+            ws_config=self.ws_config,
+            api_gateway_endpoint_url=api_gateway_endpoint_url,
+            api_gateway_region_name=api_gateway_region_name,
+        )
+
+        self.logger.info(
+            "%s event received for WebSocket connection %s", event_type, connection_id
+        )
         if event_type == "CONNECT":
-            # The initial connect event. Parse and store the scope for the connection
-            # in DynamoDB to be retrieved in subsequent message events for this request.
+
             headers = (
                 {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
                 if event.get("headers")
@@ -169,74 +201,34 @@ class Mangum:
             source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
 
-            root_path = event["requestContext"]["stage"]
-            scope = {
+            initial_scope = {
                 "type": "websocket",
                 "path": "/",
-                "headers": headers,  # The headers must be JSON serializable.
+                "headers": headers,
                 "raw_path": None,
-                "root_path": root_path,
+                "root_path": "",
                 "scheme": headers.get("x-forwarded-proto", "wss"),
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": context},
+                "aws": {"event": event, "context": None},
             }
-            connection_table = ConnectionTable()
-            status_code = connection_table.update_item(
-                connection_id, scope=json.dumps(scope)
-            )
 
-            if status_code != 200:  # pragma: no cover
-                return make_response("Error", status_code=500)
-            return make_response("OK", status_code=200)
+            websocket.create(initial_scope)
+            response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-
-            connection_table = ConnectionTable()
-            item = connection_table.get_item(connection_id)
-            if not item:  # pragma: no cover
-                return make_response("Error", status_code=500)
-
-            # Retrieve and deserialize the scope entry created in the connect event for
-            # the current connection.
-            scope = json.loads(item["scope"])
-
-            # Ensure the scope definition complies with the ASGI spec.
-            query_string = scope["query_string"]
-            headers = scope["headers"]  # type: ignore
-            headers = [
-                [k.encode(), v.encode()] for k, v in headers.items()  # type: ignore
-            ]
-            query_string = query_string.encode()  # type: ignore
-            scope.update({"headers": headers, "query_string": query_string})
-
-            asgi_cycle = ASGIWebSocketCycle(
-                scope,
-                endpoint_url=endpoint_url,
-                connection_id=connection_id,
-                connection_table=connection_table,
-            )
-            asgi_cycle.app_queue.put_nowait({"type": "websocket.connect"})
-            asgi_cycle.app_queue.put_nowait(
-                {
-                    "type": "websocket.receive",
-                    "path": "/",
-                    "bytes": None,
-                    "text": event["body"],
-                }
+            websocket.fetch()
+            asgi_cycle = WebSocketCycle(websocket, log_level=self.log_level)
+            asgi_cycle.put_message({"type": "websocket.connect"})
+            asgi_cycle.put_message(
+                {"type": "websocket.receive", "bytes": None, "text": event["body"]}
             )
 
-            try:
-                asgi_cycle(self.app)
-            except ASGIWebSocketCycleException:  # pragma: no cover
-                return make_response("Error", status_code=500)
-            return make_response("OK", status_code=200)
+            response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
-            connection_table = ConnectionTable()
-            status_code = connection_table.delete_item(connection_id)
-            if status_code != 200:  # pragma: no cover
-                return make_response("WebSocket disconnect error.", status_code=500)
-            return make_response("OK", status_code=200)
-        return make_response("Error", status_code=500)  # pragma: no cover
+            websocket.delete()
+            response = {"statusCode": 200}
+
+        return response

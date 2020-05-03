@@ -3,4 +3,4 @@ source =
     mangum
 omit =
     tests/*
-    mangum/__version__.py
+    mangum/backends/base.py
