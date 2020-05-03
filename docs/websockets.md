@@ -38,7 +38,7 @@ handler = Mangum(
 
 ##### Required
 
-- `ws_config` : ***dict*** (default=None)
+- `ws_config` : **dict**
 
     Configuration mapping for a supported WebSocket backend.
 
@@ -48,6 +48,11 @@ The following required values need to be defined inside the `ws_config`:
 
     Name of data source backend to use. 
 
+
+- `params` : **str** *(required)*
+    
+    The required and optional arguments provided to a specific backend.
+
 The following backends are currently supported:
 
  - `dynamodb`
@@ -55,10 +60,6 @@ The following backends are currently supported:
  - `postgresql`
  - `redis`
  - `sqlite3` (for local debugging)
-
-- `params` : **str** *(required)*
-    
-    The required and optional arguments provided to a specific backend.
 
 ##### Optional
 
@@ -159,7 +160,7 @@ handler = Mangum(
 
 ##### Required
 
-- `uri`: ***str*** *(required)*
+- `uri`: **str** *(required)*
     The connection string for the remote database.
 
 If a `uri` is not supplied, then the following parameters are required:
