@@ -58,7 +58,9 @@ class Mangum:
     log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
-    ws_config: typing.Optional[dict] = None
+    dsn: typing.Optional[str] = None
+    api_gateway_endpoint_url: typing.Optional[str] = None
+    api_gateway_region_name: typing.Optional[str] = None
 
     def __post_init__(self) -> None:
         self.logger = get_logger(self.log_level)
@@ -163,33 +165,32 @@ class Mangum:
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        if self.ws_config is None:
+        if self.dsn is None:
             raise ConfigurationError(
-                "A `ws_config` configuration mapping is required for WebSocket support."
+                "A `dsn` connection string is required for WebSocket support."
             )
 
         event_type = event["requestContext"]["eventType"]
         connection_id = event["requestContext"]["connectionId"]
         stage = event["requestContext"]["stage"]
         domain_name = event["requestContext"]["domainName"]
-
-        api_gateway_endpoint_url = self.ws_config.get(
-            "api_gateway_endpoint_url", f"https://{domain_name}/{stage}"
-        )
-        api_gateway_region_name = self.ws_config.get(
-            "api_gateway_region_name", os.environ["AWS_REGION"]
+        self.logger.info(
+            "%s event received for WebSocket connection %s", event_type, connection_id
         )
 
+        api_gateway_endpoint_url = (
+            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
+        )
+        api_gateway_region_name = (
+            self.api_gateway_region_name or os.environ["AWS_REGION"]
+        )
         websocket = WebSocket(
             connection_id,
-            ws_config=self.ws_config,
+            dsn=self.dsn,
             api_gateway_endpoint_url=api_gateway_endpoint_url,
             api_gateway_region_name=api_gateway_region_name,
         )
 
-        self.logger.info(
-            "%s event received for WebSocket connection %s", event_type, connection_id
-        )
         if event_type == "CONNECT":
 
             headers = (

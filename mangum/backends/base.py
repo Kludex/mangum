@@ -4,10 +4,13 @@ from dataclasses import dataclass
 @dataclass
 class WebSocketBackend:
     """
-    Base class for implementing WebSocket backends to store APIGateway connections.
+    Base class for implementing WebSocket backends to store API Gateway connections.
+
+    WebSocket backends are required to implement configuration based on a `dsn`
+    connection string.
     """
 
-    params: dict
+    dsn: str
 
     def create(self, connection_id: str, initial_scope: str) -> None:
         """

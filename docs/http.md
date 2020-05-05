@@ -2,35 +2,11 @@
 
 Mangum provides support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs in API Gateway. The adapter class handles parsing the incoming requests and managing the ASGI cycle.
 
-## Configuration
+## Usage
 
 ```python
-handler = Mangum(
-    app,
-    enable_lifespan=True,
-    log_level="info",
-    api_gateway_base_path=None,
-    text_mime_types=None,
-)
+handler = Mangum(app)
 ```
-
-The adapter class accepts the following optional arguments:
-
-- `enable_lifespan` : **bool** (default=`True`)
-    
-    Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
-
-- `log_level` : **str** (default="info")
-    
-    Level parameter for the logger.
-
-- `api_gateway_base_path` : **str**
-    
-    Base path to strip from URL when using a custom domain name.
-
-- `text_mime_types` : **list**
-        
-    The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
 
 ## Binary support
 

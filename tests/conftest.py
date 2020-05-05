@@ -286,5 +286,16 @@ def mock_ws_disconnect_event() -> dict:
     }
 
 
+@pytest.fixture
+def mock_websocket_app():
+    async def app(scope, receive, send):
+        await send({"type": "websocket.accept", "subprotocol": None})
+        await send({"type": "websocket.send", "text": "Hello world!"})
+        await send({"type": "websocket.send", "bytes": b"Hello world!"})
+        await send({"type": "websocket.close", "code": 1000})
+
+    return app
+
+
 def pytest_generate_tests(metafunc):
     os.environ["AWS_REGION"] = "ap-southeast-1"
