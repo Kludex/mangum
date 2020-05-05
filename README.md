@@ -36,19 +36,11 @@ Python 3.6+
 pip install mangum
 ```
 
-You can install the required dependencies for the WebSocket backends with one the following:
-
-```shell
-pip install mangum[aws]==0.9.0b1
-pip install mangum[postgresql]==0.9.0b1
-pip install mangum[redis]==0.9.0b1
-```
-
-**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b1`.
+**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b2` and the `master` branch.
 
 ## Usage
 
-The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned to the handler:
+The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned as the handler:
 
 ```python
 from mangum import Mangum

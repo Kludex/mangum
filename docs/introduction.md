@@ -1,16 +1,16 @@
 # Mangum
 
 <a href="https://pypi.org/project/mangum/">
-   <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
+    <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
 <a href="https://travis-ci.org/erm/mangum">
     <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
 </a>
-<a href="https://pypi.org/project/mangum/">
-    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
-</a>
+<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
 
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
+
+***Documentation***: https://erm.github.io/mangum/introduction/
 
 ## Features
 
@@ -36,19 +36,11 @@ Python 3.6+
 pip install mangum
 ```
 
-You can install the required dependencies for the WebSocket backends with one the following:
-
-```shell
-pip install mangum[aws]==0.9.0b1
-pip install mangum[postgresql]==0.9.0b1
-pip install mangum[redis]==0.9.0b1
-```
-
-**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b1`.
+**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b2` and the `master` branch.
 
 ## Usage
 
-The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned to the handler:
+The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned as the handler:
 
 ```python
 from mangum import Mangum
