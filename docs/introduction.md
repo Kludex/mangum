@@ -36,7 +36,7 @@ Python 3.6+
 pip install mangum
 ```
 
-**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b2` and the `master` branch.
+**Note**: WebSocket support is currently available only in the `master` branch.
 
 ## Usage
 
