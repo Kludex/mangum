@@ -18,35 +18,15 @@ A connected client has sent a message. The adapter will retrieve the initial req
 
 The client or the server disconnects from the API. The adapter will remove the connection from the backend.
 
-## Backends
+### Backends
 
 A data source, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data source can be used as long as it is accessible remotely to the AWS Lambda function.
 
-All supported backends require a `params` configuration mapping. The `ws_config` configuration must contain the name of a backend along with any required `params` for the selected backend.
-
-#### Configuration
+All supported backends require a `dsn` connection string argument to configure the connection. Backends that already support connection strings, such as PostgreSQL and Redis, can use their existing syntax. Other backends, such as S3 and DynamoDB, are parsed with a custom syntax defined in the backend class.
 
 ```python
-handler = Mangum(
-    app,
-    ws_config={
-        "backend": "postgresql|redis|dynamodb|s3|sqlite3",
-        "params": {...},
-    },
-)
+handler = Mangum(app, dsn="[postgresql|redis|dynamodb|s3|sqlite]://[...]")
 ```
-
-##### Required
-
-- `ws_config` : ***dict*** (default=None)
-
-    Configuration mapping for a supported WebSocket backend.
-
-The following required values need to be defined inside the `ws_config`:
-
-- `backend` : **str** *(required)*
-
-    Name of data source backend to use. 
 
 The following backends are currently supported:
 
@@ -54,55 +34,38 @@ The following backends are currently supported:
  - `s3`
  - `postgresql`
  - `redis`
- - `sqlite3` (for local debugging)
-
-- `params` : **str** *(required)*
-    
-    The required and optional arguments provided to a specific backend.
-
-##### Optional
-
-The following optional values may be defined inside the `ws_config`:
-
-- `api_gateway_endpoint_url` : **str**
-    
-    The endpoint url to use in API Gateway Management API calls.. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
-
-- `api_gateway_region_name` : **str**
-    
-    The region name of the API Gateway that is managing the API connections.
+ - `sqlite` (for local debugging)
 
 ### DynamoDB
 
-The `DynamoDBStorageBackend` uses a [DynamoDB](https://aws.amazon.com/dynamodb/) table to store the connection details.
+The `DynamoDBBackend` uses a [DynamoDB](https://aws.amazon.com/dynamodb/) table to store the connection details.
 
-#### Configuration
+#### Usage
 
 ```python
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "dynamodb",
-        "params":{
-            "table_name": "connections"
-        },
-    },
+    dsn="dynamodb://mytable"
 )
 ```
 
-##### Required
+##### Parameters
 
-- `table_name` : **str** *(required)*
+The DynamoDB backend `dsn` uses the following connection string syntax:
 
-    The name of the table in DynamoDB.
+```
+dynamodb://<table_name>[?region=<region-name>&endpoint_url=<url>]
+```
 
-##### Optional
+- `table_name` (Required)
 
-- `region_name` : **str**
+    The name of the table in DynamoDB.  
+
+- `region_name`
     
     The region name of the DyanmoDB table.
 
-- `endpoint_url`: **str**
+- `endpoint_url`
 
     The endpoint url to use in DynamoDB calls. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
 
@@ -110,156 +73,109 @@ handler = Mangum(
 
 The `S3Backend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
 
-#### Configuration
+#### Usage
 
 ```python
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "s3",
-        "params": {
-            "bucket": "asgi-websocket-connections-12345"
-        },
-    },
+    dsn="s3://my-bucket-12345"
 )
 ```
 
-##### Required
+##### Parameters
 
-- `bucket` : **str** *(required)*
+The S3 backend `dsn` uses the following connection string syntax:
+
+```
+s3://<bucket>[/key/...][?region=<region-name>]
+```
+
+- `bucket` (Required)
     
     The name of the bucket in S3.
 
-##### Optional
-
-- `region_name` : **str**
+- `region_name`
     
     The region name of the S3 bucket.
 
 ### PostgreSQL
 
-The `PostgreSQLBackend` requires (psycopg2)[https://github.com/psycopg/psycopg2] and access to a remote PostgreSQL database.
+The `PostgreSQLBackend` requires [psycopg2](https://github.com/psycopg/psycopg2) and access to a remote PostgreSQL database.
 
-#### Configuration
+### Usage
 
 ```python
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "postgresql",
-        "params": {
-            "database": "mangum",
-            "user": "postgres",
-            "password": "correct horse battery staple",
-            "host": "mydb.12345678910.ap-southeast-1.rds.amazonaws.com"
-        },
-    },
+    dsn="postgresql://myuser:mysecret@my.host:5432/mydb"
 )
 ```
 
-##### Required
+##### Parameters
 
-- `uri`: ***str*** *(required)*
-    The connection string for the remote database.
+The PostgreSQL backend `dsn` uses the following connection string syntax:
 
-If a `uri` is not supplied, then the following parameters are required:
+```
+postgresql://[user[:password]@][host][:port][,...][/dbname][?param1=value1&...]
+```
 
-- `database` : **str** *(required)*
-    
-    The name of the database.
+`host` (Required)
 
-- `user` : **str** *(required)*
-    
-    Postgres user username.
+    The network location of the PostgreSQL database
 
-- `password` : **str** *(required)*
-    
-    Postgres user password.
-
-- `host` : **str** *(required)*
-    
-    Host for Postgres database connection.
-
-##### Optional
-
-- `port` : **str** (default="5432")
-    
-    Port number for Postgres database connection.
-
-- `connect_timeout` **int** (default=5)
-    
-    Timeout for database connection.
-
-- `table_name` **str (default="connection")
-    
-    Table name to use to store WebSocket connections. 
+Read more about the supported uri schemes and additional parameters [here](https://www.postgresql.org/docs/10/libpq-connect.html#LIBPQ-CONNSTRING).
 
 ### Redis
 
 The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
 
-#### Configuration
+### Usage
 
 ```python
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "redis",
-        "params": {
-            "host": "my.redis.host",
-            "port": 6379
-            "password": "correct horse battery staple",
-        },
-    },
+    dsn="redis://:mysecret@my.host:6379/0"
 )
 ```
 
-##### Required
+#### Parameters
 
-- `host` : **str** *(required)*
+The Redis backend `dsn` uses the following connection string syntax:
+
+```
+redis://[[user:]password@]host[:port][/database]
+```
+
+- `host` (required)
     
-    Host for Redis server.
+    The network location of the Redis server.
 
-##### Optional
-
-- `port` : **str** (default="6379")
-    
-    Port number for Redis server.
-
-- `password` : **str**
-    
-    Password for Redis server.
+Read more about the supported uri schemes and additional parameters [here](https://www.iana.org/assignments/uri-schemes/prov/redis).
 
 ### SQlite3
 
-The `sqlite3` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
+The `sqlite` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
 
-#### Configuration
+### Usage
 
 ```python
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "sqlite3",
-        "params": {
-            "file_path": "mangum.sqlite3",
-            "table_name": "connection",
-        },
-    },
+    dsn="sqlite://mydbfile.sqlite3"
 )
 ```
 
-##### Required
+#### Parameters
 
-- `file_path` : **str** *(required)*
+The SQLite backend uses the following connection string syntax:
 
-    The file name or path to a sqlite3 file. If one does not exist, then it will be created automatically.
+```
+sqlite://[file_path].db
+```
 
-##### Optional
+- `file_path` (Requred)
 
-- `table_name` : **str** (default=`"connection"`)
-
-    The name of the table to use for the connections in an sqlite3 database.
+    The file name or path to an sqlite3 database file. If one does not exist, then it will be created automatically.
 
 ### Alternative backends
 

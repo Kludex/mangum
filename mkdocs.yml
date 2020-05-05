@@ -1,21 +1,20 @@
 site_name: Mangum
-site_description: Serverless ASGI
+site_description: AWS Lambda & API Gateway support for ASGI
 
 theme:
     name: 'material'
     palette:
       primary: 'brown'
       accent: 'orange'
-    logo:
-      icon: 'cloud'
-
 
 repo_name: erm/mangum
 repo_url: https://github.com/erm/mangum
 edit_uri: ""
 
 nav:
-    - Introduction: 'index.md'
+    - Introduction: 'introduction.md'
+    - HTTP: 'http.md'
+    - WebSockets: 'websockets.md'
 
 markdown_extensions:
   - markdown.extensions.codehilite:

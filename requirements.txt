@@ -14,6 +14,7 @@ psycopg2
 redis
 testing.postgresql
 testing.redis
+sqlalchemy
 
 # Docs
 mkdocs

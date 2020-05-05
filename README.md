@@ -10,6 +10,8 @@
 
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
 
+***Documentation***: https://erm.github.io/mangum/introduction/
+
 ## Features
 
 - API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
@@ -37,14 +39,16 @@ pip install mangum
 You can install the required dependencies for the WebSocket backends with one the following:
 
 ```shell
-pip install mangum[aws]
-pip install mangum[postgresql]
-pip install mangum[redis]
+pip install mangum[aws]==0.9.0b1
+pip install mangum[postgresql]==0.9.0b1
+pip install mangum[redis]==0.9.0b1
 ```
+
+**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b1`.
 
 ## Usage
 
-The `Mangum` adapter class is designed to wrap any ASGI application, accepting various configuration options, returning a callable. It can wrap an application and be assigned to the handler:
+The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned to the handler:
 
 ```python
 from mangum import Mangum
@@ -66,6 +70,55 @@ def handler(event, context):
 
     return response
 ```
+
+## Configuration
+
+The adapter accepts various arguments for configuring lifespan, logging, HTTP, WebSocket, and API Gateway behaviour.
+
+### Usage
+
+```python
+handler = Mangum(
+    app,
+    enable_lifespan=True,
+    log_level="info",
+    api_gateway_base_path=None,
+    text_mime_types=None,
+    dsn=None,
+    api_gateway_endpoint_url=None,
+    api_gateway_region_name=None
+)
+```
+
+#### Parameters
+
+- `enable_lifespan` : **bool**
+    
+    Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
+
+- `log_level` : **str**
+    
+    Level parameter for the logger.
+
+- `api_gateway_base_path` : **str**
+    
+    Base path to strip from URL when using a custom domain name.
+
+- `text_mime_types` : **list**
+        
+    The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
+
+- `dsn`: **str*
+    
+    DSN connection string to configure a supported WebSocket backend.
+
+- `api_gateway_endpoint_url` : **str**
+    
+    The endpoint url to use when sending data to WebSocket connections in API Gateway. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
+
+- `api_gateway_region_name` : **str**
+    
+    The region name of the API Gateway that is managing the API connections.
 
 ## Examples
 
@@ -159,11 +212,6 @@ async def app(scope, receive, send):
 
 handler = Mangum(
     app,
-    ws_config={
-        "backend": "s3",
-        "params": {
-            "bucket": "<s3-bucket-to-store-connections>"
-        }
-    }
+    dsn="s3://my-bucket-12345"
 )
 ```
