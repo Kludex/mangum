@@ -1,30 +1,41 @@
 import os
+
+from urllib.parse import urlparse, parse_qs
 from dataclasses import dataclass
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.config import Config
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from mangum.backends.base import WebSocketBackend
-from mangum.exceptions import WebSocketError, ConfigurationError
+from mangum.exceptions import WebSocketError
 
 
 @dataclass
 class DynamoDBBackend(WebSocketBackend):
     def __post_init__(self) -> None:
-        try:
-            table_name = self.params["table_name"]
-        except KeyError:
-            raise ConfigurationError("DynamoDB 'table_name' missing.")
-        region_name = self.params.get("region_name", os.environ["AWS_REGION"])
-        endpoint_url = self.params.get("endpoint_url", None)
+        parsed_dsn = urlparse(self.dsn)
+        parsed_query = parse_qs(parsed_dsn.query)
+        table_name = parsed_dsn.hostname
+
+        region_name = (
+            parsed_query["region"][0]
+            if "region" in parsed_query
+            else os.environ["AWS_REGION"]
+        )
+        endpoint_url = (
+            parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
+        )
         try:
             dynamodb_resource = boto3.resource(
-                "dynamodb", region_name=region_name, endpoint_url=endpoint_url
+                "dynamodb",
+                region_name=region_name,
+                endpoint_url=endpoint_url,
+                config=Config(connect_timeout=2, retries={"max_attempts": 0}),
             )
             dynamodb_resource.meta.client.describe_table(TableName=table_name)
-        except ClientError as exc:
+        except (EndpointConnectionError, ClientError) as exc:
             raise WebSocketError(exc)
-
         self.connection = dynamodb_resource.Table(table_name)
 
     def create(self, connection_id: str, initial_scope: str) -> None:

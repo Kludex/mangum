@@ -1,6 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 from mangum.types import Scope
 from mangum.exceptions import WebSocketError, ConfigurationError
@@ -14,52 +15,58 @@ from botocore.exceptions import ClientError
 class WebSocket:
 
     connection_id: str
-    ws_config: dict
+    dsn: str
     api_gateway_region_name: str
     api_gateway_endpoint_url: str
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
-        try:
-            backend = self.ws_config["backend"]
-            params = self.ws_config["params"]
-        except KeyError as exc:
-            raise ConfigurationError(f"WebSocket config {exc} missing.")
-        if backend == "sqlite3":
+        parsed_dsn = urlparse(self.dsn)
+        if not any((parsed_dsn.hostname, parsed_dsn.path)):
+            raise ConfigurationError("Invalid value for `dsn` provided.")
+        scheme = parsed_dsn.scheme
+        self.logger.debug(
+            f"Attempting WebSocket backend connection using scheme: {scheme}"
+        )
+        if scheme == "sqlite":
             self.logger.info(
                 "The `SQLiteBackend` should be only be used for local "
                 "debugging. It will not work in a deployed environment."
             )
-            from mangum.backends.sqlite3 import SQLiteBackend
+            from mangum.backends.sqlite import SQLiteBackend
 
-            self._backend = SQLiteBackend(params)  # type: ignore
-        elif backend == "dynamodb":
+            self._backend = SQLiteBackend(self.dsn)  # type: ignore
+        elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._backend = DynamoDBBackend(params)  # type: ignore
-        elif backend == "s3":
+            self._backend = DynamoDBBackend(self.dsn)  # type: ignore
+        elif scheme == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._backend = S3Backend(params)  # type: ignore
+            self._backend = S3Backend(self.dsn)  # type: ignore
 
-        elif backend == "postgresql":
+        elif scheme == "postgresql":
             from mangum.backends.postgresql import PostgreSQLBackend
 
-            self._backend = PostgreSQLBackend(params)  # type: ignore
+            self._backend = PostgreSQLBackend(self.dsn)  # type: ignore
 
-        elif backend == "redis":
+        elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 
-            self._backend = RedisBackend(params)  # type: ignore
+            self._backend = RedisBackend(self.dsn)  # type: ignore
 
         else:
-            raise ConfigurationError(f"{backend} is not a supported backend.")
+            raise ConfigurationError(f"{scheme} does not match a supported backend.")
+        self.logger.debug("WebSocket backend connection established.")
 
     def create(self, initial_scope: dict) -> None:
+        self.logger.debug("Creating scope entry for %s", self.connection_id)
         initial_scope_json = json.dumps(initial_scope)
         self._backend.create(self.connection_id, initial_scope_json)
+        self.logger.debug("Scope entry created.")
 
     def fetch(self) -> None:
+        self.logger.debug("Fetching scope entry for %s", self.connection_id)
         initial_scope = self._backend.fetch(self.connection_id)
         scope = json.loads(initial_scope)
         query_string = scope["query_string"]
@@ -68,9 +75,12 @@ class WebSocket:
             headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
         scope.update({"headers": headers, "query_string": query_string.encode()})
         self.scope: Scope = scope
+        self.logger.debug("Scope entry fetched.")
 
     def delete(self) -> None:
+        self.logger.debug("Deleting scope entry for %s", self.connection_id)
         self._backend.delete(self.connection_id)
+        self.logger.debug("Scope entry deleted.")
 
     def post_to_connection(self, msg_data: bytes) -> None:  # pragma: no cover
         try:
