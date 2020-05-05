@@ -10,6 +10,8 @@
 
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
 
+***Documentation***: https://erm.github.io/mangum/introduction/
+
 ## Features
 
 - API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
@@ -37,10 +39,12 @@ pip install mangum
 You can install the required dependencies for the WebSocket backends with one the following:
 
 ```shell
-pip install mangum[aws]
-pip install mangum[postgresql]
-pip install mangum[redis]
+pip install mangum[aws]==0.9.0b1
+pip install mangum[postgresql]==0.9.0b1
+pip install mangum[redis]==0.9.0b1
 ```
+
+**Note**: WebSocket support is currently available only in the pre-release version `0.9.0b1`.
 
 ## Usage
 
