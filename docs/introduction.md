@@ -100,13 +100,13 @@ handler = Mangum(
         
     The list of MIME types (in addition to the defaults) that should not return binary responses in API Gateway.
 
-- `dsn`: **str*
+- `dsn`: **str**
     
-    DSN connection string to configure a supported WebSocket backend.
+    Connection string to configure a supported WebSocket backend.
 
 - `api_gateway_endpoint_url` : **str**
     
-    The endpoint url to use when sending data to WebSocket connections in API Gateway. This is useful if you are debugging locally with a package such as [serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local).
+    The endpoint url to use when sending data to WebSocket connections in API Gateway. This is useful if you are debugging locally with a package such as [serverless-offline](https://github.com/dherault/serverless-offline).
 
 - `api_gateway_region_name` : **str**
     
