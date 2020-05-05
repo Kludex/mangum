@@ -102,7 +102,7 @@ s3://<bucket>[/key/...][?region=<region-name>]
 
 The `PostgreSQLBackend` requires [psycopg2](https://github.com/psycopg/psycopg2) and access to a remote PostgreSQL database.
 
-### Usage
+#### Usage
 
 ```python
 handler = Mangum(
@@ -129,7 +129,7 @@ Read more about the supported uri schemes and additional parameters [here](https
 
 The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
 
-### Usage
+#### Usage
 
 ```python
 handler = Mangum(
@@ -156,7 +156,7 @@ Read more about the supported uri schemes and additional parameters [here](https
 
 The `sqlite` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
 
-### Usage
+#### Usage
 
 ```python
 handler = Mangum(
