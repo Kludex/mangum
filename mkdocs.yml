@@ -1,5 +1,6 @@
 site_name: Mangum
 site_description: AWS Lambda & API Gateway support for ASGI
+site_url: http://mangum.io/
 
 theme:
     name: 'material'
@@ -12,7 +13,7 @@ repo_url: https://github.com/erm/mangum
 edit_uri: ""
 
 nav:
-    - Introduction: 'introduction.md'
+    - Introduction: 'index.md'
     - HTTP: 'http.md'
     - WebSockets: 'websockets.md'
 
