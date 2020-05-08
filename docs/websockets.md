@@ -71,7 +71,7 @@ dynamodb://<table_name>[?region=<region-name>&endpoint_url=<url>]
 
 ### S3
 
-The `S3Backend` uses an (S3)[https://aws.amazon.com/s3/](https://aws.amazon.com/s3/)] bucket as a key-value store to store the connection details.
+The `S3Backend` uses an [S3](https://aws.amazon.com/s3/) bucket as a key-value store to store the connection details.
 
 #### Usage
 
@@ -119,7 +119,7 @@ The PostgreSQL backend `dsn` uses the following connection string syntax:
 postgresql://[user[:password]@][host][:port][,...][/dbname][?param1=value1&...]
 ```
 
-`host` (Required)
+- `host` (Required)
 
     The network location of the PostgreSQL database
 
@@ -127,7 +127,7 @@ Read more about the supported uri schemes and additional parameters [here](https
 
 ### Redis
 
-The `RedisBackend` requires (redis-py)[https://github.com/andymccurdy/redis-py] and access to a Redis server.
+The `RedisBackend` requires [redis-py](https://github.com/andymccurdy/redis-py) and access to a Redis server.
 
 #### Usage
 
@@ -146,13 +146,13 @@ The Redis backend `dsn` uses the following connection string syntax:
 redis://[[user:]password@]host[:port][/database]
 ```
 
-- `host` (required)
+- `host` (Required)
     
     The network location of the Redis server.
 
 Read more about the supported uri schemes and additional parameters [here](https://www.iana.org/assignments/uri-schemes/prov/redis).
 
-### SQlite3
+### SQLite
 
 The `sqlite` backend uses a local [sqlite3](https://docs.python.org/3/library/sqlite3.html) database to store connection. It is intended for ***local*** debugging (with a package such as [Serverless Offline](https://github.com/dherault/serverless-offline)) and will ***not*** work in an AWS Lambda deployment.
 
@@ -173,7 +173,7 @@ The SQLite backend uses the following connection string syntax:
 sqlite://[file_path].db
 ```
 
-- `file_path` (Requred)
+- `file_path` (Required)
 
     The file name or path to an sqlite3 database file. If one does not exist, then it will be created automatically.
 

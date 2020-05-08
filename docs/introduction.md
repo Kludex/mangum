@@ -67,8 +67,6 @@ def handler(event, context):
 
 The adapter accepts various arguments for configuring lifespan, logging, HTTP, WebSocket, and API Gateway behaviour.
 
-### Usage
-
 ```python
 handler = Mangum(
     app,
@@ -82,7 +80,7 @@ handler = Mangum(
 )
 ```
 
-#### Parameters
+### Parameters
 
 - `enable_lifespan` : **bool**
     
