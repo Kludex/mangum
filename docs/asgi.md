@@ -195,7 +195,6 @@ application = get_default_application()
 
 wrapped_application = guarantee_single_callable(application)
 handler = Mangum(wrapped_application, enable_lifespan=False)
-
 ```
 
 ## Middleware
@@ -218,7 +217,7 @@ The test uses a generic, non-framework ASGI application, but it relies on Starle
         await send({"type": "http.response.body", "body": b"Hello world."})
 
  handler = Mangum(GZipMiddleware(app))
- ```
+```
 
 ## Lifespan
 
