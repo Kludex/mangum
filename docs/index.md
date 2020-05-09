@@ -36,8 +36,6 @@ Python 3.6+
 pip install mangum
 ```
 
-**Note**: WebSocket support is currently available only in the `master` branch.
-
 ## Usage
 
 The `Mangum` adapter class is designed to wrap any ASGI application and returns a callable. It can wrap an application and be assigned as the handler:
