@@ -520,15 +520,15 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
 @pytest.mark.parametrize(
     "mock_http_api_event",
     [
-        (["GET", None, None, b""]),
-        (["GET", None, {"name": ["me"]}, b"name=me"]),
-        (["GET", None, {"name": ["me", "you"]}, b"name=me&name=you"]),
+        (["GET", None, None, ""]),
+        (["GET", None, {"name": ["me"]}, "name=me"]),
+        (["GET", None, {"name": ["me", "you"]}, "name=me&name=you"]),
         (
             [
                 "GET",
                 None,
                 {"name": ["me", "you"], "pet": ["dog"]},
-                b"name=me&name=you&pet=dog",
+                "name=me&name=you&pet=dog",
             ]
         ),
     ],
@@ -594,7 +594,7 @@ def test_http_request(mock_http_api_event) -> None:
             "http_version": "1.1",
             "method": "GET",
             "path": "/my/path",
-            "query_string": mock_http_api_event["rawQueryString"],
+            "query_string": mock_http_api_event["rawQueryString"].encode(),
             "raw_path": None,
             "root_path": "",
             "scheme": "https",

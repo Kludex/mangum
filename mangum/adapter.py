@@ -101,7 +101,7 @@ class Mangum:
         self.logger.info("HTTP event received.")
         if is_http_api:
             source_ip = event["requestContext"]["http"]["sourceIp"]
-            query_string = event.get("rawQueryString")
+            query_string = event.get("rawQueryString", "").encode()
             path = event["requestContext"]["http"]["path"]
             http_method = event["requestContext"]["http"]["method"]
         else:

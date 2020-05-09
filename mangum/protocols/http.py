@@ -68,6 +68,7 @@ class HTTPCycle:
         return message
 
     async def send(self, message: Message) -> None:
+        self.logger.debug("New message event %s received.", message["type"])
         if self.state is HTTPCycleState.REQUEST:
             if message["type"] != "http.response.start":
                 raise RuntimeError(
