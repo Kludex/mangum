@@ -118,6 +118,17 @@ handler = Mangum(
     
     Defaults to the `AWS_REGION` value in the AWS Lambda environment.
 
+
+### Event and context
+
+The AWS Lambda handler has `event` and `context` parameters. These are available in the ASGI `scope` object:
+
+```python
+scope['aws.event']
+scope['aws.context']
+```
+
+
 ## Examples
 
 The examples below are ASGI applications (non-framework) with minimal configurations. You should be able to replace the `app` in these example with most ASGI framework application instances. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websocket/) docs for more detailed configuration information.

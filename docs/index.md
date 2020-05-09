@@ -10,6 +10,8 @@
 
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
 
+***Documentation***: https://mangum.io/
+
 ## Features
 
 - API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
@@ -115,6 +117,17 @@ handler = Mangum(
     The region name of the API Gateway contains the connections created by WebSocket APIs.
     
     Defaults to the `AWS_REGION` value in the AWS Lambda environment.
+
+
+### Event and context
+
+The AWS Lambda handler has `event` and `context` parameters. These are available in the ASGI `scope` object:
+
+```python
+scope['aws.event']
+scope['aws.context']
+```
+
 
 ## Examples
 

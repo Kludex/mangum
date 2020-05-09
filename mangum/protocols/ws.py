@@ -14,6 +14,7 @@ class WebSocketCycleState(enum.Enum):
 
 @dataclass
 class WebSocketCycle:
+
     websocket: WebSocket
     log_level: str
     state: WebSocketCycleState = WebSocketCycleState.REQUEST

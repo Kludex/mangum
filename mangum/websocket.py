@@ -45,7 +45,7 @@ class WebSocket:
 
             self._backend = S3Backend(self.dsn)  # type: ignore
 
-        elif scheme == "postgresql":
+        elif scheme in ("postgresql", "postgres"):
             from mangum.backends.postgresql import PostgreSQLBackend
 
             self._backend = PostgreSQLBackend(self.dsn)  # type: ignore
