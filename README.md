@@ -11,6 +11,7 @@
 Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
 
 ***Documentation***: https://mangum.io/
+
 ## Features
 
 - API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
@@ -66,8 +67,6 @@ def handler(event, context):
 
 The adapter accepts various arguments for configuring lifespan, logging, HTTP, WebSocket, and API Gateway behaviour.
 
-### Usage
-
 ```python
 handler = Mangum(
     app,
@@ -81,7 +80,11 @@ handler = Mangum(
 )
 ```
 
-#### Parameters
+### Parameters
+
+- `app` : ***ASGI application***
+
+    An asynchronous callable that conforms to ASGI specification version 3.0. This will usually be a framework application instance that exposes a valid ASGI callable.
 
 - `enable_lifespan` : **bool**
     
@@ -107,13 +110,17 @@ handler = Mangum(
     
     The endpoint url to use when sending data to WebSocket connections in API Gateway. This is useful if you are debugging locally with a package such as [serverless-offline](https://github.com/dherault/serverless-offline).
 
+    Defaults to the `AWS_REGION` value in the AWS Lambda environment.
+
 - `api_gateway_region_name` : **str**
     
-    The region name of the API Gateway that is managing the API connections.
+    The region name of the API Gateway contains the connections created by WebSocket APIs.
+    
+    Defaults to the `AWS_REGION` value in the AWS Lambda environment.
 
 ## Examples
 
-The examples below are "raw" ASGI applications with minimal configurations. You are more likely than not going to be using a framework, but you should be able to replace the `app` in these example with most ASGI framework applications. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websocket/) docs for more detailed configuration information.
+The examples below are ASGI applications (non-framework) with minimal configurations. You should be able to replace the `app` in these example with most ASGI framework application instances. Please read the [HTTP](https://erm.github.io/mangum/http/) and [WebSocket](https://erm.github.io/mangum/websocket/) docs for more detailed configuration information.
 
 ### HTTP
 
