@@ -6,9 +6,9 @@ Mangum is intended to be a universal [ASGI](https://asgi.readthedocs.io/en/lates
 
 ## Background
 
-We can think about the ASGI framework support without referencing an existing implementation. There are no framework-specific rules or dependencies in the adapater class, and all applications will be treated the same.
+We can think about the ASGI framework support without referencing an existing implementation. There are no framework-specific rules or dependencies in the adapter class, and all applications will be treated the same.
 
-Let's invent an API for a non-existent microframework to demonstrate things further. This could represent ***any*** ASGI framework application:
+Let's invent an API for a non-existent microframework to demonstrate things further. This could represent *any* ASGI framework application:
 
 ```python
 import framework
@@ -161,7 +161,7 @@ handler = Mangum(app)
 
 [Django](https://docs.djangoproject.com/) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design. 
 
-It started introducing ASGI support in version [3.0](https://docs.djangoproject.com/en/3.0/releases/3.0/#asgi-support). Certain async capabilities are not yet implemented and planned for future releases, however it is can still be used with Mangum and other ASGI applications at the outer application level.
+It started introducing ASGI support in version [3.0](https://docs.djangoproject.com/en/3.0/releases/3.0/#asgi-support). Certain async capabilities are not yet implemented and planned for future releases, however it can still be used with Mangum and other ASGI applications at the outer application level.
 
 ```python
 # asgi.py
@@ -204,7 +204,7 @@ handler = Mangum(wrapped_application, enable_lifespan=False)
 
 ## Middleware
 
-Other than framework compatability, it is possible to wrap applications that are wrapped in ASGI middleware. A case of using middleware comes up in one of Mangum's HTTP API tests. 
+In addition to framework compatability, it is possible to wrap applications that are wrapped in ASGI middleware. A case of using middleware comes up in one of Mangum's HTTP API tests. 
 
 The test uses a generic, non-framework ASGI application, but it relies on Starlette's [GZipMiddleware](https://www.starlette.io/middleware/#gzipmiddleware) to test the adapter's GZip support:
 
