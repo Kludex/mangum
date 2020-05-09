@@ -33,6 +33,11 @@ class Application(Protocol):
         ...
 ```
 
+
+### Limitations
+
+An application or framework may implement behaviour that is incompatible with the [limitations](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) of AWS Lambda, and there may be additional configuration required depending on a particular deployment circumstance. In some cases it is possible to work around these limitations, such as how Mangum implements WebSocket [backends](https://mangum.io/websockets/#backends) to persist connection details across instances, but these kinds of limitations should generally be dealt with outside of Mangum itself.
+
 ## Frameworks
 
 The examples on this page attempt to demonstrate the most basic implementation of a particular framework (usually from official documentation) to highlight the interaction with Mangum. Specific deployment tooling, infrastructure, external dependencies, etc. are not taken into account.
@@ -95,7 +100,7 @@ handler = Mangum(app)
 
 ### Responder
 
-[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](https://mangum.io/websockets/#limitations) section for more details.
+[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](https://mangum.io/asgi/#limitations) section for more details.
 
 ```python
 from mangum import Mangum
@@ -222,7 +227,3 @@ The test uses a generic, non-framework ASGI application, but it relies on Starle
 ## Lifespan
 
 Mangum implements the [lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html) ASGI sub-specification to support startup/shutdown events. Lifespan support is automatically determined by the adapter class unless explicitly disabled.
-
-# Limitations
-
-An application or framework may implement behaviour that is incompatible with the [limitations](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) of AWS Lambda, and there may be additional configuration required depending on the specific deployment strategy.
