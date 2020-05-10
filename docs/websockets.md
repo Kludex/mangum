@@ -18,7 +18,7 @@ A connected client has sent a message. The adapter will retrieve the initial req
 
 The client or the server disconnects from the API. The adapter will remove the connection from the backend.
 
-### Backends
+## Backends
 
 A data source, such as a cloud database, is required in order to persist the connection identifiers in a 'serverless' environment. Any data source can be used as long as it is accessible remotely to the AWS Lambda function.
 

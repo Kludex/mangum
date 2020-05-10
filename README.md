@@ -80,7 +80,7 @@ handler = Mangum(
 
 ### Parameters
 
-- `app` : ***ASGI application***
+- `app` : **ASGI application**
 
     An asynchronous callable that conforms to ASGI specification version 3.0. This will usually be a framework application instance that exposes a valid ASGI callable.
 
