@@ -1,10 +1,12 @@
 import sys
+import logging
 
 import pytest
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
+from mangum.exceptions import LifespanFailure
 
 # One (or more) of Quart's dependencies does not support Python 3.8, ignore this case.
 IS_PY38 = sys.version_info[:2] == (3, 8)
@@ -16,39 +18,36 @@ else:
     Quart = None
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_lifespan_startup_error(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        if scope["type"] == "lifespan":
-            while True:
-                message = await receive()
-                if message["type"] == "lifespan.startup":
-                    raise Exception("error")
-        else:
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
+@pytest.mark.parametrize(
+    "mock_http_event,lifespan",
+    [
+        (["GET", None, None], "auto"),
+        (["GET", None, None], "on"),
+        (["GET", None, None], "off"),
+    ],
+    indirect=["mock_http_event"],
+)
+def test_lifespan(mock_http_event, lifespan) -> None:
+    """
+    Test each lifespan option using an application that supports lifespan messages.
 
-    handler = Mangum(app)
-    assert handler.lifespan.is_supported
-    assert handler.lifespan.has_error
+    * "auto" (default):
+        Application support for lifespan will be inferred.
 
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
+        Any error that occurs during startup will be logged and the ASGI application
+        cycle will continue unless a `lifespan.startup.failed` event is sent.
 
+    * "on":
+        Application support for lifespan is explicit.
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_lifespan(mock_http_event) -> None:
+        Any error that occurs during startup will be raised and a 500 response will
+        be returned.
+
+    * "off":
+        Application support for lifespan should be ignored.
+
+        The application will not enter the lifespan cycle context.
+    """
     startup_complete = False
     shutdown_complete = False
 
@@ -65,6 +64,80 @@ def test_lifespan(mock_http_event) -> None:
                     await send({"type": "lifespan.shutdown.complete"})
                     shutdown_complete = True
                     return
+
+        if scope["type"] == "http":
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan=lifespan)
+    response = handler(mock_http_event, {})
+    expected = lifespan in ("on", "auto")
+
+    assert startup_complete == expected
+    assert shutdown_complete == expected
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_http_event,lifespan",
+    [
+        (["GET", None, None], "auto"),
+        (["GET", None, None], "on"),
+        (["GET", None, None], "off"),
+    ],
+    indirect=["mock_http_event"],
+)
+def test_lifespan_unsupported(mock_http_event, lifespan) -> None:
+    """
+    Test each lifespan option with an application that does not support lifespan events.
+    """
+
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan=lifespan)
+    response = handler(mock_http_event, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_http_event,lifespan",
+    [(["GET", None, None], "auto"), (["GET", None, None], "on")],
+    indirect=["mock_http_event"],
+)
+def test_lifespan_error(mock_http_event, lifespan, caplog) -> None:
+    caplog.set_level(logging.ERROR)
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    raise Exception("error")
         else:
             await send(
                 {
@@ -75,11 +148,10 @@ def test_lifespan(mock_http_event) -> None:
             )
             await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app)
-    assert startup_complete
-
+    handler = Mangum(app, lifespan=lifespan)
     response = handler(mock_http_event, {})
-    assert shutdown_complete
+
+    assert "Exception in 'lifespan' protocol." in caplog.text
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -88,78 +160,65 @@ def test_lifespan(mock_http_event) -> None:
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_lifespan_unsupported(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_http_event,lifespan",
+    [(["GET", None, None], "auto"), (["GET", None, None], "on")],
+    indirect=["mock_http_event"],
+)
+def test_lifespan_unexpected_message(mock_http_event, lifespan) -> None:
     async def app(scope, receive, send):
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    await send(
+                        {
+                            "type": "http.response.start",
+                            "status": 200,
+                            "headers": [
+                                [b"content-type", b"text/plain; charset=utf-8"]
+                            ],
+                        }
+                    )
 
-    handler = Mangum(app)
-    assert not handler.lifespan.is_supported
-
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
+    handler = Mangum(app, lifespan=lifespan)
+    with pytest.raises(LifespanFailure):
+        handler(mock_http_event, {})
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_lifespan_disabled(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_http_event,lifespan,failure_type",
+    [
+        (["GET", None, None], "auto", "startup"),
+        (["GET", None, None], "on", "startup"),
+        (["GET", None, None], "auto", "shutdown"),
+        (["GET", None, None], "on", "shutdown"),
+    ],
+    indirect=["mock_http_event"],
+)
+def test_lifespan_failure(mock_http_event, lifespan, failure_type) -> None:
     async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    if failure_type == "startup":
+                        await send(
+                            {"type": "lifespan.startup.failed", "message": "Failed."}
+                        )
+                    else:
+                        await send({"type": "lifespan.startup.complete"})
+                if message["type"] == "lifespan.shutdown":
+                    if failure_type == "shutdown":
+                        await send(
+                            {"type": "lifespan.shutdown.failed", "message": "Failed."}
+                        )
+                    await send({"type": "lifespan.shutdown.complete"})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan=lifespan)
 
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_lifespan_supported_with_error(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        await receive()
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app)
-    assert handler.lifespan.is_supported
-    assert handler.lifespan.has_error
-
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
+    with pytest.raises(LifespanFailure):
+        handler(mock_http_event, {})
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
@@ -190,11 +249,9 @@ def test_starlette_lifespan(mock_http_event) -> None:
     handler = Mangum(app)
     mock_http_event["body"] = None
 
-    assert startup_complete
-    assert not shutdown_complete
-
     response = handler(mock_http_event, {})
-
+    assert startup_complete
+    assert shutdown_complete
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -204,8 +261,6 @@ def test_starlette_lifespan(mock_http_event) -> None:
         },
         "body": "Hello, world!",
     }
-    assert startup_complete
-    assert shutdown_complete
 
 
 @pytest.mark.skipif(
@@ -237,17 +292,13 @@ def test_quart_lifespan(mock_http_event) -> None:
     assert not shutdown_complete
 
     handler = Mangum(app)
-
-    assert startup_complete
-    assert not shutdown_complete
-
     response = handler(mock_http_event, {})
 
+    assert startup_complete
+    assert shutdown_complete
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
         "body": "hello world!",
     }
-    assert startup_complete
-    assert shutdown_complete

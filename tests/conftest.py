@@ -289,10 +289,17 @@ def mock_ws_disconnect_event() -> dict:
 @pytest.fixture
 def mock_websocket_app():
     async def app(scope, receive, send):
-        await send({"type": "websocket.accept", "subprotocol": None})
-        await send({"type": "websocket.send", "text": "Hello world!"})
-        await send({"type": "websocket.send", "bytes": b"Hello world!"})
-        await send({"type": "websocket.close", "code": 1000})
+        if scope["type"] == "websocket":
+            while True:
+                message = await receive()
+                if message["type"] == "websocket.connect":
+                    await send({"type": "websocket.accept", "subprotocol": None})
+                elif message["type"] == "websocket.receive":
+                    await send({"type": "websocket.send", "text": "Hello world!"})
+                elif message["type"] == "websocket.disconnect":
+                    close_code = message.get("code", 1000)
+                    await send({"type": "websocket.close", "code": close_code})
+                    return
 
     return app
 
