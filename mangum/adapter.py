@@ -1,15 +1,16 @@
 import base64
-import asyncio
 import urllib.parse
 import typing
 import logging
 import os
+import warnings
+from contextlib import ExitStack
 from dataclasses import dataclass
 
-from mangum.lifespan import Lifespan
 from mangum.types import ASGIApp
+from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
-from mangum.protocols.ws import WebSocketCycle
+from mangum.protocols.websockets import WebSocketCycle
 from mangum.websocket import WebSocket
 from mangum.exceptions import ConfigurationError
 
@@ -52,23 +53,51 @@ def get_logger(log_level: str) -> logging.Logger:
 
 @dataclass
 class Mangum:
+    """
+    Creates an adapter instance.
+
+    **Parameters:**
+
+    * **app** - An asynchronous callable that conforms to version 3.0 of the ASGI
+    specification. This will usually be an ASGI framework application instance.
+    * **lifespan** - A string to configure lifespan support. Choices are `auto`, `on`,
+    and `off`. Default is `auto`.
+    * **log_level** - A string to configure the log level. Choices are: `info`,
+    `critical`, `error`, `warning`, and `debug`. Default is `info`.
+    * **api_gateway_base_path** - Base path to strip from URL when using a custom
+    domain name.
+    * **text_mime_types** - A list of MIME types to include with the defaults that
+    should never return a binary response in API Gateway.
+    * **dsn** - A connection string required to configure a supported WebSocket backend.
+    * **api_gateway_endpoint_url** - A string endpoint url to use for API Gateway when
+    sending data to WebSocket connections. Default is `None`.
+    * **api_gateway_region_name** - A string region name to use for API Gateway when
+    sending data to WebSocket connections. Default is `AWS_REGION` environment variable.
+    """
 
     app: ASGIApp
-    enable_lifespan: bool = True
+    lifespan: str = "auto"
     log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
     text_mime_types: typing.Optional[typing.List[str]] = None
     dsn: typing.Optional[str] = None
     api_gateway_endpoint_url: typing.Optional[str] = None
     api_gateway_region_name: typing.Optional[str] = None
+    enable_lifespan: bool = True  # Deprecated.
 
     def __post_init__(self) -> None:
         self.logger = get_logger(self.log_level)
-        if self.enable_lifespan:
-            loop = asyncio.get_event_loop()
-            self.lifespan = Lifespan(self.app)
-            loop.create_task(self.lifespan.run())
-            loop.run_until_complete(self.lifespan.startup())
+        if not self.enable_lifespan:  # pragma: no cover
+            warnings.warn(
+                "The `enable_lifespan` parameter will be removed in a future release. "
+                "It is replaced by `lifespan` setting.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if self.lifespan not in ("auto", "on", "off"):  # pragma: no cover
+            raise ConfigurationError(
+                "Invalid argument supplied for `lifespan`. Choices are: auto|on|off."
+            )
 
     def __call__(self, event: dict, context: dict) -> dict:
         response = self.handler(event, context)
@@ -84,16 +113,18 @@ class Mangum:
         return urllib.parse.unquote(path or "/")
 
     def handler(self, event: dict, context: dict) -> dict:
-        if "eventType" in event["requestContext"]:
-            response = self.handle_ws(event, context)
-        else:
-            is_http_api = "http" in event["requestContext"]
-            response = self.handle_http(event, context, is_http_api=is_http_api)
+        with ExitStack() as stack:
+            if self.lifespan in ("auto", "on"):
+                asgi_cycle: typing.ContextManager = LifespanCycle(
+                    self.app, self.lifespan
+                )
+                stack.enter_context(asgi_cycle)
 
-        if self.enable_lifespan:
-            if self.lifespan.is_supported:
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(self.lifespan.shutdown())
+            if "eventType" in event["requestContext"]:
+                response = self.handle_ws(event, context)
+            else:
+                is_http_api = "http" in event["requestContext"]
+                response = self.handle_http(event, context, is_http_api=is_http_api)
 
         return response
 
@@ -155,10 +186,7 @@ class Mangum:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
         asgi_cycle = HTTPCycle(
-            scope, text_mime_types=text_mime_types, log_level=self.log_level
-        )
-        asgi_cycle.put_message(
-            {"type": "http.request", "body": body, "more_body": False}
+            scope, body=body, text_mime_types=text_mime_types, log_level=self.log_level
         )
         response = asgi_cycle(self.app)
 
@@ -220,12 +248,9 @@ class Mangum:
 
         elif event_type == "MESSAGE":
             websocket.fetch()
-            asgi_cycle = WebSocketCycle(websocket, log_level=self.log_level)
-            asgi_cycle.put_message({"type": "websocket.connect"})
-            asgi_cycle.put_message(
-                {"type": "websocket.receive", "bytes": None, "text": event["body"]}
+            asgi_cycle = WebSocketCycle(
+                event["body"], websocket=websocket, log_level=self.log_level
             )
-
             response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":

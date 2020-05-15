@@ -19,6 +19,6 @@ nav:
     - ASGI: 'asgi.md'
 
 markdown_extensions:
+  - mkautodoc
   - markdown.extensions.codehilite:
       guess_lang: false
-

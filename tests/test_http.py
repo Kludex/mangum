@@ -127,7 +127,7 @@ def test_http_request(mock_http_event, query_string) -> None:
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
 
     response = handler(mock_http_event, {})
     assert response == {
@@ -243,7 +243,7 @@ def test_http_response(mock_http_event) -> None:
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
     assert response == {
         "statusCode": 200,
@@ -277,7 +277,7 @@ def test_http_response_with_body(mock_http_event) -> None:
                 await send({"type": "http.response.body", "body": body})
                 return
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
 
     assert response == {
@@ -314,7 +314,7 @@ def test_http_binary_request_with_body(mock_http_event) -> None:
             await send({"type": "http.response.body", "body": body})
 
     mock_http_event["isBase64Encoded"] = True
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
 
     assert response == {
@@ -351,7 +351,7 @@ def test_http_binary_request_and_response(mock_http_event) -> None:
             await send({"type": "http.response.body", "body": b"abc"})
 
     mock_http_event["isBase64Encoded"] = True
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
 
     assert response == {
@@ -369,7 +369,7 @@ def test_http_exception(mock_http_event) -> None:
         raise Exception()
         await send({"type": "http.response.body", "body": b"1", "more_body": True})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
 
     assert response == {
@@ -411,8 +411,7 @@ def test_http_cycle_state(mock_http_event) -> None:
         assert scope["type"] == "http"
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app, enable_lifespan=False)
-
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_event, {})
     assert response == {
         "body": "Internal Server Error",
@@ -426,7 +425,7 @@ def test_http_cycle_state(mock_http_event) -> None:
         await send({"type": "http.response.start", "status": 200})
         await send({"type": "http.response.start", "status": 200})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
 
     response = handler(mock_http_event, {})
     assert response == {
@@ -443,7 +442,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
         assert scope["type"] == "http"
         await send({"type": "http.response.start", "status": 200})
 
-    handler = Mangum(app, enable_lifespan=False, api_gateway_base_path=None)
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=None)
     assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
         mock_http_event["path"]
     )
@@ -454,9 +453,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
 
     api_gateway_base_path = "test"
     script_name = "/" + api_gateway_base_path
-    handler = Mangum(
-        app, enable_lifespan=False, api_gateway_base_path=api_gateway_base_path
-    )
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=api_gateway_base_path)
     assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
         mock_http_event["path"][len(script_name) :]
     )
@@ -476,7 +473,7 @@ def test_http_text_mime_types(mock_http_event) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(
-        app, enable_lifespan=False, text_mime_types=["application/vnd.apple.pkpass"]
+        app, lifespan="off", text_mime_types=["application/vnd.apple.pkpass"]
     )
     response = handler(mock_http_event, {})
 
@@ -504,7 +501,7 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
 
         await send({"type": "http.response.body", "body": body.encode()})
 
-    handler = Mangum(GZipMiddleware(app, minimum_size=1), enable_lifespan=False)
+    handler = Mangum(GZipMiddleware(app, minimum_size=1), lifespan="off")
     response = handler(mock_http_event, {})
 
     assert response["isBase64Encoded"]
@@ -611,12 +608,38 @@ def test_http_request(mock_http_api_event) -> None:
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
     response = handler(mock_http_api_event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_response_headers(mock_http_event) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"x-header-1", b"123"], [b"x-header-2", b"456"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+
+    mock_http_event["headers"] = None
+
+    response = handler(mock_http_event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"x-header-1": "123", "x-header-2": "456"},
         "body": "Hello, world!",
     }
 
@@ -634,7 +657,7 @@ def test_http_empty_header(mock_http_event) -> None:
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
-    handler = Mangum(app, enable_lifespan=False)
+    handler = Mangum(app, lifespan="off")
 
     mock_http_event["headers"] = None
 

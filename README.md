@@ -68,7 +68,7 @@ The adapter accepts various arguments for configuring lifespan, logging, HTTP, W
 ```python
 handler = Mangum(
     app,
-    enable_lifespan=True,
+    lifespan="auto",
     log_level="info",
     api_gateway_base_path=None,
     text_mime_types=None,
@@ -84,13 +84,28 @@ handler = Mangum(
 
     An asynchronous callable that conforms to ASGI specification version 3.0. This will usually be a framework application instance that exposes a valid ASGI callable.
 
-- `enable_lifespan` : **bool**
+- `lifespan` : **str** (`auto`|`on`|`off`)
     
-    Specify whether or not to enable lifespan support. The adapter will automatically determine if lifespan is supported by the framework unless explicitly disabled.
+    Specify lifespan support option. Default: `auto`.
+    
+    * `auto`
+        Application support for lifespan will be inferred.
 
-- `log_level` : **str**
+        Any error that occurs during startup will be logged and the request will continue being handled unless a `lifespan.startup.failed` event is sent by the application.
+
+    * `on`:
+        Application support for lifespan is explicitly set.
+
+        Any error that occurs during startup will be raised and a 500 response will be returned.
+
+    * `off`:
+        Application support for lifespan should be ignored.
+
+        The application will not enter the lifespan cycle context.
+
+- `log_level` : **str** (`info`|`critical`|`error`|`warning`|`debug`)
     
-    Level parameter for the logger.
+    Level parameter for the logger. Default: `info`.
 
 - `api_gateway_base_path` : **str**
     
