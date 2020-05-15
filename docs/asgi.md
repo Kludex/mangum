@@ -173,7 +173,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 
 application = get_asgi_application()
 
-handler = Mangum(application, enable_lifespan=False)
+handler = Mangum(application, lifespan="off")
 ```
 
 This example looks a bit different than the others because it is based on Django's standard project configuration, but the ASGI behaviour is the same.
@@ -199,7 +199,7 @@ django.setup()
 application = get_default_application()
 
 wrapped_application = guarantee_single_callable(application)
-handler = Mangum(wrapped_application, enable_lifespan=False)
+handler = Mangum(wrapped_application, lifespan="off")
 ```
 
 ## Middleware
