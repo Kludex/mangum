@@ -1,4 +1,16 @@
-# Release Notes
+## 0.9.1
+
+* Refactor lifespan class to be more consistent with other cycle classes and to be more compliant with ASGI spec
+
+* Bugfix lifespan startup behaviour, allow lifespan cycle to be used as a context manager in the adapter [107](https://github.com/erm/mangum/issues/107).
+
+* Deprecate `enable_lifespan` parameter to be replaced by new `lifespan` option
+
+* Include CHANGELOG in repo and release notes in documentation [110](https://github.com/erm/mangum/issues/110)
+
+* Update protocol classes generally with  docstrings/comments/better state transitions/more compliant with ASGI spec.
+
+* Overhaul documentation structure and content.
 
 ## 0.9.0
 
