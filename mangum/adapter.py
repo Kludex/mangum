@@ -192,9 +192,7 @@ class Mangum:
         else:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
-        asgi_cycle = HTTPCycle(
-            scope, body=body, text_mime_types=text_mime_types, log_level=self.log_level
-        )
+        asgi_cycle = HTTPCycle(scope, body=body, text_mime_types=text_mime_types)
         response = asgi_cycle(self.app)
 
         return response
