@@ -1,6 +1,6 @@
-# ASGI
+# Frameworks
 
-Mangum is intended to be a universal [ASGI](https://asgi.readthedocs.io/en/latest/) (*Asynchronous Server Gateway Interface*) adapter. The ["turtles all the way down"](https://simonwillison.net/2009/May/19/djng/?#turtles-all-the-way-down) principle of ASGI allows for a great deal of interoperability across many different implementations, so the adapter should "just work"* for any ASGI application or framework. 
+Mangum is intended to provide support to any [ASGI](https://asgi.readthedocs.io/en/latest/) (*Asynchronous Server Gateway Interface*) application or framework. The ["turtles all the way down"](https://simonwillison.net/2009/May/19/djng/?#turtles-all-the-way-down) principle of ASGI allows for a great deal of interoperability across many different implementations, so the adapter should "just work"* for any ASGI application or framework. 
 
 <small>* if it doesn't, then please open an [issue](https://github.com/erm/mangum/issues). :)</small>
 
@@ -25,14 +25,13 @@ def endpoint(request: framework.requests.Request) -> dict:
 handler = Mangum(app)
 ```
 
-None of application details are important here. The routing decorator, request parameter, and return value of the endpoint method could be anything. The `app` instance will be a valid `app` parameter for Mangum so long as the framework exposes an ASGI-compatible interface:
+None of the framework details are important here. The routing decorator, request parameter, and return value of the endpoint method could be anything. The `app` instance will be a valid `app` parameter for Mangum so long as the framework exposes an ASGI-compatible interface:
 
 ```python
 class Application(Protocol):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         ...
 ```
-
 
 ### Limitations
 
@@ -72,8 +71,6 @@ Then wrap it using Mangum:
 ```python
 handler = Mangum(app)
 ```
-
-That's it.
 
 ### FastAPI
 
@@ -201,29 +198,3 @@ application = get_default_application()
 wrapped_application = guarantee_single_callable(application)
 handler = Mangum(wrapped_application, lifespan="off")
 ```
-
-## Middleware
-
-In addition to framework compatability, it is possible to wrap applications that are wrapped in ASGI middleware. A case of using middleware comes up in one of Mangum's HTTP API tests. 
-
-The test uses a generic, non-framework ASGI application, but it relies on Starlette's [GZipMiddleware](https://www.starlette.io/middleware/#gzipmiddleware) to test the adapter's GZip support:
-
-```python
- async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"application/json"]],
-            }
-        )
-
-        await send({"type": "http.response.body", "body": b"Hello world."})
-
- handler = Mangum(GZipMiddleware(app))
-```
-
-## Lifespan
-
-Mangum implements the [lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html) ASGI sub-specification to support startup/shutdown events. Lifespan support is automatically determined by the adapter class unless explicitly disabled.

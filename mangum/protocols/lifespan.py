@@ -10,6 +10,22 @@ from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMe
 
 
 class LifespanCycleState(enum.Enum):
+    """
+    The state of the ASGI `lifespan` connection.
+
+    * **CONNECTING** - Initial state. The ASGI application instance will be run with
+    the connection scope containing the `lifespan` type.
+    * **STARTUP** - The lifespan startup event has been pushed to the queue to be
+    received by the application.
+    * **SHUTDOWN** - The lifespan shutdown event has been pushed to the queue to be
+    received by the application.
+    * **FAILED** - A lifespan failure has been detected, and the connection will be
+    closed with an error.
+    * **UNSUPPORTED** - An application attempted to send a message before receiving
+    the lifepan startup event. If the lifespan argument is "on", then the connection
+    will be closed with an error.
+    """
+
     CONNECTING = enum.auto()
     STARTUP = enum.auto()
     SHUTDOWN = enum.auto()
@@ -19,6 +35,26 @@ class LifespanCycleState(enum.Enum):
 
 @dataclass
 class LifespanCycle:
+    """
+    Manages the application cycle for an ASGI `lifespan` connection.
+
+    * **app** - An asynchronous callable that conforms to version 3.0 of the ASGI
+    specification. This will usually be an ASGI framework application instance.
+    * **lifespan** - A string to configure lifespan support. Choices are `auto`, `on`,
+    and `off`. Default is `auto`.
+    * **state** - An enumerated `LifespanCycleState` type that indicates the state of
+    the ASGI connection.
+    * **exception** - An exception raised while handling the ASGI event.
+    * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
+    application.
+    * **startup_event** - An asyncio event object used to control the application
+    startup flow.
+    * **shutdown_event** - An asyncio event object used to control the application
+    shutdown flow.
+    * **exception** - An exception raised while handling the ASGI event. This may or
+    may not be raised depending on the state.
+    """
+
     app: ASGIApp
     lifespan: str
     state: LifespanCycleState = LifespanCycleState.CONNECTING
@@ -51,7 +87,7 @@ class LifespanCycle:
 
     async def run(self) -> None:
         """
-        Calls the application with the connection scope, handling error cases.
+        Calls the application with the `lifespan` connection scope.
         """
         try:
             await self.app({"type": "lifespan"}, self.receive, self.send)
@@ -67,8 +103,7 @@ class LifespanCycle:
 
     async def receive(self) -> Message:
         """
-        Awaited by the application to receive ASGI lifespan events, handling event
-        state transitions.
+        Awaited by the application to receive ASGI `lifespan` events.
         """
         if self.state is LifespanCycleState.CONNECTING:
 
@@ -88,7 +123,7 @@ class LifespanCycle:
 
     async def send(self, message: Message) -> None:
         """
-        Awaited by the application to send ASGI lifespan events.
+        Awaited by the application to send ASGI `lifespan` events.
         """
         message_type = message["type"]
         self.logger.info(
@@ -136,7 +171,7 @@ class LifespanCycle:
 
     async def startup(self) -> None:
         """
-        Sends lifespan startup event to application and handle startup errors.
+        Pushes the `lifespan` startup event to application queue and handles errors.
         """
         self.logger.info("Waiting for application startup.")
         await self.app_queue.put({"type": "lifespan.startup"})
@@ -151,7 +186,7 @@ class LifespanCycle:
 
     async def shutdown(self) -> None:
         """
-        Sends lifespan shutdown event to application and handle shutdown errors.
+        Pushes the `lifespan` shutdown event to application queue and handles errors.
         """
         self.logger.info("Waiting for application shutdown.")
         await self.app_queue.put({"type": "lifespan.shutdown"})
