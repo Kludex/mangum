@@ -14,9 +14,13 @@ edit_uri: ""
 
 nav:
     - Introduction: 'index.md'
+    - Adapter: 'adapter.md'
     - HTTP: 'http.md'
     - WebSockets: 'websockets.md'
-    - ASGI: 'asgi.md'
+    - Lifespan: 'lifespan.md'
+    - ASGI Frameworks: 'asgi-frameworks.md'
+    # - External Links: 'external-links.md' todo
+    - Release Notes: 'release-notes.md'
 
 markdown_extensions:
   - mkautodoc
