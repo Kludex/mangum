@@ -60,7 +60,7 @@ or using a framework:
 ```python
 from mangum import Mangum
 from starlette.applications import Starlette
-from starlette.responses import PlanTextResponse
+from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 

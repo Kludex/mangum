@@ -80,7 +80,7 @@ A data source is required in order to persist the WebSocket client connections s
 handler = Mangum(app, dsn="[postgresql|redis|dynamodb|s3|sqlite]://[...]")
 ```
 
-<small>Read the section on ([handling events in API Gateway](https://mangum.io/websockets/#handling-api-gateway-events) for more information.)</small>
+<small>*Read the section on ([handling events in API Gateway](https://mangum.io/websockets/#handling-api-gateway-events) for more information.)</small>
 
 ### Supported backends
 
