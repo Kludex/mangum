@@ -24,6 +24,10 @@ DEFAULT_TEXT_MIME_TYPES = [
 
 
 def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
+    """
+    Parse the host and port from the event headers to use as the `server` key in the
+    ASGI connection scope.
+    """
     server_name = headers.get("host", "mangum")
     if ":" not in server_name:
         server_port = headers.get("x-forwarded-port", 80)
@@ -35,6 +39,9 @@ def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
 
 
 def get_logger(log_level: str) -> logging.Logger:
+    """
+    Create the default logger according to log level setting of the adapter instance.
+    """
     level = {
         "critical": logging.CRITICAL,
         "error": logging.ERROR,
@@ -67,7 +74,7 @@ class Mangum:
     * **api_gateway_base_path** - Base path to strip from URL when using a custom
     domain name.
     * **text_mime_types** - A list of MIME types to include with the defaults that
-    should never return a binary response in API Gateway.
+    should not return a binary response in API Gateway.
     * **dsn** - A connection string required to configure a supported WebSocket backend.
     * **api_gateway_endpoint_url** - A string endpoint url to use for API Gateway when
     sending data to WebSocket connections. Default is `None`.
@@ -100,9 +107,7 @@ class Mangum:
             )
 
     def __call__(self, event: dict, context: dict) -> dict:
-        response = self.handler(event, context)
-
-        return response
+        return self.handler(event, context)
 
     def strip_base_path(self, path: str) -> str:
         if self.api_gateway_base_path:
@@ -114,6 +119,8 @@ class Mangum:
 
     def handler(self, event: dict, context: dict) -> dict:
         with ExitStack() as stack:
+
+            # Ignore lifespan events entirely if the `lifespan` setting is `off`.
             if self.lifespan in ("auto", "on"):
                 asgi_cycle: typing.ContextManager = LifespanCycle(
                     self.app, self.lifespan
@@ -185,9 +192,7 @@ class Mangum:
         else:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
-        asgi_cycle = HTTPCycle(
-            scope, body=body, text_mime_types=text_mime_types, log_level=self.log_level
-        )
+        asgi_cycle = HTTPCycle(scope, body=body, text_mime_types=text_mime_types)
         response = asgi_cycle(self.app)
 
         return response
@@ -248,9 +253,7 @@ class Mangum:
 
         elif event_type == "MESSAGE":
             websocket.fetch()
-            asgi_cycle = WebSocketCycle(
-                event["body"], websocket=websocket, log_level=self.log_level
-            )
+            asgi_cycle = WebSocketCycle(event["body"], websocket=websocket)
             response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":

@@ -11,6 +11,20 @@ from mangum.exceptions import UnexpectedMessage
 
 
 class HTTPCycleState(enum.Enum):
+    """
+    The state of the ASGI `http` connection.
+
+    * **REQUEST** - Initial state. The ASGI application instance will be run with the
+    connection scope containing the `http` type.
+    * **RESPONSE** - The `http.response.start` event has been sent by the application.
+    The next expected message is the `http.response.body` event, containing the body
+    content. An application may pass the `more_body` argument to send content in chunks,
+    however content will always be returned in a single response, never streamed.
+    * **COMPLETE** - The body content from the ASGI application has been completely
+    read. A disconnect event will be sent to the application, and the response will
+    be returned.
+    """
+
     REQUEST = enum.auto()
     RESPONSE = enum.auto()
     COMPLETE = enum.auto()
@@ -18,11 +32,24 @@ class HTTPCycleState(enum.Enum):
 
 @dataclass
 class HTTPCycle:
+    """
+    Manages the application cycle for an ASGI `http` connection.
+
+    * **scope** - A dictionary containing the connection scope used to run the ASGI
+    application instance.
+    * **body** -  A byte string containing the body content of the request.
+    * **text_mime_types** - A list of mime types of MIME types that should not return
+    a binary response in API Gateway.
+    * **state** - An enumerated `HTTPCycleState` type that indicates the state of the
+    ASGI connection.
+    * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
+    application.
+    * **response** - A dictionary containing the response data to return in AWS Lambda.
+    """
 
     scope: Scope
     body: bytes
     text_mime_types: typing.List[str]
-    log_level: str
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: dict = field(default_factory=dict)
 
@@ -46,7 +73,7 @@ class HTTPCycle:
 
     async def run(self, app: ASGIApp) -> None:
         """
-        Calls the application with the connection scope, handling error cases.
+        Calls the application with the `http` connection scope.
         """
         try:
             await app(self.scope, self.receive, self.send)
@@ -70,12 +97,15 @@ class HTTPCycle:
 
     async def receive(self) -> Message:
         """
-        Awaited by the application to receive ASGI HTTP events.
+        Awaited by the application to receive ASGI `http` events.
         """
 
         return await self.app_queue.get()
 
     async def send(self, message: Message) -> None:
+        """
+        Awaited by the application to send ASGI `http` events.
+        """
         message_type = message["type"]
         self.logger.info(
             "%s:  '%s' event received from application.", self.state, message_type
