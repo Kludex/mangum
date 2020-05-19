@@ -1,6 +1,6 @@
 import os
 
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import ParseResult, urlparse, parse_qs
 from dataclasses import dataclass
 
 import boto3
@@ -11,12 +11,19 @@ from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
 
 
+def get_table_name(parsed_dsn: ParseResult) -> str:
+    netloc = parsed_dsn.netloc
+    _, _, hostinfo = netloc.rpartition("@")
+    hostname, _, _ = hostinfo.partition(":")
+    return hostname
+
+
 @dataclass
 class DynamoDBBackend(WebSocketBackend):
     def __post_init__(self) -> None:
         parsed_dsn = urlparse(self.dsn)
         parsed_query = parse_qs(parsed_dsn.query)
-        table_name = parsed_dsn.hostname
+        table_name = get_table_name(parsed_dsn)
 
         region_name = (
             parsed_query["region"][0]
