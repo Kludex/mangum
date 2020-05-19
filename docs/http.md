@@ -39,7 +39,7 @@ Additionally, any `Content-Type` header prefixed with `text/` is automatically e
 
 If the `Content-Encoding` header is set to `gzip`, then a binary response will be returned regardless of MIME type.
 
-## API
+## State machine
 
 The `HTTPCycle` is used by the adapter to communicate message events between the application and AWS. It is a state machine that handles the entire ASGI request and response cycle.
 

@@ -6,9 +6,11 @@ from urllib.parse import urlparse
 from mangum.types import Scope
 from mangum.exceptions import WebSocketError, ConfigurationError
 
-
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+except ImportError:  # pragma: no cover
+    boto3 = None
 
 
 @dataclass
@@ -20,6 +22,8 @@ class WebSocket:
     api_gateway_endpoint_url: str
 
     def __post_init__(self) -> None:
+        if boto3 is None:  # pragma: no cover
+            raise WebSocketError("boto3 must be installed to use WebSockets.")
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         parsed_dsn = urlparse(self.dsn)
         if not any((parsed_dsn.hostname, parsed_dsn.path)):
