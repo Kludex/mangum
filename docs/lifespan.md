@@ -46,7 +46,7 @@ Lifespan support is automatically determined unless explicitly turned on or off.
 
 Defaults to `auto`.
 
-## API
+## State machine
 
 The `LifespanCycle` is a state machine that handles ASGI `lifespan` events intended to run before and after HTTP and WebSocket requests are handled. 
 

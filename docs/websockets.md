@@ -235,7 +235,7 @@ sqlite://[file_path].db
 
     The file name or path to an sqlite3 database file. If one does not exist, then it will be created automatically.
 
-## API
+## State machine
 
 The `WebSocketCycle` is used by the adapter to communicate message events between the application and WebSocket client connections in API Gateway using a storage backend to persist the connection `scope`. It is a state machine that handles the ASGI request and response cycle for each individual message sent by a client.
 
@@ -245,7 +245,7 @@ The `WebSocketCycle` is used by the adapter to communicate message events betwee
     :docstring:
     :members: run receive send 
 
-#### Handling API Gateway events
+#### API Gateway events
 
 There are three WebSocket events sent by API Gateway for a WebSocket API connection. Each event requires returning a response immediately, and the information required to create the connection scope is only available in the initial `CONNECT` event. Messages are only sent in `MESSAGE` events that occur after the initial connection is established, and they do not include the details of the initial connect event. Due to the stateless nature of AWS Lambda, a storage backend is required to persist the WebSocket connection details for the duration of a client connection.
 
