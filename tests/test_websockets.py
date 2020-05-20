@@ -70,3 +70,20 @@ def test_websocket_unexpected_message_error(
     handler = Mangum(app, dsn=dsn)
     response = handler(mock_ws_send_event, {})
     assert response == {"statusCode": 500}
+
+
+def test_websocket_without_body(
+    tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
+) -> None:
+
+    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
+
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
+
+    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
+        send.return_value = None
+        del mock_ws_send_event["body"]
+        response = handler(mock_ws_send_event, {})
+        assert response == {"statusCode": 200}
