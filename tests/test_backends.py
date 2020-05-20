@@ -43,14 +43,18 @@ def test_sqlite_3_backend(
     assert response == {"statusCode": 200}
 
 
+@pytest.mark.parametrize(
+    "table_name",
+    ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002",],
+)
 @mock_dynamodb2
 def test_dynamodb_backend(
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
     mock_websocket_app,
+    table_name,
 ) -> None:
-    table_name = "mangum"
     region_name = "ap-southeast-1"
     dynamodb_resource = boto3.resource("dynamodb", region_name=region_name)
     dynamodb_resource.meta.client.create_table(
