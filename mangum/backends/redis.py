@@ -10,24 +10,27 @@ class RedisBackend(WebSocketBackend):
     def __post_init__(self) -> None:
         self.connection = redis.Redis.from_url(self.dsn)
 
-    def create(self, connection_id: str, initial_scope: str) -> None:
-        self.connection.set(connection_id, initial_scope)
+    def create(self, connection_id: str, *, initial_scope_json: str) -> None:
+        self.connection.set(connection_id, initial_scope_json)
 
-    def fetch(self, connection_id: str) -> str:
-        initial_scope = self.connection.get(connection_id)
+    def update(self, connection_id: str, *, updated_scope_json: str) -> None:
+        self.connection.set(connection_id, updated_scope_json)
 
-        return initial_scope
+    def retrieve(self, connection_id: str) -> str:
+        scope_json = self.connection.get(connection_id)
+
+        return scope_json
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete(connection_id)
 
-    def add_subscriber(self, connection_id: str, *, channel: str) -> None:
+    def subscribe(self, channel: str, *, connection_id: str) -> None:
         self.connection.sadd(channel, connection_id)
 
-    def remove_subscriber(self, connection_id: str, *, channel: str) -> None:
+    def unsubscribe(self, channel: str, *, connection_id: str) -> None:
         self.connection.srem(channel, connection_id)
 
-    def get_subscribers(self, channel: str) -> None:
+    def get_subscribers(self, channel: str) -> set:
         subscribers = self.connection.smembers(channel)
 
         return subscribers

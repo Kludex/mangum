@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from mangum.websocket import WebSocket
 from mangum.exceptions import UnexpectedMessage, WebSocketClosed
-from mangum.types import ASGIApp, Message
+from mangum.types import ASGIApp, Message, Scope
 
 
 class WebSocketCycleState(enum.Enum):
@@ -42,6 +42,8 @@ class WebSocketCycle:
     """
     Manages the application cycle for an ASGI `websocket` connection.
 
+    * **scope** - A dictionary containing the connection scope used to run the ASGI
+    application instance.
     * **body** -  A string containing the body content of the request.
     * **websocket** - A `WebSocket` connection handler interface for the selected
     `WebSocketBackend` subclass. Contains the ASGI connection `scope` and client
@@ -54,6 +56,7 @@ class WebSocketCycle:
     This will only contain a `statusCode` for WebSocket connections.
     """
 
+    scope: Scope
     body: str
     websocket: WebSocket
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
@@ -78,8 +81,14 @@ class WebSocketCycle:
         """
         Calls the application with the ASGI `websocket` connection scope.
         """
+        scope = self.scope.copy()
+        query_string = scope["query_string"]
+        headers = scope["headers"]
+        if headers:
+            headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
+        scope.update({"headers": headers, "query_string": query_string.encode()})
         try:
-            await app(self.websocket.scope, self.receive, self.send)
+            await app(scope, self.receive, self.send)
         except WebSocketClosed:
             self.response["statusCode"] = 403
         except UnexpectedMessage:
@@ -147,7 +156,7 @@ class WebSocketCycle:
                 self.logger.debug(
                     f"Subscribing {self.websocket.connection_id} to {channel}"
                 )
-                self.websocket.subscribe(channel)
+                self.websocket.subscribe(channel, scope=self.scope)
 
             elif message["type"] == "websocket.broadcast.publish":
                 channel = message["channel"]
@@ -157,7 +166,7 @@ class WebSocketCycle:
 
             elif message["type"] == "websocket.send":
                 body = message["body"].encode()
-                self.websocket.send(body)
+                self.websocket.send_data(body)
 
             await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 
@@ -165,6 +174,7 @@ class WebSocketCycle:
             self.state is WebSocketCycleState.DISCONNECTING
             and message_type == "websocket.close"
         ):
+
             # ASGI connection is closing, however the WebSocket client in API Gateway
             # will persist and be used in future application ASGI connections until the
             # client disconnects or the application rejects a handshake.

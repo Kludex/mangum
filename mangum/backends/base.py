@@ -18,9 +18,9 @@ class WebSocketBackend:
         """
         raise NotImplementedError()
 
-    def fetch(self, connection_id: str) -> str:
+    def update(self, connection_id: str) -> str:
         """
-        Retrieve and return the initial scope during the WebSocket MESSAGE event.
+        Update the initial scope during the WebSocket MESSAGE event.
         """
         raise NotImplementedError()
 

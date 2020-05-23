@@ -1,7 +1,7 @@
 import json
 import logging
 import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 from urllib.parse import urlparse
 
 from mangum.types import Scope
@@ -18,21 +18,25 @@ except ImportError:  # pragma: no cover
 class WebSocket:
 
     connection_id: str
-    dsn: str
+    dsn: InitVar[str]
     api_gateway_region_name: str
     api_gateway_endpoint_url: str
+    api_gateway_client: typing.Optional[typing.Any] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, dsn: str) -> None:
         if boto3 is None:  # pragma: no cover
             raise WebSocketError("boto3 must be installed to use WebSockets.")
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
-        parsed_dsn = urlparse(self.dsn)
+
+        parsed_dsn = urlparse(dsn)
         if not any((parsed_dsn.hostname, parsed_dsn.path)):
             raise ConfigurationError("Invalid value for `dsn` provided.")
+
         scheme = parsed_dsn.scheme
         self.logger.debug(
             f"Attempting WebSocket backend connection using scheme: {scheme}"
         )
+
         if scheme == "sqlite":
             self.logger.info(
                 "The `SQLiteBackend` should be only be used for local "
@@ -40,80 +44,107 @@ class WebSocket:
             )
             from mangum.backends.sqlite import SQLiteBackend
 
-            self._backend = SQLiteBackend(self.dsn)  # type: ignore
+            self._backend = SQLiteBackend(dsn)  # type: ignore
+
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._backend = DynamoDBBackend(self.dsn)  # type: ignore
+            self._backend = DynamoDBBackend(dsn)  # type: ignore
+
         elif scheme == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._backend = S3Backend(self.dsn)  # type: ignore
+            self._backend = S3Backend(dsn)  # type: ignore
 
         elif scheme in ("postgresql", "postgres"):
             from mangum.backends.postgresql import PostgreSQLBackend
 
-            self._backend = PostgreSQLBackend(self.dsn)  # type: ignore
+            self._backend = PostgreSQLBackend(dsn)  # type: ignore
 
         elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 
-            self._backend = RedisBackend(self.dsn)  # type: ignore
+            self._backend = RedisBackend(dsn)  # type: ignore
 
         else:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
+
         self.logger.debug("WebSocket backend connection established.")
 
-    def create(self, initial_scope: dict) -> None:
+    def on_connect(self, initial_scope: dict) -> None:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         initial_scope_json = json.dumps(initial_scope)
-        self._backend.create(self.connection_id, initial_scope_json)
+        self._backend.create(self.connection_id, initial_scope_json=initial_scope_json)
 
-    def fetch(self) -> None:
-        self.logger.debug("Fetching scope entry for %s", self.connection_id)
-        initial_scope = self._backend.fetch(self.connection_id)
-        scope = json.loads(initial_scope)
-        query_string = scope["query_string"]
-        headers = scope["headers"]
-        if headers:
-            headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
-        scope.update({"headers": headers, "query_string": query_string.encode()})
-        self.scope: Scope = scope
+    def on_message(self, event: dict) -> Scope:
+        self.logger.debug("Retrieving scope entry for %s", self.connection_id)
+        scope_json = self._backend.retrieve(self.connection_id)
+        scope = json.loads(scope_json)
+        scope["aws.events"].append(event)
+        self.update(scope)
 
-    def delete(self, connection_id: str) -> None:
-        self.logger.debug("Deleting scope entry for %s", connection_id)
-        self._backend.delete(connection_id)
+        return scope
 
-    def send(self, body: bytes) -> None:
-        self.post_to_connection(self.connection_id, body=body)
+    def on_disconnect(self) -> None:
+        self.logger.debug("Deleting scope entry for %s", self.connection_id)
+        scope_json = self._backend.retrieve(self.connection_id)
+        scope = json.loads(scope_json)
+        subscriptions = scope["websocket.broadcast"]["subscriptions"]
+        if subscriptions:
+            for channel in subscriptions:
+                self._backend.unsubscribe(self.connection_id, channel)
+
+        self._backend.delete(self.connection_id)
+
+    def update(self, scope: dict) -> None:
+        scope_json = json.dumps(scope)
+        self._backend.update(self.connection_id, updated_scope_json=scope_json)
 
     def publish(self, channel: str, *, body: bytes) -> None:
         subscribers = self._backend.get_subscribers(channel)
         for connection_id in subscribers:
             self.post_to_connection(connection_id.decode(), body=body, channel=channel)
 
-    def subscribe(self, channel: str) -> None:
-        self._backend.add_subscriber(self.connection_id, channel=channel)
+    def subscribe(self, channel: str, *, scope: Scope) -> None:
+        self._backend.subscribe(channel, connection_id=self.connection_id)
+        scope["extensions"]["websocket.broadcast"]["subscriptions"].append(channel)
+        self.update(scope)
 
-    def unsubscribe(self, connection_id: str, channel: str) -> None:
-        self._backend.remove_subscriber(connection_id, channel=channel)
+    def unsubscribe(self, channel: str, *, scope: Scope) -> None:
+        self._backend.unsubscribe(channel, connection_id=self.connection_id)
+        scope["extensions"]["websocket.broadcast"]["subscriptions"].remove(channel)
+        self.update(scope)
+
+    def send(self, body: bytes) -> None:
+        self.post_to_connection(self.connection_id, body=body)
 
     def post_to_connection(
         self, connection_id: str, *, body: bytes, channel: typing.Optional[str] = None
     ) -> None:  # pragma: no cover
-        try:
-            apigw_client = boto3.client(
+
+        if self.api_gateway_client is None:
+            self.api_gateway_client = boto3.client(
                 "apigatewaymanagementapi",
                 endpoint_url=self.api_gateway_endpoint_url,
                 region_name=self.api_gateway_region_name,
             )
 
-            apigw_client.post_to_connection(ConnectionId=connection_id, Data=body)
+        try:
+            self.api_gateway_client.post_to_connection(
+                ConnectionId=connection_id, Data=body
+            )
         except ClientError as exc:
             status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code == 410:
                 if channel:
-                    self.unsubscribe(connection_id, channel=channel)
-                self.delete(connection_id)
+                    self.logger.debug(
+                        "Deleting scope entry for %s and unsubscribing from %s",
+                        connection_id,
+                        channel,
+                    )
+                    self._backend.delete(connection_id)
+                    self._backend.unsubscribe(channel, connection_id=connection_id)
+                else:
+                    self.on_disconnect()
             else:
                 raise WebSocketError(exc)
