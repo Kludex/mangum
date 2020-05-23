@@ -12,21 +12,20 @@ class WebSocketBackend:
 
     dsn: str
 
-    def create(self, connection_id: str, initial_scope: str) -> None:
+    def save(self, connection_id: str, *, scope_json: str) -> None:
         """
-        Store the connection id and initial scope during the WebSocket CONNECT event.
+        Save the JSON scope for a connection.
         """
         raise NotImplementedError()
 
-    def update(self, connection_id: str) -> str:
+    def retrieve(self, connection_id: str) -> str:
         """
-        Update the initial scope during the WebSocket MESSAGE event.
+        Retrieve the JSON scope for a connection.
         """
         raise NotImplementedError()
 
     def delete(self, connection_id: str) -> None:
         """
-        Delete the stored connection during the WebSocket DISCONNECT event or when
-        a stale connection is detected in API Gateway.
+        Delete the JSON scope for a connection.
         """
         raise NotImplementedError()

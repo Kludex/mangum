@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from dataclasses import dataclass
 from urllib.parse import urlparse, parse_qs
@@ -49,22 +50,45 @@ class S3Backend(WebSocketBackend):
                 CreateBucketConfiguration={"LocationConstraint": region_name},
             )
 
-    def create(self, connection_id: str, initial_scope: str) -> None:
+    def save(self, connection_id: str, *, scope_json: str) -> None:
         self.connection.put_object(
-            Body=initial_scope.encode(),
+            Body=scope_json.encode(),
             Bucket=self.bucket,
             Key=f"{self.key}{connection_id}",
         )
 
-    def fetch(self, connection_id: str) -> str:
+    def retrieve(self, connection_id: str) -> str:
         s3_object = self.connection.get_object(
             Bucket=self.bucket, Key=f"{self.key}{connection_id}"
         )
-        initial_scope = s3_object["Body"].read().decode()
+        scope_json = s3_object["Body"].read().decode()
 
-        return initial_scope
+        return scope_json
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete_object(
             Bucket=self.bucket, Key=f"{self.key}{connection_id}"
         )
+
+    def subscribe(self, channel: str, *, connection_id: str) -> None:
+        self.connection.put_object(
+            Bucket=self.bucket, Key=f"{self.key}channels/{channel}/{connection_id}"
+        )
+
+    def unsubscribe(self, channel: str, *, connection_id: str) -> None:
+        self.connection.delete_object(
+            Bucket=self.bucket, Key=f"{self.key}channels/{channel}/{connection_id}"
+        )
+
+    def get_subscribers(self, channel: str) -> list:
+        subscribers = []
+        prefix = f"{self.key}channels/{channel}/"
+        paginator = self.connection.get_paginator("list_objects")
+        paginated = paginator.paginate(Bucket=self.bucket)
+        for page in paginated:
+            for obj in page["Contents"]:
+                if obj["Key"].startswith(prefix):
+                    connection_id = obj["Key"].replace(prefix, "")
+                    subscribers.append(connection_id)
+
+        return subscribers

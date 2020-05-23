@@ -73,15 +73,16 @@ class WebSocket:
 
     def on_connect(self, initial_scope: dict) -> None:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
-        initial_scope_json = json.dumps(initial_scope)
-        self._backend.create(self.connection_id, initial_scope_json=initial_scope_json)
+        scope_json = json.dumps(initial_scope)
+        self._backend.save(self.connection_id, scope_json=scope_json)
 
     def on_message(self, event: dict) -> Scope:
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
         scope_json = self._backend.retrieve(self.connection_id)
         scope = json.loads(scope_json)
         scope["aws.events"].append(event)
-        self.update(scope)
+        scope_json = json.dumps(scope)
+        self._backend.save(self.connection_id, scope_json=scope_json)
 
         return scope
 
@@ -96,24 +97,24 @@ class WebSocket:
 
         self._backend.delete(self.connection_id)
 
-    def update(self, scope: dict) -> None:
-        scope_json = json.dumps(scope)
-        self._backend.update(self.connection_id, updated_scope_json=scope_json)
-
     def publish(self, channel: str, *, body: bytes) -> None:
         subscribers = self._backend.get_subscribers(channel)
         for connection_id in subscribers:
-            self.post_to_connection(connection_id.decode(), body=body, channel=channel)
+            if isinstance(connection_id, bytes):
+                connection_id = connection_id.decode()
+            self.post_to_connection(connection_id, body=body, channel=channel)
 
     def subscribe(self, channel: str, *, scope: Scope) -> None:
         self._backend.subscribe(channel, connection_id=self.connection_id)
         scope["extensions"]["websocket.broadcast"]["subscriptions"].append(channel)
-        self.update(scope)
+        scope_json = json.dumps(scope)
+        self._backend.save(self.connection_id, scope_json=scope_json)
 
     def unsubscribe(self, channel: str, *, scope: Scope) -> None:
         self._backend.unsubscribe(channel, connection_id=self.connection_id)
         scope["extensions"]["websocket.broadcast"]["subscriptions"].remove(channel)
-        self.update(scope)
+        scope_json = json.dumps(scope)
+        self._backend.save(self.connection_id, scope_json=scope_json)
 
     def send(self, body: bytes) -> None:
         self.post_to_connection(self.connection_id, body=body)
