@@ -20,3 +20,14 @@ class RedisBackend(WebSocketBackend):
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete(connection_id)
+
+    def add_subscriber(self, connection_id: str, *, channel: str) -> None:
+        self.connection.sadd(channel, connection_id)
+
+    def remove_subscriber(self, connection_id: str, *, channel: str) -> None:
+        self.connection.srem(channel, connection_id)
+
+    def get_subscribers(self, channel: str) -> None:
+        subscribers = self.connection.smembers(channel)
+
+        return subscribers

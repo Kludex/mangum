@@ -76,7 +76,7 @@ class WebSocketCycle:
 
     async def run(self, app: ASGIApp) -> None:
         """
-        Calls the application with the `websocket` connection scope.
+        Calls the application with the ASGI `websocket` connection scope.
         """
         try:
             await app(self.websocket.scope, self.receive, self.send)
@@ -137,15 +137,28 @@ class WebSocketCycle:
             elif message_type == "websocket.close":
                 self.state = WebSocketCycleState.CLOSED
                 raise WebSocketClosed
-        elif (
-            self.state is WebSocketCycleState.RESPONSE
-            and message_type == "websocket.send"
+        elif self.state is WebSocketCycleState.RESPONSE and message_type in (
+            "websocket.send",
+            "websocket.broadcast.subscribe",
+            "websocket.broadcast.publish",
         ):
+            if message["type"] == "websocket.broadcast.subscribe":
+                channel = message["channel"]
+                self.logger.debug(
+                    f"Subscribing {self.websocket.connection_id} to {channel}"
+                )
+                self.websocket.subscribe(channel)
 
-            # Message data sent from the application is posted to the WebSocket client
-            # in API Gateway using an API call.
-            message_text = message.get("text", "")
-            self.websocket.post_to_connection(message_text.encode())
+            elif message["type"] == "websocket.broadcast.publish":
+                channel = message["channel"]
+                body = message["body"].encode()
+                self.logger.debug(f"Publishing {body} to {channel}")
+                self.websocket.publish(channel, body=body)
+
+            elif message["type"] == "websocket.send":
+                body = message["body"].encode()
+                self.websocket.send(body)
+
             await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 
         elif (

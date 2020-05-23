@@ -1,5 +1,6 @@
 import json
 import logging
+import typing
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -67,7 +68,6 @@ class WebSocket:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         initial_scope_json = json.dumps(initial_scope)
         self._backend.create(self.connection_id, initial_scope_json)
-        self.logger.debug("Scope entry created.")
 
     def fetch(self) -> None:
         self.logger.debug("Fetching scope entry for %s", self.connection_id)
@@ -79,26 +79,41 @@ class WebSocket:
             headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
         scope.update({"headers": headers, "query_string": query_string.encode()})
         self.scope: Scope = scope
-        self.logger.debug("Scope entry fetched.")
 
-    def delete(self) -> None:
-        self.logger.debug("Deleting scope entry for %s", self.connection_id)
-        self._backend.delete(self.connection_id)
-        self.logger.debug("Scope entry deleted.")
+    def delete(self, connection_id: str) -> None:
+        self.logger.debug("Deleting scope entry for %s", connection_id)
+        self._backend.delete(connection_id)
 
-    def post_to_connection(self, msg_data: bytes) -> None:  # pragma: no cover
+    def send(self, body: bytes) -> None:
+        self.post_to_connection(self.connection_id, body=body)
+
+    def publish(self, channel: str, *, body: bytes) -> None:
+        subscribers = self._backend.get_subscribers(channel)
+        for connection_id in subscribers:
+            self.post_to_connection(connection_id.decode(), body=body, channel=channel)
+
+    def subscribe(self, channel: str) -> None:
+        self._backend.add_subscriber(self.connection_id, channel=channel)
+
+    def unsubscribe(self, connection_id: str, channel: str) -> None:
+        self._backend.remove_subscriber(connection_id, channel=channel)
+
+    def post_to_connection(
+        self, connection_id: str, *, body: bytes, channel: typing.Optional[str] = None
+    ) -> None:  # pragma: no cover
         try:
             apigw_client = boto3.client(
                 "apigatewaymanagementapi",
                 endpoint_url=self.api_gateway_endpoint_url,
                 region_name=self.api_gateway_region_name,
             )
-            apigw_client.post_to_connection(
-                ConnectionId=self.connection_id, Data=msg_data
-            )
+
+            apigw_client.post_to_connection(ConnectionId=connection_id, Data=body)
         except ClientError as exc:
             status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code == 410:
-                self.delete()
+                if channel:
+                    self.unsubscribe(connection_id, channel=channel)
+                self.delete(connection_id)
             else:
                 raise WebSocketError(exc)

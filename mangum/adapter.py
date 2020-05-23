@@ -245,19 +245,23 @@ class Mangum:
                 "query_string": "",
                 "server": server,
                 "client": client,
-                "aws": {"event": event, "context": None},
+                "aws.event": event,
+                "aws.context": None,
+                "aws.connection_id": connection_id,
+                "extensions": {"websocket.broadcast": {}},
             }
 
             websocket.create(initial_scope)
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
+            # TODO: Update the scope
             websocket.fetch()
             asgi_cycle = WebSocketCycle(event.get("body", ""), websocket=websocket)
             response = asgi_cycle(self.app)
 
         elif event_type == "DISCONNECT":
-            websocket.delete()
+            websocket.delete(connection_id)
             response = {"statusCode": 200}
 
         return response
