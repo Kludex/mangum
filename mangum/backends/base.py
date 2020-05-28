@@ -12,7 +12,7 @@ class WebSocketBackend:
 
     dsn: str
 
-    def save(self, connection_id: str, *, scope_json: str) -> None:
+    def save(self, connection_id: str, *, json_scope: str) -> None:
         """
         Save the JSON scope for a connection.
         """

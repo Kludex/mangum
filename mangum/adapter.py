@@ -235,7 +235,7 @@ class Mangum:
             source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
 
-            initial_scope = {
+            scope = {
                 "type": "websocket",
                 "path": "/",
                 "headers": headers,
@@ -249,7 +249,7 @@ class Mangum:
                 "extensions": {"websocket.broadcast": {"subscriptions": []}},
             }
 
-            websocket.on_connect(initial_scope)
+            websocket.on_connect(scope)
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":

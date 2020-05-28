@@ -81,12 +81,8 @@ class WebSocketCycle:
         """
         Calls the application with the ASGI `websocket` connection scope.
         """
+
         scope = self.scope.copy()
-        query_string = scope["query_string"]
-        headers = scope["headers"]
-        if headers:
-            headers = [[k.encode(), v.encode()] for k, v in headers.items() if headers]
-        scope.update({"headers": headers, "query_string": query_string.encode()})
         try:
             await app(scope, self.receive, self.send)
         except WebSocketClosed:
@@ -156,17 +152,17 @@ class WebSocketCycle:
                 self.logger.debug(
                     f"Subscribing {self.websocket.connection_id} to {channel}"
                 )
-                self.websocket.subscribe(channel, scope=self.scope)
+                await self.websocket.subscribe(channel, scope=self.scope)
 
             elif message["type"] == "websocket.broadcast.publish":
                 channel = message["channel"]
                 body = message["body"].encode()
                 self.logger.debug(f"Publishing {body} to {channel}")
-                self.websocket.publish(channel, body=body)
+                await self.websocket.publish(channel, body=body, scope=self.scope)
 
             elif message["type"] == "websocket.send":
                 body = message["body"].encode()
-                self.websocket.send_data(body)
+                await self.websocket.send_data(body)
 
             await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 

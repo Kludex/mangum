@@ -63,3 +63,14 @@ class DynamoDBBackend(WebSocketBackend):
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete_item(Key={"connectionId": connection_id})
+
+    def subscribe(self, channel: str, *, connection_id: str) -> None:
+        self.connection.sadd(channel, connection_id)
+
+    def unsubscribe(self, channel: str, *, connection_id: str) -> None:
+        self.connection.srem(channel, connection_id)
+
+    def get_subscribers(self, channel: str) -> set:
+        subscribers = self.connection.smembers(channel)
+
+        return subscribers

@@ -10,13 +10,13 @@ class RedisBackend(WebSocketBackend):
     def __post_init__(self) -> None:
         self.connection = redis.Redis.from_url(self.dsn)
 
-    def save(self, connection_id: str, *, scope_json: str) -> None:
-        self.connection.set(connection_id, scope_json)
+    def save(self, connection_id: str, *, json_scope: str) -> None:
+        self.connection.set(connection_id, json_scope)
 
     def retrieve(self, connection_id: str) -> str:
-        scope_json = self.connection.get(connection_id)
+        json_scope = self.connection.get(connection_id)
 
-        return scope_json
+        return json_scope
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete(connection_id)

@@ -50,9 +50,9 @@ class S3Backend(WebSocketBackend):
                 CreateBucketConfiguration={"LocationConstraint": region_name},
             )
 
-    def save(self, connection_id: str, *, scope_json: str) -> None:
+    def save(self, connection_id: str, *, json_scope: str) -> None:
         self.connection.put_object(
-            Body=scope_json.encode(),
+            Body=json_scope.encode(),
             Bucket=self.bucket,
             Key=f"{self.key}{connection_id}",
         )
@@ -61,9 +61,9 @@ class S3Backend(WebSocketBackend):
         s3_object = self.connection.get_object(
             Bucket=self.bucket, Key=f"{self.key}{connection_id}"
         )
-        scope_json = s3_object["Body"].read().decode()
+        json_scope = s3_object["Body"].read().decode()
 
-        return scope_json
+        return json_scope
 
     def delete(self, connection_id: str) -> None:
         self.connection.delete_object(
