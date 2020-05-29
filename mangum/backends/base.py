@@ -12,19 +12,29 @@ class WebSocketBackend:
 
     dsn: str
 
-    def save(self, connection_id: str, *, json_scope: str) -> None:
+    # async def connect(self) -> None:
+    #     """
+    #     """
+    #     raise NotImplementedError()
+
+    async def disconnect(self) -> None:
+        """
+        """
+        raise NotImplementedError()
+
+    async def save(self, connection_id: str, *, json_scope: str) -> None:
         """
         Save the JSON scope for a connection.
         """
         raise NotImplementedError()
 
-    def retrieve(self, connection_id: str) -> str:
+    async def retrieve(self, connection_id: str) -> str:
         """
         Retrieve the JSON scope for a connection.
         """
         raise NotImplementedError()
 
-    def delete(self, connection_id: str) -> None:
+    async def delete(self, connection_id: str) -> None:
         """
         Delete the JSON scope for a connection.
         """

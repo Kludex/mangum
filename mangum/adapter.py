@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import urllib.parse
 import typing
@@ -10,8 +11,7 @@ from dataclasses import dataclass
 from mangum.types import ASGIApp
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
-from mangum.protocols.websockets import WebSocketCycle
-from mangum.websocket import WebSocket
+from mangum.protocols.websockets import WebSocketCycle, WebSocket
 from mangum.exceptions import ConfigurationError
 
 
@@ -217,12 +217,6 @@ class Mangum:
         api_gateway_region_name = (
             self.api_gateway_region_name or os.environ["AWS_REGION"]
         )
-        websocket = WebSocket(
-            connection_id,
-            dsn=self.dsn,
-            api_gateway_endpoint_url=api_gateway_endpoint_url,
-            api_gateway_region_name=api_gateway_region_name,
-        )
 
         if event_type == "CONNECT":
 
@@ -249,17 +243,36 @@ class Mangum:
                 "extensions": {"websocket.broadcast": {"subscriptions": []}},
             }
 
-            websocket.on_connect(scope)
+            websocket = WebSocket(
+                connection_id,
+                dsn=self.dsn,
+                api_gateway_endpoint_url=api_gateway_endpoint_url,
+                api_gateway_region_name=api_gateway_region_name,
+            )
+
+            asyncio.run(websocket.on_connect(scope))
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-            scope = websocket.on_message(event)
-            body = event.get("body", "")
-            asgi_cycle = WebSocketCycle(scope, body, websocket=websocket)
-            response = asgi_cycle(self.app)
+            # scope = asyncio.run(websocket.on_message(event))
+            # body = event.get("body", "")
+            asgi_cycle = WebSocketCycle(
+                connection_id,
+                dsn=self.dsn,
+                api_gateway_endpoint_url=api_gateway_endpoint_url,
+                api_gateway_region_name=api_gateway_region_name,
+            )
+            response = asyncio.run(asgi_cycle(self.app, event=event))
 
         elif event_type == "DISCONNECT":
-            websocket.on_disconnect()
+            websocket = WebSocket(
+                connection_id,
+                dsn=self.dsn,
+                api_gateway_endpoint_url=api_gateway_endpoint_url,
+                api_gateway_region_name=api_gateway_region_name,
+            )
+
+            asyncio.run(websocket.on_disconnect())
             response = {"statusCode": 200}
 
         return response
