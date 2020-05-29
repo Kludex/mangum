@@ -9,10 +9,11 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 
 from mangum.types import ASGIApp
+from mangum.exceptions import ConfigurationError
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
-from mangum.protocols.websockets import WebSocketCycle, WebSocket
-from mangum.exceptions import ConfigurationError
+from mangum.protocols.websockets import WebSocketCycle
+from mangum.backends import WebSocket
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -202,24 +203,28 @@ class Mangum:
             raise ConfigurationError(
                 "A `dsn` connection string is required for WebSocket support."
             )
-
-        event_type = event["requestContext"]["eventType"]
-        connection_id = event["requestContext"]["connectionId"]
-        stage = event["requestContext"]["stage"]
-        domain_name = event["requestContext"]["domainName"]
-        self.logger.info(
+        request_context = event["requestContext"]
+        event_type = request_context["eventType"]
+        connection_id = request_context["connectionId"]
+        self.logger.debug(
             "%s event received for WebSocket connection %s", event_type, connection_id
         )
-
         api_gateway_endpoint_url = (
-            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
+            self.api_gateway_endpoint_url
+            or f"https://{request_context['domainName']}/{request_context['stage']}"
         )
         api_gateway_region_name = (
             self.api_gateway_region_name or os.environ["AWS_REGION"]
         )
 
-        if event_type == "CONNECT":
+        websocket = WebSocket(
+            connection_id,
+            dsn=self.dsn,
+            api_gateway_endpoint_url=api_gateway_endpoint_url,
+            api_gateway_region_name=api_gateway_region_name,
+        )
 
+        if event_type == "CONNECT":
             headers = (
                 {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
                 if event.get("headers")
@@ -228,8 +233,7 @@ class Mangum:
             server = get_server(headers)
             source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
             client = (source_ip, 0)
-
-            scope = {
+            initial_scope = {
                 "type": "websocket",
                 "path": "/",
                 "headers": headers,
@@ -242,37 +246,16 @@ class Mangum:
                 "aws.events": [event],
                 "extensions": {"websocket.broadcast": {"subscriptions": []}},
             }
+            asyncio.run(websocket.on_connect(initial_scope))
+            response = {"statusCode": 200}
 
-            websocket = WebSocket(
-                connection_id,
-                dsn=self.dsn,
-                api_gateway_endpoint_url=api_gateway_endpoint_url,
-                api_gateway_region_name=api_gateway_region_name,
-            )
-
-            asyncio.run(websocket.on_connect(scope))
+        elif event_type == "DISCONNECT":
+            asyncio.run(websocket.on_disconnect())
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-            # scope = asyncio.run(websocket.on_message(event))
-            # body = event.get("body", "")
-            asgi_cycle = WebSocketCycle(
-                connection_id,
-                dsn=self.dsn,
-                api_gateway_endpoint_url=api_gateway_endpoint_url,
-                api_gateway_region_name=api_gateway_region_name,
-            )
+            body = event.get("body", "")
+            asgi_cycle = WebSocketCycle(body, websocket=websocket)
             response = asyncio.run(asgi_cycle(self.app, event=event))
-
-        elif event_type == "DISCONNECT":
-            websocket = WebSocket(
-                connection_id,
-                dsn=self.dsn,
-                api_gateway_endpoint_url=api_gateway_endpoint_url,
-                api_gateway_region_name=api_gateway_region_name,
-            )
-
-            asyncio.run(websocket.on_disconnect())
-            response = {"statusCode": 200}
 
         return response

@@ -6,16 +6,17 @@ class WebSocketBackend:
     """
     Base class for implementing WebSocket backends to store API Gateway connections.
 
-    WebSocket backends are required to implement configuration based on a `dsn`
+    Data source backends are required to implement configuration based on a `dsn`
     connection string.
     """
 
     dsn: str
 
-    # async def connect(self) -> None:
-    #     """
-    #     """
-    #     raise NotImplementedError()
+    async def connect(self) -> None:
+        """
+        Establish the connection to a data source.
+        """
+        raise NotImplementedError()
 
     async def disconnect(self) -> None:
         """
