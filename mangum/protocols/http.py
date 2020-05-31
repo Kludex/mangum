@@ -59,8 +59,6 @@ class HTTPCycle:
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.response["isBase64Encoded"] = False
 
-        self.text_mime_types
-
     def __call__(self, app: ASGIApp) -> dict:
         self.logger.debug("HTTP cycle starting.")
         self.app_queue.put_nowait(
