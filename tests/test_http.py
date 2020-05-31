@@ -440,23 +440,37 @@ def test_http_cycle_state(mock_http_event) -> None:
 def test_http_api_gateway_base_path(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(mock_http_event["path"])
         await send({"type": "http.response.start", "status": 200})
+        await send({"type": "http.response.body", "body": b"Hello world!"})
 
     handler = Mangum(app, lifespan="off", api_gateway_base_path=None)
-    assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
-        mock_http_event["path"]
-    )
+    response = handler(mock_http_event, {})
+
+    assert response == {
+        "body": "Hello world!",
+        "headers": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
 
     async def app(scope, receive, send):
         assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(
+            mock_http_event["path"][len(f"/{api_gateway_base_path}") :]
+        )
         await send({"type": "http.response.start", "status": 200})
+        await send({"type": "http.response.body", "body": b"Hello world!"})
 
     api_gateway_base_path = "test"
-    script_name = "/" + api_gateway_base_path
     handler = Mangum(app, lifespan="off", api_gateway_base_path=api_gateway_base_path)
-    assert handler.strip_base_path(mock_http_event["path"]) == urllib.parse.unquote(
-        mock_http_event["path"][len(script_name) :]
-    )
+    response = handler(mock_http_event, {})
+    assert response == {
+        "body": "Hello world!",
+        "headers": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
@@ -571,7 +585,7 @@ def test_http_request(mock_http_api_event) -> None:
                     "routeKey": "$default",
                     "stage": "$default",
                     "time": "12/Mar/2020:19:03:58 +0000",
-                    "timeEpoch": 1583348638390,
+                    "timeEpoch": 1_583_348_638_390,
                 },
                 "body": None,
                 "pathParameters": {"parameter1": "value1"},

@@ -99,7 +99,6 @@ class HTTPCycle:
         """
         Awaited by the application to receive ASGI `http` events.
         """
-
         return await self.app_queue.get()
 
     async def send(self, message: Message) -> None:
@@ -133,12 +132,12 @@ class HTTPCycle:
 
             if not more_body:
                 body = self.body
-                mimetype, _ = cgi.parse_header(
-                    self.response["headers"].get("content-type", "text/plain")
-                )
 
                 # Check if a binary response should be returned based on the mime type
                 # or content encoding.
+                mimetype, _ = cgi.parse_header(
+                    self.response["headers"].get("content-type", "text/plain")
+                )
                 if (
                     mimetype not in self.text_mime_types
                     and not mimetype.startswith("text/")

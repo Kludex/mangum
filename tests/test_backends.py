@@ -45,7 +45,7 @@ def test_sqlite_3_backend(
 
 @pytest.mark.parametrize(
     "table_name",
-    ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002",],
+    ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002"],
 )
 @mock_dynamodb2
 def test_dynamodb_backend(
