@@ -1,26 +1,17 @@
 import base64
-import urllib.parse
 import typing
-import logging
 import os
 import warnings
-from contextlib import ExitStack
 from dataclasses import dataclass
+from contextlib import ExitStack
 
 from mangum.types import ASGIApp
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.websockets import WebSocketCycle
 from mangum.websocket import WebSocket
+from mangum.config import Config
 from mangum.exceptions import ConfigurationError
-
-
-DEFAULT_TEXT_MIME_TYPES = [
-    "application/json",
-    "application/javascript",
-    "application/xml",
-    "application/vnd.api+json",
-]
 
 
 def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
@@ -38,32 +29,10 @@ def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
     return server
 
 
-def get_logger(log_level: str) -> logging.Logger:
-    """
-    Create the default logger according to log level setting of the adapter instance.
-    """
-    level = {
-        "critical": logging.CRITICAL,
-        "error": logging.ERROR,
-        "warning": logging.WARNING,
-        "info": logging.INFO,
-        "debug": logging.DEBUG,
-    }[log_level]
-    logging.basicConfig(
-        format="[%(asctime)s] %(message)s", level=level, datefmt="%d-%b-%y %H:%M:%S"
-    )
-    logger = logging.getLogger("mangum")
-    logger.setLevel(level)
-
-    return logger
-
-
 @dataclass
 class Mangum:
     """
     Creates an adapter instance.
-
-    **Parameters:**
 
     * **app** - An asynchronous callable that conforms to version 3.0 of the ASGI
     specification. This will usually be an ASGI framework application instance.
@@ -93,7 +62,6 @@ class Mangum:
     enable_lifespan: bool = True  # Deprecated.
 
     def __post_init__(self) -> None:
-        self.logger = get_logger(self.log_level)
         if not self.enable_lifespan:  # pragma: no cover
             warnings.warn(
                 "The `enable_lifespan` parameter will be removed in a future release. "
@@ -103,83 +71,44 @@ class Mangum:
             )
         if self.lifespan not in ("auto", "on", "off"):  # pragma: no cover
             raise ConfigurationError(
-                "Invalid argument supplied for `lifespan`. Choices are: auto|on|off."
+                "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
+        if self.log_level not in ("critical", "error", "warning", "info", "debug"):
+            raise ConfigurationError(  # pragma: no cover
+                "Invalid argument supplied for `log_level`. "
+                "Choices are: critical|error|warning|info|debug"
+            )
+        self.config: Config = Config(
+            self.lifespan,
+            self.log_level,
+            self.api_gateway_base_path,
+            self.text_mime_types,
+            self.dsn,
+            self.api_gateway_endpoint_url,
+            self.api_gateway_region_name,
+        )
 
     def __call__(self, event: dict, context: dict) -> dict:
-        return self.handler(event, context)
-
-    def strip_base_path(self, path: str) -> str:
-        if self.api_gateway_base_path:
-            script_name = "/" + self.api_gateway_base_path
-            if path.startswith(script_name):
-                path = path[len(script_name) :]
-
-        return urllib.parse.unquote(path or "/")
-
-    def handler(self, event: dict, context: dict) -> dict:
         with ExitStack() as stack:
 
             # Ignore lifespan events entirely if the `lifespan` setting is `off`.
-            if self.lifespan in ("auto", "on"):
+            if self.config.lifespan in ("auto", "on"):
                 asgi_cycle: typing.ContextManager = LifespanCycle(
-                    self.app, self.lifespan
+                    self.app, self.config.lifespan
                 )
                 stack.enter_context(asgi_cycle)
 
             if "eventType" in event["requestContext"]:
                 response = self.handle_ws(event, context)
             else:
-                is_http_api = "http" in event["requestContext"]
-                response = self.handle_http(event, context, is_http_api=is_http_api)
+                response = self.handle_http(event, context)
 
         return response
 
-    def handle_http(self, event: dict, context: dict, *, is_http_api: bool) -> dict:
-        self.logger.info("HTTP event received.")
-        if is_http_api:
-            source_ip = event["requestContext"]["http"]["sourceIp"]
-            query_string = event.get("rawQueryString", "").encode()
-            path = event["requestContext"]["http"]["path"]
-            http_method = event["requestContext"]["http"]["method"]
-        else:
-            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
-            multi_value_query_string_params = event["multiValueQueryStringParameters"]
-            query_string = (
-                urllib.parse.urlencode(
-                    multi_value_query_string_params, doseq=True
-                ).encode()
-                if multi_value_query_string_params
-                else b""
-            )
-            path = event["path"]
-            http_method = event["httpMethod"]
+    def handle_http(self, event: dict, context: dict) -> dict:
+        self.config.logger.info("HTTP event received.")
 
-        headers = (
-            {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
-            if event.get("headers")
-            else {}
-        )
-        server = get_server(headers)
-        client = (source_ip, 0)
-
-        scope = {
-            "type": "http",
-            "http_version": "1.1",
-            "method": http_method,
-            "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
-            "path": self.strip_base_path(path),
-            "raw_path": None,
-            "root_path": "",
-            "scheme": headers.get("x-forwarded-proto", "https"),
-            "query_string": query_string,
-            "server": server,
-            "client": client,
-            "asgi": {"version": "3.0"},
-            "aws.event": event,
-            "aws.context": context,
-        }
-
+        scope = self.config.make_http_scope(event, context)
         is_binary = event.get("isBase64Encoded", False)
         body = event.get("body") or b""
         if is_binary:
@@ -187,68 +116,44 @@ class Mangum:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        if self.text_mime_types:
-            text_mime_types = self.text_mime_types + DEFAULT_TEXT_MIME_TYPES
-        else:
-            text_mime_types = DEFAULT_TEXT_MIME_TYPES
-
-        asgi_cycle = HTTPCycle(scope, body=body, text_mime_types=text_mime_types)
+        asgi_cycle = HTTPCycle(
+            scope,
+            body=body,
+            text_mime_types=self.config.text_mime_types,  # type: ignore
+        )
         response = asgi_cycle(self.app)
 
         return response
 
     def handle_ws(self, event: dict, context: dict) -> dict:
-        if self.dsn is None:
+        self.config.logger.info("WebSocket event received.")
+
+        if self.config.dsn is None:
             raise ConfigurationError(
                 "A `dsn` connection string is required for WebSocket support."
             )
 
-        event_type = event["requestContext"]["eventType"]
-        connection_id = event["requestContext"]["connectionId"]
-        stage = event["requestContext"]["stage"]
-        domain_name = event["requestContext"]["domainName"]
-        self.logger.info(
-            "%s event received for WebSocket connection %s", event_type, connection_id
-        )
-
+        request_context = event["requestContext"]
+        event_type = request_context["eventType"]
+        connection_id = request_context["connectionId"]
+        stage = request_context["stage"]
+        domain_name = request_context["domainName"]
         api_gateway_endpoint_url = (
-            self.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
+            self.config.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
         )
         api_gateway_region_name = (
-            self.api_gateway_region_name or os.environ["AWS_REGION"]
+            self.config.api_gateway_region_name or os.environ["AWS_REGION"]
         )
         websocket = WebSocket(
             connection_id,
-            dsn=self.dsn,
+            dsn=self.config.dsn,
             api_gateway_endpoint_url=api_gateway_endpoint_url,
             api_gateway_region_name=api_gateway_region_name,
         )
 
         if event_type == "CONNECT":
-
-            headers = (
-                {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
-                if event.get("headers")
-                else {}
-            )
-            server = get_server(headers)
-            source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
-            client = (source_ip, 0)
-
-            initial_scope = {
-                "type": "websocket",
-                "path": "/",
-                "headers": headers,
-                "raw_path": None,
-                "root_path": "",
-                "scheme": headers.get("x-forwarded-proto", "wss"),
-                "query_string": "",
-                "server": server,
-                "client": client,
-                "aws": {"event": event, "context": None},
-            }
-
-            websocket.create(initial_scope)
+            scope = self.config.make_websocket_scope(event)
+            websocket.create(scope)
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":

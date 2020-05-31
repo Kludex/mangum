@@ -63,7 +63,7 @@ class WebSocket:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.debug("WebSocket backend connection established.")
 
-    def create(self, initial_scope: dict) -> None:
+    def create(self, initial_scope: Scope) -> None:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         initial_scope_json = json.dumps(initial_scope)
         self._backend.create(self.connection_id, initial_scope_json)
