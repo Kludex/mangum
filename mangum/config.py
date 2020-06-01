@@ -75,11 +75,6 @@ class Config:
             self.text_mime_types = DEFAULT_TEXT_MIME_TYPES
 
     def make_http_scope(self, event: dict, context: dict) -> Scope:
-        headers = (
-            {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
-            if event.get("headers")
-            else {}
-        )
         request_context = event["requestContext"]
         if "http" in request_context:
             source_ip = request_context["http"]["sourceIp"]

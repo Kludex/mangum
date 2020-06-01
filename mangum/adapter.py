@@ -16,21 +16,6 @@ from mangum.config import Config
 from mangum.exceptions import ConfigurationError
 
 
-def get_server(headers: dict) -> typing.Tuple:  # pragma: no cover
-    """
-    Parse the host and port from the event headers to use as the `server` key in the
-    ASGI connection scope.
-    """
-    server_name = headers.get("host", "mangum")
-    if ":" not in server_name:
-        server_port = headers.get("x-forwarded-port", 80)
-    else:
-        server_name, server_port = server_name.split(":")
-    server = (server_name, int(server_port))
-
-    return server
-
-
 @dataclass
 class Mangum:
     """
