@@ -143,7 +143,7 @@ class Config:
             "server": server,
             "client": client,
             "asgi": {"version": "3.0"},
-            "aws.event": event,
+            "aws.events": [event],
         }
 
         return scope

@@ -1,22 +1,29 @@
-from dataclasses import dataclass
-
-import redis
+import aioredis
 
 from mangum.backends.base import WebSocketBackend
 
 
-@dataclass
 class RedisBackend(WebSocketBackend):
-    def __post_init__(self) -> None:
-        self.connection = redis.Redis.from_url(self.dsn)
+    async def connect(self) -> None:
+        self.connection = await aioredis.create_redis(self.dsn)
 
-    def create(self, connection_id: str, initial_scope: str) -> None:
-        self.connection.set(connection_id, initial_scope)
+    async def disconnect(self) -> None:
+        await self.connection.close()
 
-    def fetch(self, connection_id: str) -> str:
-        initial_scope = self.connection.get(connection_id)
+    async def save(self, connection_id: str, *, json_scope: str) -> None:
+        await self.connection.set(connection_id, json_scope)
 
-        return initial_scope
+    async def retrieve(self, connection_id: str) -> str:
+        return await self.connection.get(connection_id)
 
-    def delete(self, connection_id: str) -> None:
-        self.connection.delete(connection_id)
+    async def delete(self, connection_id: str) -> None:
+        await self.connection.delete(connection_id)
+
+    async def subscribe(self, channel: str, *, connection_id: str) -> None:
+        await self.connection.sadd(channel, connection_id)
+
+    async def unsubscribe(self, channel: str, *, connection_id: str) -> None:
+        await self.connection.srem(channel, connection_id)
+
+    async def get_subscribers(self, channel: str) -> set:
+        return await self.connection.smembers(channel)

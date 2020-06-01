@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import typing
 import os
@@ -9,7 +10,8 @@ from mangum.types import ASGIApp
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.protocols.websockets import WebSocketCycle
-from mangum.websocket import WebSocket
+from mangum.middleware import WebSocketMiddleware
+from mangum.backends import WebSocket
 from mangum.config import Config
 from mangum.exceptions import ConfigurationError
 
@@ -62,6 +64,7 @@ class Mangum:
     enable_lifespan: bool = True  # Deprecated.
 
     def __post_init__(self) -> None:
+        print("balh")
         if not self.enable_lifespan:  # pragma: no cover
             warnings.warn(
                 "The `enable_lifespan` parameter will be removed in a future release. "
@@ -89,80 +92,114 @@ class Mangum:
         )
 
     def __call__(self, event: dict, context: dict) -> dict:
+        event_type = event["requestContext"].get("eventType")
+
         with ExitStack() as stack:
 
-            # Ignore lifespan events entirely if the `lifespan` setting is `off`.
-            if self.config.lifespan in ("auto", "on"):
+            # Ignore lifespan events entirely if the `lifespan` setting is `off`, or if
+            # this is a WebSocket connect or disconnect event.
+            if self.config.lifespan in ("auto", "on") and event_type != "CONNECT":
                 asgi_cycle: typing.ContextManager = LifespanCycle(
                     self.app, self.config.lifespan
                 )
                 stack.enter_context(asgi_cycle)
 
-            if "eventType" in event["requestContext"]:
-                response = self.handle_ws(event, context)
+            if event_type:
+                if self.config.dsn is None:
+                    raise ConfigurationError(
+                        "A `dsn` connection string is required for WebSocket support."
+                    )
+                req_context = event["requestContext"]
+                connection_id = req_context["connectionId"]
+                api_gateway_endpoint_url = (
+                    self.config.api_gateway_endpoint_url
+                    or f"https://{req_context['domainName']}/{req_context['stage']}"
+                )
+                api_gateway_region_name = (
+                    self.config.api_gateway_region_name or os.environ["AWS_REGION"]
+                )
+                websocket = WebSocket(
+                    connection_id,
+                    event=event,
+                    dsn=self.config.dsn,
+                    api_gateway_endpoint_url=api_gateway_endpoint_url,
+                    api_gateway_region_name=api_gateway_region_name,
+                )
+                if event_type == "CONNECT":
+                    scope = self.config.make_websocket_scope(event)
+                    asyncio.run(websocket.on_connect(scope))
+                    response = {"statusCode": 200}
+
+                elif event_type == "MESSAGE":
+                    body = event.get("body", "")
+                    asgi_cycle = WebSocketCycle(body, websocket=websocket)
+                    response = asgi_cycle(WebSocketMiddleware(self.app))
+
+                elif event_type == "DISCONNECT":
+                    asyncio.run(websocket.on_disconnect())
+                    response = {"statusCode": 200}
+
             else:
-                response = self.handle_http(event, context)
+                self.config.logger.info("HTTP event received.")
+                scope = self.config.make_http_scope(event, context)
+                is_binary = event.get("isBase64Encoded", False)
+                body = event.get("body") or b""
+                if is_binary:
+                    body = base64.b64decode(body)
+                elif not isinstance(body, bytes):
+                    body = body.encode()
+
+                asgi_cycle = HTTPCycle(
+                    scope,
+                    body=body,
+                    text_mime_types=self.config.text_mime_types,  # type: ignore
+                )
+                response = asgi_cycle(self.app)
 
         return response
 
-    def handle_http(self, event: dict, context: dict) -> dict:
-        self.config.logger.info("HTTP event received.")
+    def handle_ws(self, event_type: str, *, websocket: WebSocket) -> dict:
+        self.config.logger.debug("WebSocket event received.")
 
-        scope = self.config.make_http_scope(event, context)
-        is_binary = event.get("isBase64Encoded", False)
-        body = event.get("body") or b""
-        if is_binary:
-            body = base64.b64decode(body)
-        elif not isinstance(body, bytes):
-            body = body.encode()
+        # print("??")
 
-        asgi_cycle = HTTPCycle(
-            scope,
-            body=body,
-            text_mime_types=self.config.text_mime_types,  # type: ignore
-        )
-        response = asgi_cycle(self.app)
+        # if self.config.dsn is None:
+        #     raise ConfigurationError(
+        #         "A `dsn` connection string is required for WebSocket support."
+        #     )
 
-        return response
+        # request_context = event["requestContext"]
+        # event_type = request_context["eventType"]
+        # connection_id = request_context["connectionId"]
+        # stage = request_context["stage"]
+        # domain_name = request_context["domainName"]
+        # api_gateway_endpoint_url = (
+        #     self.config.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
+        # )
+        # api_gateway_region_name = (
+        #     self.config.api_gateway_region_name or os.environ["AWS_REGION"]
+        # )
 
-    def handle_ws(self, event: dict, context: dict) -> dict:
-        self.config.logger.info("WebSocket event received.")
-
-        if self.config.dsn is None:
-            raise ConfigurationError(
-                "A `dsn` connection string is required for WebSocket support."
-            )
-
-        request_context = event["requestContext"]
-        event_type = request_context["eventType"]
-        connection_id = request_context["connectionId"]
-        stage = request_context["stage"]
-        domain_name = request_context["domainName"]
-        api_gateway_endpoint_url = (
-            self.config.api_gateway_endpoint_url or f"https://{domain_name}/{stage}"
-        )
-        api_gateway_region_name = (
-            self.config.api_gateway_region_name or os.environ["AWS_REGION"]
-        )
-        websocket = WebSocket(
-            connection_id,
-            dsn=self.config.dsn,
-            api_gateway_endpoint_url=api_gateway_endpoint_url,
-            api_gateway_region_name=api_gateway_region_name,
-        )
-
+        print("ok")
+        # websocket = WebSocket(
+        #     connection_id,
+        #     dsn=self.config.dsn,
+        #     api_gateway_endpoint_url=api_gateway_endpoint_url,
+        #     api_gateway_region_name=api_gateway_region_name,
+        # )
         if event_type == "CONNECT":
             scope = self.config.make_websocket_scope(event)
-            websocket.create(scope)
+            asyncio.run(websocket.on_connect(scope))
             response = {"statusCode": 200}
 
         elif event_type == "MESSAGE":
-            websocket.fetch()
-            asgi_cycle = WebSocketCycle(event.get("body", ""), websocket=websocket)
-            response = asgi_cycle(self.app)
+            scope = asyncio.run(websocket.on_message(event))
+            body = event.get("body", "")
+            asgi_cycle = WebSocketCycle(scope, body=body, websocket=websocket)
+            response = asgi_cycle(WebSocketMiddleware(self.app))
 
         elif event_type == "DISCONNECT":
-            websocket.delete()
+            asyncio.run(websocket.on_disconnect())
             response = {"statusCode": 200}
 
         return response
