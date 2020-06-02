@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from mangum.backends import WebSocket
 from mangum.exceptions import UnexpectedMessage, WebSocketClosed
-from mangum.types import ASGIApp, Scope, Message
+from mangum.types import ASGIApp, Message
 
 
 class WebSocketCycleState(enum.Enum):
@@ -54,7 +54,7 @@ class WebSocketCycle:
     This will only contain a `statusCode` for WebSocket connections.
     """
 
-    body: str
+    event: dict
     websocket: WebSocket
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
     response: dict = field(default_factory=dict)
@@ -78,7 +78,7 @@ class WebSocketCycle:
         """
         Calls the application with the `websocket` connection scope.
         """
-        self.scope = await self.websocket.on_message()
+        self.scope = await self.websocket.on_message(event=self.event)
         scope = self.scope.copy()
         try:
             await app(scope, self.receive, self.send)
@@ -134,28 +134,31 @@ class WebSocketCycle:
             # the client connection. This process does not support subprotocols.
             if message_type == "websocket.accept":
                 await self.app_queue.put(
-                    {"type": "websocket.receive", "bytes": None, "text": self.body}
+                    {
+                        "type": "websocket.receive",
+                        "bytes": None,
+                        "text": self.event.get("body", ""),
+                    }
                 )
             elif message_type == "websocket.close":
                 self.state = WebSocketCycleState.CLOSED
                 raise WebSocketClosed
+
         elif self.state is WebSocketCycleState.RESPONSE and message_type in (
             "websocket.send",
             "broadcast.subscribe",
             "broadcast.publish",
         ):
+
             if message["type"] == "broadcast.subscribe":
                 channel = message["channel"]
-                self.logger.debug(
-                    f"Subscribing {self.websocket.connection_id} to {channel}"
-                )
+
                 await self.websocket.subscribe(channel, scope=self.scope)
 
             elif message["type"] == "broadcast.publish":
                 channel = message["channel"]
-                body = message["body"]
-                self.logger.debug(f"Publishing {body} to {channel}")
-                await self.websocket.publish(channel, body=body, scope=self.scope)
+                body = message["body"].encode()
+                await self.websocket.publish(channel, body=body)
 
             elif message["type"] == "websocket.send":
                 body = message.get("text", "").encode()
