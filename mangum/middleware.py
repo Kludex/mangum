@@ -3,7 +3,7 @@ import json
 from mangum.types import ASGIApp, Scope, Receive, Send, Message
 
 
-class WebSocketMiddleware:
+class BroadcastMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
@@ -11,6 +11,8 @@ class WebSocketMiddleware:
         assert (
             scope["type"] == "websocket"
         ), f"WebSocketMiddleware called with invalid scope type '{scope['type']}'"
+
+        print("setting subs")
         scope["subscriptions"] = []
 
         async def websocket_send(message: Message) -> None:
@@ -27,7 +29,7 @@ class WebSocketMiddleware:
                             "channel": channel,
                             "body": body,
                         }
-
+            print(f"message: {message}")
             await send(message)
 
         await self.app(scope, receive, websocket_send)

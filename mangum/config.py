@@ -47,6 +47,7 @@ class Config:
     dsn: typing.Optional[str]
     api_gateway_endpoint_url: typing.Optional[str]
     api_gateway_region_name: typing.Optional[str]
+    broadcast: bool
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = get_logger(self.log_level)

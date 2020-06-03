@@ -158,11 +158,14 @@ class WebSocketCycle:
             elif message["type"] == "broadcast.publish":
                 channel = message["channel"]
                 body = message["body"].encode()
+
+                print(body)
+                print("..?")
                 await self.websocket.publish(channel, body=body)
 
             elif message["type"] == "websocket.send":
                 body = message.get("text", "").encode()
-                await self.websocket.send_data(body)
+                await self.websocket.post_to_connection(body=body)
 
             await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 

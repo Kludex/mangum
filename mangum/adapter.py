@@ -1,18 +1,17 @@
 import asyncio
 import base64
 import typing
-import os
 import urllib.parse
 
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 from contextlib import ExitStack
 
 from mangum.types import ASGIApp
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
+from mangum.middleware import BroadcastMiddleware
 from mangum.protocols.websockets import WebSocketCycle
-from mangum.middleware import WebSocketMiddleware
 from mangum.backends import WebSocket
 from mangum.config import Config
 from mangum.exceptions import ConfigurationError
@@ -58,40 +57,53 @@ class Mangum:
     """
 
     app: ASGIApp
-    lifespan: str = "auto"
-    log_level: str = "info"
-    api_gateway_base_path: typing.Optional[str] = None
-    text_mime_types: typing.Optional[typing.List[str]] = None
-    dsn: typing.Optional[str] = None
-    api_gateway_endpoint_url: typing.Optional[str] = None
-    api_gateway_region_name: typing.Optional[str] = None
-    enable_lifespan: bool = True  # Deprecated.
+    lifespan: InitVar[str] = "auto"
+    log_level: InitVar[str] = "info"
+    api_gateway_base_path: InitVar[typing.Optional[str]] = None
+    text_mime_types: InitVar[typing.Optional[typing.List[str]]] = None
+    dsn: InitVar[typing.Optional[str]] = None
+    api_gateway_endpoint_url: InitVar[typing.Optional[str]] = None
+    api_gateway_region_name: InitVar[typing.Optional[str]] = None
+    broadcast: InitVar[bool] = False
+    enable_lifespan: InitVar[bool] = True  # Deprecated.
 
-    def __post_init__(self) -> None:
-        if not self.enable_lifespan:  # pragma: no cover
+    def __post_init__(
+        self,
+        lifespan: str,
+        log_level: str,
+        api_gateway_base_path: str,
+        text_mime_types: str,
+        dsn: str,
+        api_gateway_endpoint_url: str,
+        api_gateway_region_name: str,
+        broadcast: bool,
+        enable_lifespan: bool,
+    ) -> None:
+        if not enable_lifespan:  # pragma: no cover
             warnings.warn(
                 "The `enable_lifespan` parameter will be removed in a future release. "
                 "It is replaced by `lifespan` setting.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        if self.lifespan not in ("auto", "on", "off"):  # pragma: no cover
+        if lifespan not in ("auto", "on", "off"):  # pragma: no cover
             raise ConfigurationError(
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
-        if self.log_level not in ("critical", "error", "warning", "info", "debug"):
+        if log_level not in ("critical", "error", "warning", "info", "debug"):
             raise ConfigurationError(  # pragma: no cover
                 "Invalid argument supplied for `log_level`. "
                 "Choices are: critical|error|warning|info|debug"
             )
         self.config: Config = Config(
-            self.lifespan,
-            self.log_level,
-            self.api_gateway_base_path,
-            self.text_mime_types,
-            self.dsn,
-            self.api_gateway_endpoint_url,
-            self.api_gateway_region_name,
+            lifespan,
+            log_level,
+            api_gateway_base_path,
+            text_mime_types,
+            dsn,
+            api_gateway_endpoint_url,
+            api_gateway_region_name,
+            broadcast,
         )
 
     def __call__(self, event: dict, context: dict) -> dict:
@@ -133,9 +145,9 @@ class Mangum:
 
                 if not path:  # pragma: no cover
                     path = "/"
-                elif self.api_gateway_base_path:
-                    if path.startswith(self.api_gateway_base_path):
-                        path = path[len(self.api_gateway_base_path) :]
+                elif self.config.api_gateway_base_path:
+                    if path.startswith(self.config.api_gateway_base_path):
+                        path = path[len(self.config.api_gateway_base_path) :]
 
                 scope = {
                     "type": "http",
@@ -167,9 +179,15 @@ class Mangum:
                     text_mime_types=self.config.text_mime_types,  # type: ignore
                 )
                 response = asgi_cycle(self.app)
+
                 return response
 
-            websocket = WebSocket(self.config)
+            websocket = WebSocket(
+                self.config.dsn,
+                self.config.connection_id,
+                self.config.api_gateway_endpoint_url,
+                self.config.api_gateway_region_name,
+            )
 
             if self.config.api_gateway_event_type == "CONNECT":
                 server, headers = get_server_and_headers(event)
@@ -192,8 +210,11 @@ class Mangum:
                 loop.run_until_complete(websocket.on_connect(initial_scope))
 
             elif self.config.api_gateway_event_type == "MESSAGE":
+                if self.config.broadcast:
+                    self.app = BroadcastMiddleware(self.app)
                 asgi_cycle = WebSocketCycle(event, websocket=websocket)
-                response = asgi_cycle(WebSocketMiddleware(self.app))
+                response = asgi_cycle(self.app)
+
                 return response
 
             elif self.config.api_gateway_event_type == "DISCONNECT":
