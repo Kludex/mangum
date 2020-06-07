@@ -19,7 +19,7 @@ from mangum.exceptions import WebSocketError, ConfigurationError
 from mangum.types import Scope
 
 
-def sign(key: bytes, msg: str):
+def sign(key: bytes, msg: str) -> str:
     return hmac.new(key, msg.encode(), hashlib.sha256).digest()
 
 
@@ -41,13 +41,10 @@ def get_sigv4_headers(body: str, region_name: str) -> dict:
     string_to_sign = f"{algorithm}\n{amz_date}\n{credential_scope}\n{request_hash}"
     access_key = os.environ["AWS_ACCESS_KEY_ID"]
     secret_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-
     key_date = sign(f"AWS4{secret_key}".encode(), request_date)
-
     key_region = sign(key_date, region_name)
     key_service = sign(key_region, service)
     signing_key = sign(key_service, "aws4_request")
-
     signature = hmac.new(
         signing_key, (string_to_sign).encode(), hashlib.sha256
     ).hexdigest()
@@ -71,6 +68,7 @@ class WebSocket:
     connection_id: str
     api_gateway_endpoint_url: str
     api_gateway_region_name: str
+    broadcast: bool
 
     def __post_init__(self, dsn: str) -> None:
         if httpx is None:  # pragma: no cover
@@ -119,12 +117,17 @@ class WebSocket:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
 
-    async def load_scope(self, event: dict = None) -> typing.Optional[Scope]:
+    async def load_scope(self, request_context: dict = None) -> typing.Optional[Scope]:
         scope = await self._backend.retrieve(self.connection_id)
         if scope:
             scope = json.loads(scope)
-            if event:
-                scope["aws.events"].append(event)
+            if request_context:
+                message_events = scope["aws.events"]["message"]
+                if message_events:
+                    order_id = list(message_events.keys())[-1]
+                else:
+                    order_id = 0
+                scope["aws.events"]["message"][order_id] = request_context
             scope.update(
                 {
                     "query_string": scope["query_string"].encode(),
@@ -154,23 +157,24 @@ class WebSocket:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         await self.save_scope(initial_scope, decode=False)
 
-    async def on_message(self, event: dict) -> Scope:
+    async def on_message(self, request_context: dict) -> Scope:
         await self._backend.connect()
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
-        return await self.load_scope(event=event)
+        return await self.load_scope(request_context=request_context)
 
     async def on_disconnect(self) -> None:
         await self._backend.connect()
         self.logger.debug("Deleting scope entry for %s", self.connection_id)
 
-        scope = await self.load_scope()
-        if scope:
-            subscriptions = scope["subscriptions"]
-            if subscriptions:
-                for channel in subscriptions:
-                    await self._backend.unsubscribe(
-                        channel, connection_id=self.connection_id
-                    )
+        if self.broadcast:
+            scope = await self.load_scope()
+            if scope:
+                subscriptions = scope["aws.subscriptions"]
+                if subscriptions:
+                    for channel in subscriptions:
+                        await self._backend.unsubscribe(
+                            channel, connection_id=self.connection_id
+                        )
 
         await self._backend.delete(self.connection_id)
 
@@ -193,12 +197,12 @@ class WebSocket:
 
     async def subscribe(self, channel: str, *, scope: Scope) -> None:
         await self._backend.subscribe(channel, connection_id=self.connection_id)
-        scope["subscriptions"].append(channel)
+        scope["aws.subscriptions"].append(channel)
         await self.save_scope(scope)
 
     async def unsubscribe(self, channel: str, *, scope: Scope) -> None:
         await self._backend.unsubscribe(channel, connection_id=self.connection_id)
-        scope["subscriptions"].remove(channel)
+        scope["aws.subscriptions"].remove(channel)
         await self.save_scope(scope)
 
     async def post_to_connection(self, body: bytes) -> None:
@@ -206,6 +210,11 @@ class WebSocket:
         await self._post_to_connection(
             connection_id=self.connection_id, client=client, body=body
         )
+
+    async def delete_connection(self) -> None:
+        async with httpx.AsyncClient() as client:
+            url = f"{self.api_gateway_endpoint_url}/@connections/{self.connection_id}"
+            await client.delete(url)
 
     async def _post_to_connection(
         self,

@@ -10,7 +10,6 @@ from contextlib import ExitStack
 from mangum.types import ASGIApp
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
-from mangum.middleware import BroadcastMiddleware
 from mangum.protocols.websockets import WebSocketCycle
 from mangum.backends import WebSocket
 from mangum.config import Config
@@ -108,7 +107,6 @@ class Mangum:
 
     def __call__(self, event: dict, context: dict) -> dict:
         request_context = event["requestContext"]
-
         self.config.update(request_context)
 
         with ExitStack() as stack:
@@ -187,11 +185,12 @@ class Mangum:
                 self.config.connection_id,
                 self.config.api_gateway_endpoint_url,
                 self.config.api_gateway_region_name,
+                self.config.broadcast,
             )
 
             if self.config.api_gateway_event_type == "CONNECT":
                 server, headers = get_server_and_headers(event)
-                source_ip = event["requestContext"].get("identity", {}).get("sourceIp")
+                source_ip = request_context.get("identity", {}).get("sourceIp")
                 client = (source_ip, 0)
                 initial_scope = {
                     "type": "websocket",
@@ -204,16 +203,17 @@ class Mangum:
                     "server": server,
                     "client": client,
                     "asgi": {"version": "3.0"},
-                    "aws.events": [event],
+                    "aws.events": {"connect": event, "message": {}},
                 }
+                if self.config.broadcast:
+                    initial_scope["aws.subscriptions"] = []
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(websocket.on_connect(initial_scope))
 
             elif self.config.api_gateway_event_type == "MESSAGE":
-                if self.config.broadcast:
-                    self.app = BroadcastMiddleware(self.app)
-                asgi_cycle = WebSocketCycle(event, websocket=websocket)
-                response = asgi_cycle(self.app)
+                body = event.get("body", "")
+                asgi_cycle = WebSocketCycle(body, websocket=websocket)
+                response = asgi_cycle(self.app, request_context=request_context)
 
                 return response
 

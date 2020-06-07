@@ -23,7 +23,7 @@ class WebSocketBackend:
         """
         raise NotImplementedError()
 
-    async def save(self, connection_id: str, *, json_scope: str) -> None:
+    async def set(self, connection_id: str, *, json_scope: str) -> None:
         """
         Save the JSON scope for a connection.
         """
