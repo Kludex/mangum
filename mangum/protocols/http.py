@@ -115,14 +115,17 @@ class HTTPCycle:
             and message_type == "http.response.start"
         ):
             self.response["statusCode"] = message["status"]
-            headers = {}
-            multi_value_headers = {}
+            headers: typing.Dict[str, str] = {}
+            multi_value_headers: typing.Dict[str, typing.List[str]] = {}
             for key, value in message.get("headers", []):
                 lower_key = key.decode().lower()
                 if lower_key in multi_value_headers:
                     multi_value_headers[lower_key].append(value.decode())
                 elif lower_key in headers:
-                    multi_value_headers[lower_key] = [headers.pop(lower_key), value.decode()]
+                    multi_value_headers[lower_key] = [
+                        headers.pop(lower_key),
+                        value.decode(),
+                    ]
                 else:
                     headers[lower_key] = value.decode()
 
