@@ -682,3 +682,57 @@ def test_http_empty_header(mock_http_event) -> None:
         "headers": {"content-type": "text/plain; charset=utf-8"},
         "body": "Hello, world!",
     }
+
+
+@pytest.mark.parametrize(
+    "mock_http_event,response_headers,expected_headers,expected_multi_value_headers",
+    [
+        [
+            ["GET", None, None],
+            [[b"key1", b"value1"], [b"key2", b"value2"]],
+            {"key1": "value1", "key2": "value2"},
+            {},
+        ],
+        [
+            ["GET", None, None],
+            [[b"key1", b"value1"], [b"key1", b"value2"]],
+            {},
+            {"key1": ["value1", "value2"]},
+        ],
+        [
+            ["GET", None, None],
+            [[b"key1", b"value1"], [b"key1", b"value2"], [b"key1", b"value3"]],
+            {},
+            {"key1": ["value1", "value2", "value3"]},
+        ],
+        [["GET", None, None], [], {}, {}],
+    ],
+    indirect=["mock_http_event"],
+)
+def test_http_response_headers(
+    mock_http_event, response_headers, expected_headers, expected_multi_value_headers
+) -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]]
+                + response_headers,
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_http_event, {})
+    expected = {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "body": "Hello, world!",
+    }
+    if expected_headers:
+        expected["headers"].update(expected_headers)
+    if expected_multi_value_headers:
+        expected["multiValueHeaders"] = expected_multi_value_headers
+    assert response == expected
