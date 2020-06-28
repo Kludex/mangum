@@ -3,8 +3,8 @@
 <a href="https://pypi.org/project/mangum/">
     <img src="https://badge.fury.io/py/mangum.svg" alt="Package version">
 </a>
-<a href="https://travis-ci.org/erm/mangum">
-    <img src="https://travis-ci.org/erm/mangum.svg?branch=master" alt="Build Status">
+<a href="https://travis-ci.org/jordaneremieff/mangum">
+    <img src="https://travis-ci.org/jordaneremieff/mangum.svg?branch=master" alt="Build Status">
 </a>
 <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
 
