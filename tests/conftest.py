@@ -116,7 +116,3 @@ def mock_http_api_event(request):
     }
 
     return event
-
-
-def pytest_generate_tests(metafunc):
-    os.environ["AWS_REGION"] = "ap-southeast-1"
