@@ -7,9 +7,6 @@ python:
   - "3.7"
   - "3.8"
 
-before_install:
-  - export BOTO_CONFIG=/dev/null
-
 install:
     - pip install -U -r requirements.txt
 

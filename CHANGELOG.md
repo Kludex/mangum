@@ -1,35 +1,39 @@
+## 0.10.0 (future release)
+
+* Remove WebSocket support to focus on HTTP. [#127](https://github.com/jordaneremieff/mangum/issues/127)
+
+* Support multiValue headers in response. [#129](https://github.com/jordaneremieff/mangum/pull/129). Thanks [@koxudaxi](https://github.com/koxudaxi)!
+
 ## 0.9.2
 
-* Make boto3 dependency optional [#115](https://github.com/erm/mangum/pull/115)
+* Make boto3 dependency optional [#115](https://github.com/jordaneremieff/mangum/pull/115)
 
 ## 0.9.1
 
-* Refactor lifespan class to be more consistent with other cycle classes and to be more compliant with ASGI spec
+* Improve documentation, include CHANGELOG in repo, and include release notes in documentation [#111](https://github.com/jordaneremieff/mangum/pull/111)
 
-* Bugfix lifespan startup behaviour, allow lifespan cycle to be used as a context manager in the adapter [#107](https://github.com/erm/mangum/issues/107)
-
-* Deprecate `enable_lifespan` parameter to be replaced by new `lifespan` option
-
-* Include CHANGELOG in repo and release notes in documentation [#110](https://github.com/erm/mangum/issues/110)
-
-* Update protocol classes generally with  docstrings/comments/better state transitions/more compliant with ASGI spec
-
-* Overhaul documentation structure and content
+* Bugfix lifespan startup behaviour and refactor lifespan cycle, deprecate `enable_lifespan` parameter, document protocols. [#108](https://github.com/jordaneremieff/mangum/pull/108)
 
 ## 0.9.0
 
-* Improve documentation [#48](https://github.com/erm/mangum/issues/48)
+* Improve documentation [#48](https://github.com/jordaneremieff/mangum/issues/48)
 
-* Resolve issue with `rawQueryString` in HTTP APIs using wrong type [#105](https://github.com/erm/mangum/issues/105)
+* Resolve issue with `rawQueryString` in HTTP APIs using wrong type [#105](https://github.com/jordaneremieff/mangum/issues/105)
 
-* Implement new WebSocket storage backends for managing connections (PostgreSQL, Redis, DyanmoDB, S3, SQlite) using a single `dsn` configuration parameter [#100](https://github.com/erm/mangum/issues/100)
+* Implement new WebSocket storage backends for managing connections (PostgreSQL, Redis, DyanmoDB, S3, SQlite) using a single `dsn` configuration parameter [#103](https://github.com/jordaneremieff/mangum/pull/103)
 
-## 0.9.0b1 (pre-release)
+## pre-0.9.0
 
-* Refactor ASGI lifespan handlers and automatically detect if lifespan is supported by an application [#62](https://github.com/erm/mangum/issues/62)
+I did not maintain a CHANGELOG prior to 0.9.0, however, I still would like to include a thank you to following people:
 
-* Decouple WebSocket support from DyanmoDB to allow alternative WebSocket storage backends [#52](https://github.com/erm/mangum/issues/52)
+[@lsorber](https://github.com/lsorber)
+[@SKalt](https://github.com/SKalt)
+[@koxudaxi](https://github.com/koxudaxi)
+[@zachmullen](https://github.com/zachmullen)
+[@remorses](https://github.com/remorses)
+[@allan-simon](https://github.com/allan-simon)
+[@jaehyeon-kim](https://github.com/jaehyeon-kim)
 
-* Implement new WebSocket storage backends for managing connections (PostgreSQL, Redis, DyanmoDB, S3, SQlite)
+Your contributions to previous releases have greatly improved this project and are very much appreciated.
 
-* Improving logging throughout the various classes
+Special thanks to [@tomchristie](https://github.com/tomchristie) for all of his support, encouragement, and guidance early on, and [@rajeev](https://github.com/rajeev) for inspiring this project.

@@ -8,6 +8,6 @@ fi
 
 set -x # print executed commands to the terminal
 
-mypy ./mangum
+#mypy ./mangum
 PYTHONPATH=. ${PREFIX}pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=100 --cov-report=term-missing "${@}"
 black --check ./

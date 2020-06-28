@@ -35,17 +35,17 @@ class Application(Protocol):
 
 ### Limitations
 
-An application or framework may implement behaviour that is incompatible with the [limitations](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) of AWS Lambda, and there may be additional configuration required depending on a particular deployment circumstance. In some cases it is possible to work around these limitations, such as how Mangum implements WebSocket [backends](https://mangum.io/websockets/#backends) to persist connection details across instances, but these kinds of limitations should generally be dealt with outside of Mangum itself.
+An application or framework may implement behaviour that is incompatible with the [limitations](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) of AWS Lambda, and there may be additional configuration required depending on a particular deployment circumstance. In some cases it is possible to work around these limitations, but these kinds of limitations should generally be dealt with outside of Mangum itself.
 
 ## Frameworks
 
-The examples on this page attempt to demonstrate the most basic implementation of a particular framework (usually from official documentation) to highlight the interaction with Mangum. Specific deployment tooling, infrastructure, external dependencies, etc. are not taken into account.
+The examples on this page attempt to demonstrate a basic implementation of a particular framework (usually from official documentation) to highlight the interaction with Mangum. Specific deployment tooling, infrastructure, external dependencies, etc. are not taken into account.
 
 ### Starlette
 
 [Starlette](https://www.starlette.io/) is a lightweight ASGI framework/toolkit, which is ideal for building high performance asyncio services.
 
-Mangum uses it as a toolkit in tests and as an application framework in the [example](https://github.com/erm/mangum-example) project. It is developed by [Encode](https://github.com/encode), a wonderful community and collection of projects that is building the foundations of the Python async web ecosystem.
+Mangum uses it as a toolkit in tests. It is developed by [Encode](https://github.com/encode), a wonderful community and collection of projects that are forming the foundations of the Python async web ecosystem.
 
 Define an application:
 
