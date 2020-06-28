@@ -6,15 +6,8 @@ black
 starlette
 quart; python_version == '3.7'
 dataclasses; python_version < '3.7'
-boto3
-botocore
 moto
 mypy
-psycopg2
-redis
-testing.postgresql
-testing.redis
-sqlalchemy
 
 # Docs
 mkdocs
