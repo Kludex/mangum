@@ -1,6 +1,6 @@
 # Adapter
 
-The heart of Mangum is the adapter class. It is a configurable wrapper that allows any [ASGI](https://asgi.readthedocs.io/en/latest/) application (or framework) to run in an [AWS Lambda](https://aws.amazon.com/lambda/) deployment. The adapter accepts a number of keyword arguments to configure settings related to logging, HTTP & WebSocket events, lifespan behaviour, and API Gateway.
+The heart of Mangum is the adapter class. It is a configurable wrapper that allows any [ASGI](https://asgi.readthedocs.io/en/latest/) application (or framework) to run in an [AWS Lambda](https://aws.amazon.com/lambda/) deployment. The adapter accepts a number of keyword arguments to configure settings related to logging, HTTP & lifespan behaviour, and API Gateway events.
 
 ```python
 handler = Mangum(

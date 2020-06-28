@@ -14,9 +14,7 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 ## Features
 
-- API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
-
-- Multiple storage backend interfaces for managing WebSocket connections.
+- API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs.
 
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
@@ -55,23 +53,23 @@ async def app(scope, receive, send):
 handler = Mangum(app)
 ```
 
-or using a framework:
+Or using a framework.
 
 ```python
+from fastapi import FastAPI
 from mangum import Mangum
-from starlette.applications import Starlette
-from starlette.responses import PlainTextResponse
-from starlette.routing import Route
+
+app = FastAPI()
 
 
-async def homepage(request):
-    response = PlainTextResponse("Hello, world!")
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
 
-    return response
 
-
-app = Starlette(debug=True, routes=[Route("/", homepage)])
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: str = None):
+    return {"item_id": item_id, "q": q}
 
 handler = Mangum(app)
 ```
-
