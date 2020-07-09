@@ -84,7 +84,7 @@ def test_lifespan(mock_http_event, lifespan) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
 
@@ -119,7 +119,7 @@ def test_lifespan_unsupported(mock_http_event, lifespan) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
 
@@ -155,7 +155,7 @@ def test_lifespan_error(mock_http_event, lifespan, caplog) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
 
@@ -255,9 +255,9 @@ def test_starlette_lifespan(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {
-            "content-length": "13",
-            "content-type": "text/plain; charset=utf-8",
+        "multiValueHeaders": {
+            "content-length": ["13"],
+            "content-type": ["text/plain; charset=utf-8"],
         },
         "body": "Hello, world!",
     }
@@ -299,6 +299,6 @@ def test_quart_lifespan(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-length": "12", "content-type": "text/html; charset=utf-8"},
+        "multiValueHeaders": {"content-length": ["12"], "content-type": ["text/html; charset=utf-8"]},
         "body": "hello world!",
     }

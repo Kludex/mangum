@@ -42,6 +42,8 @@ def get_logger(log_level: str) -> logging.Logger:
     return logger
 
 
+D = typing.TypeVar('D')
+
 @dataclass
 class Mangum:
     """
@@ -93,8 +95,19 @@ class Mangum:
 
         self.logger: logging.Logger = get_logger(self.log_level)
 
+    @staticmethod
+    def get_header(headers: typing.Dict[str, typing.List[str]], key: str, default:D=None) -> typing.Union[str, D]:
+        values = headers.get(key, [])
+        return (
+            values[0]
+            if len(values) > 0
+            else default
+        )
+
     def __call__(self, event: dict, context: dict) -> dict:
         self.logger.debug("Event received.")
+
+        use_multi_value_headers = False
 
         with ExitStack() as stack:
             if self.lifespan != "off":
@@ -111,9 +124,13 @@ class Mangum:
                 query_string = event.get("rawQueryString", "").encode()
             else:
                 source_ip = request_context.get("identity", {}).get("sourceIp")
-                multi_value_query_string_params = event[
-                    "multiValueQueryStringParameters"
-                ]
+                multi_value_query_string_params = {}
+                if event.get("multiValueQueryStringParameters"):
+                    use_multi_value_headers = True
+                    multi_value_query_string_params = event.get("multiValueQueryStringParameters")
+                elif event.get("queryStringParameters"):
+                    multi_value_query_string_params = {k:[v] for k, v in event.get("queryStringParameters").items()}
+
                 query_string = (
                     urllib.parse.urlencode(
                         multi_value_query_string_params, doseq=True
@@ -124,15 +141,16 @@ class Mangum:
                 path = event["path"]
                 http_method = event["httpMethod"]
 
-            headers = (
-                {k.lower(): v for k, v in event.get("headers").items()}
-                if event.get("headers")
-                else {}
-            )
+            headers: typing.Dict[str, typing.List[str]] = {}
+            if event.get("headers"):
+                headers.update({k.lower(): [v] for k, v in event["headers"].items()})
+            if event.get("multiValueHeaders"):
+                use_multi_value_headers = True
+                headers.update({k.lower(): vv for k, vv in event["multiValueHeaders"].items()})
 
-            server_name = headers.get("host", "mangum")
+            server_name = self.get_header(headers, "host", default="mangum")
             if ":" not in server_name:
-                server_port = headers.get("x-forwarded-port", 80)
+                server_port = self.get_header(headers, "x-forwarded-port", default="80")
             else:
                 server_name, server_port = server_name.split(":")  # pragma: no cover
             server = (server_name, int(server_port))
@@ -148,11 +166,15 @@ class Mangum:
                 "type": "http",
                 "http_version": "1.1",
                 "method": http_method,
-                "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
+                "headers": [
+                    [k.encode(), v.encode()]
+                    for k, vv in headers.items()
+                    for v in vv
+                ],
                 "path": urllib.parse.unquote(path),
                 "raw_path": None,
                 "root_path": "",
-                "scheme": headers.get("x-forwarded-proto", "https"),
+                "scheme": self.get_header(headers, "x-forwarded-proto", default="https"),
                 "query_string": query_string,
                 "server": server,
                 "client": client,
@@ -168,8 +190,9 @@ class Mangum:
             elif not isinstance(body, bytes):
                 body = body.encode()
 
+
             asgi_cycle = HTTPCycle(
-                scope, body=body, text_mime_types=self.text_mime_types
+                scope, body=body, text_mime_types=self.text_mime_types, use_multi_value_headers=use_multi_value_headers
             )
             response = asgi_cycle(self.app)
 

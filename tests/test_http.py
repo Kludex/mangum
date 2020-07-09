@@ -164,6 +164,22 @@ def test_http_response(mock_http_event) -> None:
                     "X-Forwarded-Port": "443",
                     "X-Forwarded-Proto": "https",
                 },
+                "multiValueHeaders": {
+                    "Accept": ["text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"],
+                    "Accept-Encoding": ["gzip, deflate, lzma, sdch, " "br"],
+                    "Accept-Language": ["en-US,en;q=0.8"],
+                    "CloudFront-Forwarded-Proto": ["https"],
+                    "CloudFront-Is-Desktop-Viewer": ["true"],
+                    "CloudFront-Is-Mobile-Viewer": ["false"],
+                    "CloudFront-Is-SmartTV-Viewer": ["false"],
+                    "CloudFront-Is-Tablet-Viewer": ["false"],
+                    "CloudFront-Viewer-Country": ["US"],
+                    "Host": ["test.execute-api.us-west-2.amazonaws.com"],
+                    "Upgrade-Insecure-Requests": ["1"],
+                    "X-Forwarded-For": ["192.168.100.1, 192.168.1.1"],
+                    "X-Forwarded-Port": ["443"],
+                    "X-Forwarded-Proto": ["https"],
+                },
                 "httpMethod": "GET",
                 "path": "/test/hello",
                 "pathParameters": {"proxy": "hello"},
@@ -248,7 +264,7 @@ def test_http_response(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
 
@@ -283,7 +299,7 @@ def test_http_response_with_body(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "456123",
     }
 
@@ -320,7 +336,7 @@ def test_http_binary_request_with_body(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "123",
     }
 
@@ -357,7 +373,7 @@ def test_http_binary_request_and_response(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": True,
-        "headers": {"content-type": "application/octet-stream"},
+        "multiValueHeaders": {"content-type": ["application/octet-stream"]},
         "body": base64.b64encode(b"abc").decode(),
     }
 
@@ -374,7 +390,7 @@ def test_http_exception(mock_http_event) -> None:
 
     assert response == {
         "body": "Internal Server Error",
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
@@ -399,7 +415,7 @@ def test_http_exception_handler(mock_http_event) -> None:
 
     assert response == {
         "body": "Error!",
-        "headers": {"content-length": "6", "content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-length": ["6"], "content-type": ["text/plain; charset=utf-8"]},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
@@ -415,7 +431,7 @@ def test_http_cycle_state(mock_http_event) -> None:
     response = handler(mock_http_event, {})
     assert response == {
         "body": "Internal Server Error",
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
@@ -430,7 +446,7 @@ def test_http_cycle_state(mock_http_event) -> None:
     response = handler(mock_http_event, {})
     assert response == {
         "body": "Internal Server Error",
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
@@ -449,7 +465,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
 
     assert response == {
         "body": "Hello world!",
-        "headers": {},
+        "multiValueHeaders": {},
         "isBase64Encoded": False,
         "statusCode": 200,
     }
@@ -467,7 +483,7 @@ def test_http_api_gateway_base_path(mock_http_event) -> None:
     response = handler(mock_http_event, {})
     assert response == {
         "body": "Hello world!",
-        "headers": {},
+        "multiValueHeaders": {},
         "isBase64Encoded": False,
         "statusCode": 200,
     }
@@ -494,7 +510,7 @@ def test_http_text_mime_types(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
 
@@ -519,11 +535,11 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
     response = handler(mock_http_event, {})
 
     assert response["isBase64Encoded"]
-    assert response["headers"] == {
-        "content-encoding": "gzip",
-        "content-type": "application/json",
-        "content-length": "35",
-        "vary": "Accept-Encoding",
+    assert response["multiValueHeaders"] == {
+        "content-encoding": ["gzip"],
+        "content-type": ["application/json"],
+        "content-length": ["35"],
+        "vary": ["Accept-Encoding"],
     }
     assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
 
@@ -653,7 +669,7 @@ def test_http_response_headers(mock_http_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"x-header-1": "123", "x-header-2": "456"},
+        "multiValueHeaders": {"x-header-1": ["123"], "x-header-2": ["456"]},
         "body": "Hello, world!",
     }
 
@@ -674,6 +690,7 @@ def test_http_empty_header(mock_http_event) -> None:
     handler = Mangum(app, lifespan="off")
 
     mock_http_event["headers"] = None
+    mock_http_event["multiValueHeaders"] = None
 
     response = handler(mock_http_event, {})
     assert response == {
@@ -690,8 +707,8 @@ def test_http_empty_header(mock_http_event) -> None:
         [
             ["GET", None, None],
             [[b"key1", b"value1"], [b"key2", b"value2"]],
-            {"key1": "value1", "key2": "value2"},
             {},
+            {"key1": ["value1"], "key2": ["value2"]}
         ],
         [
             ["GET", None, None],
@@ -709,7 +726,7 @@ def test_http_empty_header(mock_http_event) -> None:
     ],
     indirect=["mock_http_event"],
 )
-def test_http_response_headers(
+def test_http_response_headers_apigw(
     mock_http_event, response_headers, expected_headers, expected_multi_value_headers
 ) -> None:
     async def app(scope, receive, send):
@@ -728,11 +745,62 @@ def test_http_response_headers(
     expected = {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
         "body": "Hello, world!",
     }
     if expected_headers:
         expected["headers"].update(expected_headers)
     if expected_multi_value_headers:
-        expected["multiValueHeaders"] = expected_multi_value_headers
+        expected["multiValueHeaders"].update(expected_multi_value_headers)
+    assert response == expected
+
+@pytest.mark.parametrize(
+    "mock_alb_event,expected_response_partial",
+    [
+        [
+            ["GET", True],
+            {
+                "multiValueHeaders": {
+                    "content-type": ["text/plain; charset=utf-8"],
+                    "set-cookie": ["name=value", "name2=value2"]
+                }
+            }
+        ],
+        [
+            ["GET", False],
+            {
+                "headers": {
+                    "content-type": "text/plain; charset=utf-8",
+                    "set-cookie": "name=value"
+                }
+            }
+        ]
+    ],
+    indirect=["mock_alb_event"]
+)
+def test_http_response_headers_alb(
+    mock_alb_event, expected_response_partial
+) -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"name=value"],
+                    [b"set-cookie", b"name2=value2"]
+                ]
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_alb_event, {})
+    expected = {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": "Hello, world!",
+        **expected_response_partial
+    }
     assert response == expected

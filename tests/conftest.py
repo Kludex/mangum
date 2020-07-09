@@ -1,15 +1,13 @@
 import pytest
-
+import typing
+from collections import defaultdict
 
 @pytest.fixture
 def mock_http_event(request):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
-    event = {
-        "path": "/test/hello",
-        "body": body,
-        "headers": {
+    headers = {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
             "Accept-Language": "en-US,en;q=0.8",
@@ -24,7 +22,12 @@ def mock_http_event(request):
             "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
             "X-Forwarded-Port": "443",
             "X-Forwarded-Proto": "https",
-        },
+    }
+    event = {
+        "path": "/test/hello",
+        "body": body,
+        "headers": headers,
+        "multiValueHeaders": {h: [v] for h, v in headers.items()}, # API GW docs suggest these are always present.
         "pathParameters": {"proxy": "hello"},
         "requestContext": {
             "accountId": "123456789012",
@@ -113,5 +116,46 @@ def mock_http_api_event(request):
         "isBase64Encoded": False,
         "stageVariables": {"stageVariable1": "value1", "stageVariable2": "value2"},
     }
+
+    return event
+
+@pytest.fixture
+def mock_alb_event(request):
+    method = request.param[0]
+    use_multi_value_headers = request.param[1]
+
+    mvHeaders = {
+        'accept': ['text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'],
+        'accept-encoding': ['gzip'],
+        'accept-language': ['en-US,en;q=0.5'],
+        'connection': ['keep-alive'],
+        'cookie': ['name=value'],
+        'host': ['lambda-YYYYYYYY.elb.amazonaws.com'],
+        'upgrade-insecure-requests': ['1'],
+        'user-agent': ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:60.0) Gecko/20100101 Firefox/60.0'],
+        'x-amzn-trace-id': ['Root=1-5bdb40ca-556d8b0c50dc66f0511bf520'],
+        'x-forwarded-for': ['192.0.2.1'],
+        'x-forwarded-port': ['80'],
+        'x-forwarded-proto': ['http']
+    }
+
+    event = {
+        'requestContext': {
+            'elb': {
+                'targetGroupArn': 'arn:aws:elasticloadbalancing:us-east-1:XXXXXXXXXXX:targetgroup/sample/6d0ecf831eec9f09'
+            }
+        },
+        'httpMethod': method,
+        'path': '/',
+        'body': '',
+        'isBase64Encoded': False
+    }
+
+    if use_multi_value_headers:
+        event["multiValueHeaders"] = mvHeaders
+        event["multiValueQueryStringParameters"] = {}
+    else:
+        event["headers"] = {h: vv[0] for h, vv in mvHeaders.items()}
+        event["queryStringParameters"] = {}
 
     return event

@@ -4,6 +4,7 @@ import asyncio
 import typing
 import cgi
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
@@ -50,6 +51,7 @@ class HTTPCycle:
     scope: Scope
     body: bytes
     text_mime_types: typing.List[str]
+    use_multi_value_headers: bool = True
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: dict = field(default_factory=dict)
 
@@ -70,6 +72,15 @@ class HTTPCycle:
         self.loop.run_until_complete(asgi_task)
 
         return self.response
+
+    def get_header(self, key: str, default=None) -> typing.Optional[str]:
+        headers = self.response.get("multiValueHeaders", {})
+        values = headers.get(key, [])
+        return (
+            values[0]
+            if len(values) > 0
+            else default
+        )
 
     async def run(self, app: ASGIApp) -> None:
         """
@@ -93,7 +104,7 @@ class HTTPCycle:
             elif self.state is not HTTPCycleState.COMPLETE:
                 self.response["statusCode"] = 500
                 self.response["body"] = "Internal Server Error"
-                self.response["headers"] = {"content-type": "text/plain; charset=utf-8"}
+                self.response["multiValueHeaders"] = {"content-type": ["text/plain; charset=utf-8"]}
 
     async def receive(self) -> Message:
         """
@@ -115,23 +126,11 @@ class HTTPCycle:
             and message_type == "http.response.start"
         ):
             self.response["statusCode"] = message["status"]
-            headers: typing.Dict[str, str] = {}
-            multi_value_headers: typing.Dict[str, typing.List[str]] = {}
-            for key, value in message.get("headers", []):
-                lower_key = key.decode().lower()
-                if lower_key in multi_value_headers:
-                    multi_value_headers[lower_key].append(value.decode())
-                elif lower_key in headers:
-                    multi_value_headers[lower_key] = [
-                        headers.pop(lower_key),
-                        value.decode(),
-                    ]
-                else:
-                    headers[lower_key] = value.decode()
-
-            self.response["headers"] = headers
-            if multi_value_headers:
-                self.response["multiValueHeaders"] = multi_value_headers
+            message_headers = message.get("headers", [])
+            multi_value_headers: typing.DefaultDict[str, typing.List[str]] = defaultdict(list)
+            for key, value in message_headers:
+                multi_value_headers[key.decode().lower()].append(value.decode())
+            self.response["multiValueHeaders"] = dict(multi_value_headers)
             self.state = HTTPCycleState.RESPONSE
 
         elif (
@@ -150,16 +149,25 @@ class HTTPCycle:
                 # Check if a binary response should be returned based on the mime type
                 # or content encoding.
                 mimetype, _ = cgi.parse_header(
-                    self.response["headers"].get("content-type", "text/plain")
+                    self.get_header("content-type", default="text/plain")
                 )
                 if (
                     mimetype not in self.text_mime_types
                     and not mimetype.startswith("text/")
-                ) or self.response["headers"].get("content-encoding") == "gzip":
+                ) or self.get_header("content-encoding") == "gzip":
                     body = base64.b64encode(body)
                     self.response["isBase64Encoded"] = True
 
                 self.response["body"] = body.decode()
+
+                if self.use_multi_value_headers == False:
+                    self.response["headers"] = {
+                        k: vv[0]
+                        for k, vv in self.response["multiValueHeaders"].items()
+                        if len(vv) > 0
+                    }
+                    del self.response["multiValueHeaders"]
+
                 self.state = HTTPCycleState.COMPLETE
                 await self.app_queue.put({"type": "http.disconnect"})
 
