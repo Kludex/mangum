@@ -634,32 +634,6 @@ def test_api_request(mock_http_api_event) -> None:
 
 
 @pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_response_headers(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"x-header-1", b"123"], [b"x-header-2", b"456"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app, lifespan="off")
-
-    mock_http_event["headers"] = None
-
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"x-header-1": "123", "x-header-2": "456"},
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
 def test_http_empty_header(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
