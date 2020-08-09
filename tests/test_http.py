@@ -1,12 +1,13 @@
 import base64
-import urllib.parse
-import json
 import gzip
+import json
+import urllib.parse
 
 import pytest
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
+
 from mangum import Mangum
 
 
@@ -115,7 +116,7 @@ def test_http_request(mock_http_event, query_string) -> None:
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 80),
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
             "type": "http",
         }
         await send(
@@ -545,7 +546,7 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
     ],
     indirect=["mock_http_api_event"],
 )
-def test_http_request(mock_http_api_event) -> None:
+def test_api_request(mock_http_api_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
@@ -628,32 +629,6 @@ def test_http_request(mock_http_api_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_response_headers(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"x-header-1", b"123"], [b"x-header-2", b"456"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app, lifespan="off")
-
-    mock_http_event["headers"] = None
-
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"x-header-1": "123", "x-header-2": "456"},
         "body": "Hello, world!",
     }
 
