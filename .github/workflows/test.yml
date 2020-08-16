@@ -26,6 +26,6 @@ jobs:
         pip install -U -r requirements.txt
     - name: Run tests
       run: |
-        pytestscripts/test
+        scripts/test
     - name: Run codecov
       run: codecov
