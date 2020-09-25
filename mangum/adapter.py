@@ -84,7 +84,7 @@ class Mangum:
                 "Invalid argument supplied for `log_level`. "
                 "Choices are: critical|error|warning|info|debug"
             )
-        if self.api_gateway_base_path:
+        if self.api_gateway_base_path and not self.api_gateway_base_path.startswith("/"):
             self.api_gateway_base_path = f"/{self.api_gateway_base_path}"
         if self.text_mime_types:
             self.text_mime_types = self.text_mime_types + DEFAULT_TEXT_MIME_TYPES
