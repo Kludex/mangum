@@ -155,7 +155,7 @@ class HTTPCycle:
                 if (
                     mimetype not in self.text_mime_types
                     and not mimetype.startswith("text/")
-                ) or self.response["headers"].get("content-encoding") == "gzip":
+                ) or self.response["headers"].get("content-encoding") in ["gzip", "br"]:
                     body = base64.b64encode(body)
                     self.response["isBase64Encoded"] = True
 
