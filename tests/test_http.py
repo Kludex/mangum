@@ -713,6 +713,7 @@ def test_http_response_headers(
         expected["multiValueHeaders"] = expected_multi_value_headers
     assert response == expected
 
+
 @pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
 def test_http_binary_br_response(mock_http_event) -> None:
     body = json.dumps({"abc": "defg"})
