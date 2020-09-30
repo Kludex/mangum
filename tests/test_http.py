@@ -4,10 +4,11 @@ import json
 import urllib.parse
 
 import pytest
+import brotli
+from brotli_asgi import BrotliMiddleware
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
-
 from mangum import Mangum
 
 
@@ -711,3 +712,32 @@ def test_http_response_headers(
     if expected_multi_value_headers:
         expected["multiValueHeaders"] = expected_multi_value_headers
     assert response == expected
+
+
+@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
+def test_http_binary_br_response(mock_http_event) -> None:
+    body = json.dumps({"abc": "defg"})
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"application/json"]],
+            }
+        )
+
+        await send({"type": "http.response.body", "body": body.encode()})
+
+    handler = Mangum(BrotliMiddleware(app, minimum_size=1), lifespan="off")
+    response = handler(mock_http_event, {})
+
+    assert response["isBase64Encoded"]
+    assert response["headers"] == {
+        "content-encoding": "br",
+        "content-type": "application/json",
+        "content-length": "19",
+        "vary": "Accept-Encoding",
+    }
+    assert response["body"] == base64.b64encode(brotli.compress(body.encode())).decode()
