@@ -1,8 +1,16 @@
-## 0.10.0 (future release)
+## 0.10.0 
 
-* Remove WebSocket support to focus on HTTP. [#127](https://github.com/jordaneremieff/mangum/issues/127)
+* Remove WebSocket support to focus on HTTP [#127](https://github.com/jordaneremieff/mangum/issues/127).
 
-* Support multiValue headers in response. [#129](https://github.com/jordaneremieff/mangum/pull/129). Thanks [@koxudaxi](https://github.com/koxudaxi)!
+* Support multiValue headers in response [#129](https://github.com/jordaneremieff/mangum/pull/129). Thanks [@koxudaxi](https://github.com/koxudaxi)!
+
+* Fix duplicate test names [#134](https://github.com/jordaneremieff/mangum/pull/134). Thanks [@a-feld](https://github.com/a-feld)!
+
+* Run tests and release package using GitHub Actions [#131](https://github.com/jordaneremieff/mangum/issues/131). Thanks [@simonw](https://github.com/simonw)!
+
+* Only prefix a slash on the api_gateway_base_path if needed [#138](https://github.com/jordaneremieff/mangum/pull/138). Thanks [@dspatoulas](https://github.com/dspatoulas)!
+
+* Add support to Brotli compress [#139](https://github.com/jordaneremieff/mangum/issues/139). Thanks [@fullonic](https://github.com/fullonic)!
 
 ## 0.9.2
 
