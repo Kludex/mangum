@@ -8,8 +8,8 @@ theme:
       primary: 'brown'
       accent: 'orange'
 
-repo_name: erm/mangum
-repo_url: https://github.com/erm/mangum
+repo_name: jordaneremieff/mangum
+repo_url: https://github.com/jordaneremieff/mangum
 edit_uri: ""
 
 nav:
