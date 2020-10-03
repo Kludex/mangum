@@ -35,9 +35,9 @@ The following types are excluded from binary responses by default:
 
 Additionally, any `Content-Type` header prefixed with `text/` is automatically excluded.
 
-### GZip
+### Compression
 
-If the `Content-Encoding` header is set to `gzip`, then a binary response will be returned regardless of MIME type.
+If the `Content-Encoding` header is set to `gzip` or `br`, then a binary response will be returned regardless of MIME type.
 
 ## State machine
 
