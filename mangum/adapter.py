@@ -28,23 +28,6 @@ LOG_LEVELS = {
 }
 
 
-def get_logger(log_level: str) -> logging.Logger:
-    """
-    Create the default logger according to log level setting of the adapter instance.
-    """
-    level = {
-        "critical": logging.CRITICAL,
-        "error": logging.ERROR,
-        "warning": logging.WARNING,
-        "info": logging.INFO,
-        "debug": logging.DEBUG,
-    }[log_level]
-    logger = logging.getLogger("mangum")
-    logger.setLevel(level)
-
-    return logger
-
-
 @dataclass
 class Mangum:
     """
@@ -56,7 +39,7 @@ class Mangum:
     and `off`. Default is `auto`.
     * **log_level** - A string to configure the log level. Choices are: `info`,
     `critical`, `error`, `warning`, and `debug`. Default is `info`.
-    * **api_gateway_base_path** - Base path to strip from URL when using a custom
+    * **** - Base path to strip from URL when using a custom
     domain name.
     * **text_mime_types** - A list of MIME types to include with the defaults that
     should not return a binary response in API Gateway.
@@ -69,19 +52,19 @@ class Mangum:
     text_mime_types: InitVar[typing.Optional[typing.List[str]]] = None
 
     def __post_init__(self, text_mime_types: typing.Optional[typing.List[str]]) -> None:
-        if self.lifespan not in ("auto", "on", "off"):  # pragma: no cover
+        if self.lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
 
         if self.log_level not in ("critical", "error", "warning", "info", "debug"):
-            raise ConfigurationError(  # pragma: no cover
+            raise ConfigurationError(
                 "Invalid argument supplied for `log_level`. "
                 "Choices are: critical|error|warning|info|debug"
             )
 
-        logger = logging.getLogger("mangum")
-        logger.setLevel(LOG_LEVELS[self.log_level])
+        self.logger = logging.getLogger("mangum")
+        self.logger.setLevel(LOG_LEVELS[self.log_level])
 
         should_prefix_base_path = (
             self.api_gateway_base_path
@@ -94,10 +77,7 @@ class Mangum:
             text_mime_types += DEFAULT_TEXT_MIME_TYPES
         else:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
-
         self.text_mime_types = text_mime_types
-
-        self.logger: logging.Logger = get_logger(self.log_level)
 
     def __call__(self, event: dict, context: dict) -> dict:
         self.logger.debug("Event received.")

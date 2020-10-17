@@ -38,7 +38,6 @@ class HTTPCycle:
 
     * **scope** - A dictionary containing the connection scope used to run the ASGI
     application instance.
-    * **body** -  A byte string containing the body content of the request.
     * **text_mime_types** - A list of mime types of MIME types that should not return
     a binary response in API Gateway.
     * **state** - An enumerated `HTTPCycleState` type that indicates the state of the
@@ -143,10 +142,8 @@ class HTTPCycle:
 
             # The body must be completely read before returning the response.
             self.body.write(body)
-            # self.body += body
 
             if not more_body:
-                # body = self.body.getvalue()
                 body = self.body.getvalue()
                 self.body.close()
 

@@ -61,7 +61,7 @@ class LifespanCycle:
     exception: typing.Optional[BaseException] = None
 
     def __post_init__(self) -> None:
-        self.logger: logging.Logger = logging.getLogger("mangum.lifespan")
+        self.logger = logging.getLogger("mangum.lifespan")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
