@@ -1,3 +1,9 @@
+## 0.10.1 (Future release)
+
+* Added CONTRIBUTING.md to outline contribution guidelines.
+
+* Remove deprecated `enable_lifespan` parameter [109](https://github.com/jordaneremieff/mangum/issues/109)
+
 ## 0.10.0 
 
 * Remove WebSocket support to focus on HTTP [#127](https://github.com/jordaneremieff/mangum/issues/127).

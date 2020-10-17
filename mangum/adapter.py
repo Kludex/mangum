@@ -3,8 +3,6 @@ import typing
 import logging
 import urllib.parse
 
-
-import warnings
 from dataclasses import dataclass, InitVar
 from contextlib import ExitStack
 
@@ -21,6 +19,14 @@ DEFAULT_TEXT_MIME_TYPES = [
     "application/vnd.api+json",
 ]
 
+LOG_LEVELS = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+}
+
 
 def get_logger(log_level: str) -> logging.Logger:
     """
@@ -33,9 +39,6 @@ def get_logger(log_level: str) -> logging.Logger:
         "info": logging.INFO,
         "debug": logging.DEBUG,
     }[log_level]
-    logging.basicConfig(
-        format="[%(asctime)s] %(message)s", level=level, datefmt="%d-%b-%y %H:%M:%S"
-    )
     logger = logging.getLogger("mangum")
     logger.setLevel(level)
 
@@ -63,17 +66,9 @@ class Mangum:
     lifespan: str = "auto"
     log_level: str = "info"
     api_gateway_base_path: typing.Optional[str] = None
-    text_mime_types: typing.Optional[typing.List[str]] = None
-    enable_lifespan: InitVar[bool] = True  # Deprecated.
+    text_mime_types: InitVar[typing.Optional[typing.List[str]]] = None
 
-    def __post_init__(self, enable_lifespan: bool) -> None:
-        if not enable_lifespan:  # pragma: no cover
-            warnings.warn(
-                "The `enable_lifespan` parameter will be removed in a future release. "
-                "It is replaced by `lifespan` setting.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+    def __post_init__(self, text_mime_types: typing.Optional[typing.List[str]]) -> None:
         if self.lifespan not in ("auto", "on", "off"):  # pragma: no cover
             raise ConfigurationError(
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
@@ -84,16 +79,23 @@ class Mangum:
                 "Invalid argument supplied for `log_level`. "
                 "Choices are: critical|error|warning|info|debug"
             )
+
+        logger = logging.getLogger("mangum")
+        logger.setLevel(LOG_LEVELS[self.log_level])
+
         should_prefix_base_path = (
             self.api_gateway_base_path
             and not self.api_gateway_base_path.startswith("/")
         )
         if should_prefix_base_path:
             self.api_gateway_base_path = f"/{self.api_gateway_base_path}"
-        if self.text_mime_types:
-            self.text_mime_types = self.text_mime_types + DEFAULT_TEXT_MIME_TYPES
+
+        if text_mime_types:
+            text_mime_types += DEFAULT_TEXT_MIME_TYPES
         else:
-            self.text_mime_types = DEFAULT_TEXT_MIME_TYPES
+            text_mime_types = DEFAULT_TEXT_MIME_TYPES
+
+        self.text_mime_types = text_mime_types
 
         self.logger: logging.Logger = get_logger(self.log_level)
 
@@ -102,10 +104,10 @@ class Mangum:
 
         with ExitStack() as stack:
             if self.lifespan != "off":
-                asgi_cycle: typing.ContextManager = LifespanCycle(
+                lifespan_cycle: typing.ContextManager = LifespanCycle(
                     self.app, self.lifespan
                 )
-                stack.enter_context(asgi_cycle)
+                stack.enter_context(lifespan_cycle)
 
             request_context = event["requestContext"]
             if "http" in request_context:
@@ -129,7 +131,7 @@ class Mangum:
                 http_method = event["httpMethod"]
 
             headers = (
-                {k.lower(): v for k, v in event.get("headers").items()}
+                {k.lower(): v for k, v in event.get("headers", {}).items()}
                 if event.get("headers")
                 else {}
             )
@@ -166,15 +168,13 @@ class Mangum:
             }
 
             is_binary = event.get("isBase64Encoded", False)
-            body = event.get("body") or b""
+            initial_body = event.get("body") or b""
             if is_binary:
-                body = base64.b64decode(body)
-            elif not isinstance(body, bytes):
-                body = body.encode()
+                initial_body = base64.b64decode(initial_body)
+            elif not isinstance(initial_body, bytes):
+                initial_body = initial_body.encode()
 
-            asgi_cycle = HTTPCycle(
-                scope, body=body, text_mime_types=self.text_mime_types
-            )
-            response = asgi_cycle(self.app)
+            http_cycle = HTTPCycle(scope, text_mime_types=self.text_mime_types)
+            response = http_cycle(self.app, initial_body)
 
-            return response
+        return response

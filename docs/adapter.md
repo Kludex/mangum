@@ -1,6 +1,6 @@
 # Adapter
 
-The heart of Mangum is the adapter class. It is a configurable wrapper that allows any [ASGI](https://asgi.readthedocs.io/en/latest/) application (or framework) to run in an [AWS Lambda](https://aws.amazon.com/lambda/) deployment. The adapter accepts a number of keyword arguments to configure settings related to logging, HTTP & lifespan behaviour, and API Gateway events.
+The heart of Mangum is the adapter class. It is a configurable wrapper that allows any [ASGI](https://asgi.readthedocs.io/en/latest/) application (or framework) to run in an [AWS Lambda](https://aws.amazon.com/lambda/) deployment. The adapter accepts a number of keyword arguments to configure settings related to logging, HTTP responses, ASGI lifespan, and API Gateway configuration.
 
 ```python
 handler = Mangum(
@@ -8,14 +8,9 @@ handler = Mangum(
     lifespan="auto",
     log_level="info",
     api_gateway_base_path=None,
-    text_mime_types=None,
-    dsn=None,
-    api_gateway_endpoint_url=None,
-    api_gateway_region_name=None
+    text_mime_types=None
 )
 ```
-
-All arguments are optional, but some may be necessary for specific use-cases (e.g. `dsn` is only required for WebSocket support).
 
 ## Configuring an adapter instance
 
@@ -60,7 +55,6 @@ def handler(event, context):
     return response
 ```
 
-
 ## Retrieving the AWS event and context
 
 The AWS Lambda handler `event` and `context` arguments are made available to an ASGI application in the ASGI connection scope.
@@ -70,7 +64,7 @@ scope['aws.event']
 scope['aws.context']
 ```
 
-If you're using FastAPI it can be retrieved from the `scope` attribute of the request object.
+For example, if you're using FastAPI it can be retrieved from the `scope` attribute of the request object.
 
 ```python
 from fastapi import FastAPI

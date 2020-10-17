@@ -4,6 +4,7 @@ import asyncio
 import typing
 import cgi
 import logging
+from io import BytesIO
 from dataclasses import dataclass, field
 
 from mangum.types import ASGIApp, Message, Scope
@@ -48,7 +49,6 @@ class HTTPCycle:
     """
 
     scope: Scope
-    body: bytes
     text_mime_types: typing.List[str]
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: dict = field(default_factory=dict)
@@ -57,14 +57,14 @@ class HTTPCycle:
         self.logger: logging.Logger = logging.getLogger("mangum.http")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.body: BytesIO = BytesIO()
         self.response["isBase64Encoded"] = False
 
-    def __call__(self, app: ASGIApp) -> dict:
+    def __call__(self, app: ASGIApp, initial_body: bytes) -> dict:
         self.logger.debug("HTTP cycle starting.")
         self.app_queue.put_nowait(
-            {"type": "http.request", "body": self.body, "more_body": False}
+            {"type": "http.request", "body": initial_body, "more_body": False}
         )
-        self.body = b""
         asgi_instance = self.run(app)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
@@ -142,10 +142,13 @@ class HTTPCycle:
             more_body = message.get("more_body", False)
 
             # The body must be completely read before returning the response.
-            self.body += body
+            self.body.write(body)
+            # self.body += body
 
             if not more_body:
-                body = self.body
+                # body = self.body.getvalue()
+                body = self.body.getvalue()
+                self.body.close()
 
                 # Check if a binary response should be returned based on the mime type
                 # or content encoding.
