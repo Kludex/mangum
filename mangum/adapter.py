@@ -97,9 +97,10 @@ class Mangum:
                 query_string = event.get("rawQueryString", "").encode()
             else:
                 source_ip = request_context.get("identity", {}).get("sourceIp")
-                multi_value_query_string_params = event[
-                    "multiValueQueryStringParameters"
-                ]
+                multi_value_query_string_params = event.get(
+                    "multiValueQueryStringParameters",
+                    None
+                )
                 query_string = (
                     urllib.parse.urlencode(
                         multi_value_query_string_params, doseq=True
