@@ -39,7 +39,7 @@ class Mangum:
     and `off`. Default is `auto`.
     * **log_level** - A string to configure the log level. Choices are: `info`,
     `critical`, `error`, `warning`, and `debug`. Default is `info`.
-    * **** - Base path to strip from URL when using a custom
+    * **api_gateway_base_path** - Base path to strip from URL when using a custom
     domain name.
     * **text_mime_types** - A list of MIME types to include with the defaults that
     should not return a binary response in API Gateway.
