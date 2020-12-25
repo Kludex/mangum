@@ -19,6 +19,7 @@ def mock_http_event(request):
             "CloudFront-Is-SmartTV-Viewer": "false",
             "CloudFront-Is-Tablet-Viewer": "false",
             "CloudFront-Viewer-Country": "US",
+            "Cookie": "cookie1; cookie2",
             "Host": "test.execute-api.us-west-2.amazonaws.com",
             "Upgrade-Insecure-Requests": "1",
             "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
