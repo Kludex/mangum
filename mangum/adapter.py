@@ -90,11 +90,34 @@ class Mangum:
                 stack.enter_context(lifespan_cycle)
 
             request_context = event["requestContext"]
+            # API Gateway v2
             if "http" in request_context:
                 source_ip = request_context["http"]["sourceIp"]
                 path = request_context["http"]["path"]
                 http_method = request_context["http"]["method"]
                 query_string = event.get("rawQueryString", "").encode()
+            # ELB
+            elif "elb" in request_context:
+                source_ip = event["headers"]["x-forwarded-for"].split(", ")[-1]
+                path = event["path"]
+                http_method = event["httpMethod"]
+                if "multiValueQueryStringParameters" in event:
+                    query_string = (
+                        urllib.parse.urlencode(
+                            event["multiValueQueryStringParameters"], doseq=True
+                        ).encode()
+                        if event["multiValueQueryStringParameters"]
+                        else b""
+                    )
+                else:
+                    query_string = (
+                        urllib.parse.urlencode(
+                            event["queryStringParameters"]
+                        ).encode()
+                        if event["queryStringParameters"]
+                        else b""
+                    )
+            # API Gateway v1
             else:
                 source_ip = request_context.get("identity", {}).get("sourceIp")
                 multi_value_query_string_params = event[
@@ -110,11 +133,18 @@ class Mangum:
                 path = event["path"]
                 http_method = event["httpMethod"]
 
-            headers = (
-                {k.lower(): v for k, v in event.get("headers", {}).items()}
-                if event.get("headers")
-                else {}
-            )
+            if "headers" in event:
+                headers = (
+                    {k.lower(): v for k, v in event.get("headers", {}).items()}
+                    if event.get("headers")
+                    else {}
+                )
+            else:
+                headers = (
+                    {k.lower(): v[0] for k, v in event.get("multiValueHeaders", {}).items()}
+                    if event.get("multiValueHeaders")
+                    else {}
+                )
 
             if "cookies" in event:
                 headers["cookie"] = "; ".join(event.get("cookies", []))
