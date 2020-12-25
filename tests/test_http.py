@@ -603,6 +603,7 @@ def test_api_request(mock_http_api_event) -> None:
                 [b"x-forwarded-port", b"443"],
                 [b"x-forwarded-proto", b"https"],
                 [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
+                [b"cookie", b"cookie1; cookie2"],
             ],
             "http_version": "1.1",
             "method": "GET",

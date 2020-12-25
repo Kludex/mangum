@@ -116,6 +116,9 @@ class Mangum:
                 else {}
             )
 
+            if "cookies" in event:
+                headers["cookie"] = "; ".join(event.get("cookies", []))
+
             server_name = headers.get("host", "mangum")
             if ":" not in server_name:
                 server_port = headers.get("x-forwarded-port", 80)
