@@ -98,7 +98,11 @@ class Mangum:
                 query_string = event.get("rawQueryString", "").encode()
             # ELB
             elif "elb" in request_context:
-                source_ip = event["headers"]["x-forwarded-for"].split(", ")[-1]
+                # NOTE: trust only the most right side value
+                if "headers" in event:
+                    source_ip = event["headers"]["x-forwarded-for"].split(", ")[-1]
+                else:
+                    source_ip = event["multiValueHeaders"]["x-forwarded-for"][0].split(", ")[-1]
                 path = event["path"]
                 http_method = event["httpMethod"]
                 if "multiValueQueryStringParameters" in event:
