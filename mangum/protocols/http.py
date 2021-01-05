@@ -135,6 +135,7 @@ class HTTPCycle:
             self.response["statusCode"] = message["status"]
             headers: typing.Dict[str, str] = {}
             multi_value_headers: typing.Dict[str, typing.List[str]] = {}
+            cookies: typing.List[str] = []
             event = self.scope["aws.event"]
             # ELB
             if "elb" in event["requestContext"]:
@@ -158,7 +159,9 @@ class HTTPCycle:
             else:
                 for key, value in message.get("headers", []):
                     lower_key = key.decode().lower()
-                    if lower_key in multi_value_headers:
+                    if event.get("version") == "2.0" and lower_key == "set-cookie":
+                        cookies.append(value.decode())
+                    elif lower_key in multi_value_headers:
                         multi_value_headers[lower_key].append(value.decode())
                     elif lower_key in headers:
                         multi_value_headers[lower_key] = [
@@ -171,6 +174,8 @@ class HTTPCycle:
             self.response["headers"] = headers
             if multi_value_headers:
                 self.response["multiValueHeaders"] = multi_value_headers
+            if len(cookies):
+                self.response["cookies"] = cookies
             self.state = HTTPCycleState.RESPONSE
 
         elif (

@@ -779,7 +779,11 @@ def test_api_request(mock_http_api_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -790,6 +794,7 @@ def test_api_request(mock_http_api_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "cookies": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
         "body": "Hello, world!",
     }
 
