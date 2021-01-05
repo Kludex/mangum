@@ -244,7 +244,11 @@ def test_http_response(mock_http_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -255,6 +259,7 @@ def test_http_response(mock_http_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]},
         "body": "Hello, world!",
     }
 
@@ -310,7 +315,12 @@ def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                    [b"set-cookie", b"cookie3=cookie3; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -320,7 +330,12 @@ def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "set-cookie": "cookie1=cookie1; Secure",
+            "Set-cookie": "cookie2=cookie2; Secure",
+            "sEt-cookie": "cookie3=cookie3; Secure",
+        },
         "body": "Hello, world!",
     }
 
@@ -376,7 +391,11 @@ def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -387,7 +406,10 @@ def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {},
-        "multiValueHeaders": {"content-type": ["text/plain; charset=utf-8"]},
+        "multiValueHeaders": {
+            "content-type": ["text/plain; charset=utf-8"],
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+        },
         "body": "Hello, world!",
     }
 

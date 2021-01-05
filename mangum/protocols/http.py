@@ -11,6 +11,25 @@ from mangum.types import ASGIApp, Message, Scope
 from mangum.exceptions import UnexpectedMessage
 
 
+def all_casings(input_string):
+    """
+    Permute all casings of a given string.
+    A pretty algoritm, via @Amber
+    http://stackoverflow.com/questions/6792803/finding-all-possible-case-permutations-in-python
+    """
+    if not input_string:
+        yield ""
+    else:
+        first = input_string[:1]
+        if first.lower() == first.upper():
+            for sub_casing in all_casings(input_string[1:]):
+                yield first + sub_casing
+        else:
+            for sub_casing in all_casings(input_string[1:]):
+                yield first.lower() + sub_casing
+                yield first.upper() + sub_casing
+
+
 class HTTPCycleState(enum.Enum):
     """
     The state of the ASGI `http` connection.
@@ -114,23 +133,27 @@ class HTTPCycle:
             and message_type == "http.response.start"
         ):
             self.response["statusCode"] = message["status"]
-
             headers: typing.Dict[str, str] = {}
             multi_value_headers: typing.Dict[str, typing.List[str]] = {}
             event = self.scope["aws.event"]
-            # ELB MultiValue
-            if "elb" in event["requestContext"] and "multiValueHeaders" in event:
+            # ELB
+            if "elb" in event["requestContext"]:
                 for key, value in message.get("headers", []):
                     lower_key = key.decode().lower()
                     if lower_key in multi_value_headers:
                         multi_value_headers[lower_key].append(value.decode())
                     else:
                         multi_value_headers[lower_key] = [value.decode()]
-            # ELB SingleValue
-            elif "elb" in event["requestContext"] and "headers" in event:
-                for key, value in message.get("headers", []):
-                    lower_key = key.decode().lower()
-                    headers[lower_key] = value.decode()
+                if "multiValueHeaders" not in event:
+                    # If there are multiple occurrences of headers, create case-mutated variations
+                    # see: https://github.com/logandk/serverless-wsgi/issues/11
+                    for key, values in multi_value_headers.items():
+                        if len(values) > 1:
+                            for value, cased_key in zip(values, all_casings(key)):
+                                headers[cased_key] = value
+                        elif len(values) == 1:
+                            headers[key] = values[0]
+                    multi_value_headers = {}
             # API Gateway
             else:
                 for key, value in message.get("headers", []):
