@@ -31,5 +31,8 @@ jobs:
     - name: Run tests
       run: |
         scripts/test
+    - name: Run linters
+      run: |
+        scripts/lint
     - name: Run codecov
       run: codecov
