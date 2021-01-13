@@ -3,6 +3,7 @@ pytest
 codecov
 pytest-cov
 black
+flake8
 starlette
 quart; python_version == '3.7'
 moto
