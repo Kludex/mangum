@@ -33,7 +33,7 @@ def test_http_request(mock_http_event, query_string) -> None:
             "aws.event": {
                 "body": None,
                 "headers": {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",  # noqa: E501
                     "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
                     "Accept-Language": "en-US,en;q=0.8",
                     "CloudFront-Forwarded-Proto": "https",
@@ -153,7 +153,7 @@ def test_http_response(mock_http_event) -> None:
             "aws.event": {
                 "body": None,
                 "headers": {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",  # noqa: E501
                     "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
                     "Accept-Language": "en-US,en;q=0.8",
                     "CloudFront-Forwarded-Proto": "https",

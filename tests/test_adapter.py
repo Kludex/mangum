@@ -14,7 +14,7 @@ def test_default_settings():
     assert handler.lifespan == "auto"
     assert handler.log_level == "info"
     assert handler.text_mime_types == DEFAULT_TEXT_MIME_TYPES
-    assert handler.api_gateway_base_path == None
+    assert handler.api_gateway_base_path is None
 
 
 @pytest.mark.parametrize(
