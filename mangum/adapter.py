@@ -11,7 +11,7 @@ from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.exceptions import ConfigurationError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
 DEFAULT_TEXT_MIME_TYPES = [
