@@ -9,3 +9,4 @@ set -x
 
 ${PREFIX}black mangum tests --check
 ${PREFIX}mypy mangum --disallow-untyped-defs --ignore-missing-imports
+${PREFIX}flake8 mangum tests
