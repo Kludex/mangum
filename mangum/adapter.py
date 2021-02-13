@@ -90,34 +90,44 @@ class Mangum:
                 stack.enter_context(lifespan_cycle)
 
             request_context = event["requestContext"]
-            if "http" in request_context:
+
+            if event.get("multiValueHeaders"):
+                headers = {k.lower(): ", ".join(v) if isinstance(v, list) else ""
+                           for k, v in event.get("multiValueHeaders", {}).items()}
+            elif event.get("headers"):
+                headers = {k.lower(): v for k, v in event.get("headers", {}).items()}
+            else:
+                headers = {}
+
+            # API Gateway v2
+            if event.get("version") == "2.0":
                 source_ip = request_context["http"]["sourceIp"]
                 path = request_context["http"]["path"]
                 http_method = request_context["http"]["method"]
                 query_string = event.get("rawQueryString", "").encode()
+
+                if event.get("cookies"):
+                    headers["cookie"] = "; ".join(event.get("cookies", []))
+
+            # API Gateway v1 / ELB
             else:
-                source_ip = request_context.get("identity", {}).get("sourceIp")
-                multi_value_query_string_params = event[
-                    "multiValueQueryStringParameters"
-                ]
-                query_string = (
-                    urllib.parse.urlencode(
-                        multi_value_query_string_params, doseq=True
-                    ).encode()
-                    if multi_value_query_string_params
-                    else b""
-                )
+                if "elb" in request_context:
+                    # NOTE: trust only the most right side value
+                    source_ip = headers.get("x-forwarded-for", "").split(", ")[-1]
+                else:
+                    source_ip = request_context.get("identity", {}).get("sourceIp")
+
                 path = event["path"]
                 http_method = event["httpMethod"]
 
-            headers = (
-                {k.lower(): v for k, v in event.get("headers", {}).items()}
-                if event.get("headers")
-                else {}
-            )
-
-            if "cookies" in event:
-                headers["cookie"] = "; ".join(event.get("cookies", []))
+                if event.get("multiValueQueryStringParameters"):
+                    query_string = urllib.parse.urlencode(
+                        event.get("multiValueQueryStringParameters", {}), doseq=True).encode()
+                elif event.get("queryStringParameters"):
+                    query_string = urllib.parse.urlencode(
+                        event.get("queryStringParameters", {})).encode()
+                else:
+                    query_string = b""
 
             server_name = headers.get("host", "mangum")
             if ":" not in server_name:

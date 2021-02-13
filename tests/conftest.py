@@ -116,3 +116,65 @@ def mock_http_api_event(request):
     }
 
     return event
+
+
+@pytest.fixture
+def mock_http_elb_singlevalue_event(request):
+    method = request.param[0]
+    body = request.param[1]
+    multi_value_query_parameters = request.param[2]
+    event = {
+        "requestContext": {
+            "elb": {
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
+            }
+        },
+        "httpMethod": method,
+        "path": "/my/path",
+        "queryStringParameters": {
+            k: v[-1] for k, v in multi_value_query_parameters.items()
+        }
+        if multi_value_query_parameters
+        else None,
+        "headers": {
+            "accept-encoding": "gzip, deflate",
+            "cookie": "cookie1; cookie2",
+            "host": "test.execute-api.us-west-2.amazonaws.com",
+            "x-forwarded-for": "192.168.100.3, 192.168.100.2, 192.168.100.1",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+        },
+        "body": body,
+        "isBase64Encoded": False
+    }
+
+    return event
+
+
+@pytest.fixture
+def mock_http_elb_multivalue_event(request):
+    method = request.param[0]
+    body = request.param[1]
+    multi_value_query_parameters = request.param[2]
+    event = {
+        "requestContext": {
+            "elb": {
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
+            }
+        },
+        "httpMethod": method,
+        "path": "/my/path",
+        "multiValueQueryStringParameters": multi_value_query_parameters or None,
+        "multiValueHeaders": {
+            "accept-encoding": ["gzip, deflate"],
+            "cookie": ["cookie1; cookie2"],
+            "host": ["test.execute-api.us-west-2.amazonaws.com"],
+            "x-forwarded-for": ["192.168.100.3, 192.168.100.2, 192.168.100.1"],
+            "x-forwarded-port": ["443"],
+            "x-forwarded-proto": ["https"],
+        },
+        "body": body,
+        "isBase64Encoded": False
+    }
+
+    return event

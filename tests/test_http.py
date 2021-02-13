@@ -244,7 +244,11 @@ def test_http_response(mock_http_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -255,6 +259,157 @@ def test_http_response(mock_http_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {"set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]},
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_http_elb_singlevalue_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
+)
+def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.context": {},
+            "aws.event": {
+                "body": None,
+                "isBase64Encoded": False,
+                "headers": {
+                    "accept-encoding": "gzip, deflate",
+                    "cookie": "cookie1; cookie2",
+                    "host": "test.execute-api.us-west-2.amazonaws.com",
+                    "x-forwarded-for": "192.168.100.3, 192.168.100.2, 192.168.100.1",
+                    "x-forwarded-port": "443",
+                    "x-forwarded-proto": "https"
+                },
+                "httpMethod": "GET",
+                "path": "/my/path",
+                "queryStringParameters": {"name": "you"},
+                "requestContext": {
+                    "elb": {
+                        "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
+                    }
+                },
+            },
+            "client": ("192.168.100.1", 0),
+            "headers": [
+                [b"accept-encoding", b"gzip, deflate"],
+                [b"cookie", b"cookie1; cookie2"],
+                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
+                [b"x-forwarded-for", b"192.168.100.3, 192.168.100.2, 192.168.100.1"],
+                [b"x-forwarded-port", b"443"],
+                [b"x-forwarded-proto", b"https"],
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/my/path",
+            "query_string": b"name=you",
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
+            "type": "http",
+        }
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                    [b"set-cookie", b"cookie3=cookie3; Secure"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_http_elb_singlevalue_event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "set-cookie": "cookie1=cookie1; Secure",
+            "Set-cookie": "cookie2=cookie2; Secure",
+            "sEt-cookie": "cookie3=cookie3; Secure",
+        },
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_http_elb_multivalue_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
+)
+def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.context": {},
+            "aws.event": {
+                "body": None,
+                "isBase64Encoded": False,
+                "multiValueHeaders": {
+                    "accept-encoding": ["gzip, deflate"],
+                    "cookie": ["cookie1; cookie2"],
+                    "host": ["test.execute-api.us-west-2.amazonaws.com"],
+                    "x-forwarded-for": ["192.168.100.3, 192.168.100.2, 192.168.100.1"],
+                    "x-forwarded-port": ["443"],
+                    "x-forwarded-proto": ["https"],
+                },
+                "httpMethod": "GET",
+                "path": "/my/path",
+                "multiValueQueryStringParameters": {"name": ["me", "you"]},
+                "requestContext": {
+                    "elb": {
+                        "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
+                    }
+                },
+            },
+            "client": ("192.168.100.1", 0),
+            "headers": [
+                [b"accept-encoding", b"gzip, deflate"],
+                [b"cookie", b"cookie1; cookie2"],
+                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
+                [b"x-forwarded-for", b"192.168.100.3, 192.168.100.2, 192.168.100.1"],
+                [b"x-forwarded-port", b"443"],
+                [b"x-forwarded-proto", b"https"],
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/my/path",
+            "query_string": b"name=me&name=you",
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
+            "type": "http",
+        }
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_http_elb_multivalue_event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {},
+        "multiValueHeaders": {
+            "content-type": ["text/plain; charset=utf-8"],
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+        },
         "body": "Hello, world!",
     }
 
@@ -624,7 +779,11 @@ def test_api_request(mock_http_api_event) -> None:
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -635,6 +794,7 @@ def test_api_request(mock_http_api_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "cookies": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
         "body": "Hello, world!",
     }
 
