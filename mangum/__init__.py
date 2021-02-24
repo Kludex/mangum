@@ -1,1 +1,1 @@
-from .adapter import Mangum
+from .adapter import Mangum  # noqa: F401

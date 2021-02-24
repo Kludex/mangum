@@ -10,7 +10,7 @@ def mock_http_event(request):
         "path": "/test/hello",
         "body": body,
         "headers": {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",  # noqa: E501
             "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
             "Accept-Language": "en-US,en;q=0.8",
             "CloudFront-Forwarded-Proto": "https",
@@ -42,7 +42,7 @@ def mock_http_event(request):
                 "cognitoAuthenticationType": "",
                 "cognitoAuthenticationProvider": "",
                 "userArn": "",
-                "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36 OPR/39.0.2256.48",
+                "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36 OPR/39.0.2256.48",  # noqa: E501
                 "user": "",
             },
             "resourcePath": "/{proxy+}",
