@@ -11,7 +11,7 @@ from mangum.types import ASGIApp, Message, Scope
 from mangum.exceptions import UnexpectedMessage
 
 
-def all_casings(input_string):
+def all_casings(input_string: str) -> typing.Generator:
     """
     Permute all casings of a given string.
     A pretty algoritm, via @Amber
@@ -146,8 +146,8 @@ class HTTPCycle:
                     else:
                         multi_value_headers[lower_key] = [value.decode()]
                 if "multiValueHeaders" not in event:
-                    # If there are multiple occurrences of headers, create case-mutated variations
-                    # see: https://github.com/logandk/serverless-wsgi/issues/11
+                    # If there are multiple occurrences of headers, create case-mutated
+                    # variations: https://github.com/logandk/serverless-wsgi/issues/11
                     for key, values in multi_value_headers.items():
                         if len(values) > 1:
                             for value, cased_key in zip(values, all_casings(key)):

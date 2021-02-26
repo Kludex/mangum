@@ -92,8 +92,10 @@ class Mangum:
             request_context = event["requestContext"]
 
             if event.get("multiValueHeaders"):
-                headers = {k.lower(): ", ".join(v) if isinstance(v, list) else ""
-                           for k, v in event.get("multiValueHeaders", {}).items()}
+                headers = {
+                    k.lower(): ", ".join(v) if isinstance(v, list) else ""
+                    for k, v in event.get("multiValueHeaders", {}).items()
+                }
             elif event.get("headers"):
                 headers = {k.lower(): v for k, v in event.get("headers", {}).items()}
             else:
@@ -122,10 +124,12 @@ class Mangum:
 
                 if event.get("multiValueQueryStringParameters"):
                     query_string = urllib.parse.urlencode(
-                        event.get("multiValueQueryStringParameters", {}), doseq=True).encode()
+                        event.get("multiValueQueryStringParameters", {}), doseq=True
+                    ).encode()
                 elif event.get("queryStringParameters"):
                     query_string = urllib.parse.urlencode(
-                        event.get("queryStringParameters", {})).encode()
+                        event.get("queryStringParameters", {})
+                    ).encode()
                 else:
                     query_string = b""
 

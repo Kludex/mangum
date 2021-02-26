@@ -33,7 +33,7 @@ def test_http_request(mock_http_event, query_string) -> None:
             "aws.event": {
                 "body": None,
                 "headers": {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",  # noqa: E501
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                     "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
                     "Accept-Language": "en-US,en;q=0.8",
                     "CloudFront-Forwarded-Proto": "https",
@@ -153,7 +153,7 @@ def test_http_response(mock_http_event) -> None:
             "aws.event": {
                 "body": None,
                 "headers": {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",  # noqa: E501
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                     "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
                     "Accept-Language": "en-US,en;q=0.8",
                     "CloudFront-Forwarded-Proto": "https",
@@ -259,13 +259,17 @@ def test_http_response(mock_http_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "multiValueHeaders": {"set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]},
+        "multiValueHeaders": {
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]
+        },
         "body": "Hello, world!",
     }
 
 
 @pytest.mark.parametrize(
-    "mock_http_elb_singlevalue_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
+    "mock_http_elb_singlevalue_event",
+    [["GET", None, {"name": ["me", "you"]}]],
+    indirect=True,
 )
 def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
     async def app(scope, receive, send):
@@ -281,7 +285,7 @@ def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
                     "host": "test.execute-api.us-west-2.amazonaws.com",
                     "x-forwarded-for": "192.168.100.3, 192.168.100.2, 192.168.100.1",
                     "x-forwarded-port": "443",
-                    "x-forwarded-proto": "https"
+                    "x-forwarded-proto": "https",
                 },
                 "httpMethod": "GET",
                 "path": "/my/path",
@@ -341,7 +345,9 @@ def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
 
 
 @pytest.mark.parametrize(
-    "mock_http_elb_multivalue_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
+    "mock_http_elb_multivalue_event",
+    [["GET", None, {"name": ["me", "you"]}]],
+    indirect=True,
 )
 def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
     async def app(scope, receive, send):
