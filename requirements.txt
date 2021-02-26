@@ -10,6 +10,7 @@ moto
 mypy
 brotli
 brotli-asgi
+awslambdaric-stubs
 # Docs
 mkdocs
 mkdocs-material

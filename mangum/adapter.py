@@ -11,6 +11,8 @@ from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.exceptions import ConfigurationError
 
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from awslambdaric.lambda_context import LambdaContext
 
 DEFAULT_TEXT_MIME_TYPES = [
     "application/json",
@@ -79,7 +81,7 @@ class Mangum:
             text_mime_types = DEFAULT_TEXT_MIME_TYPES
         self.text_mime_types = text_mime_types
 
-    def __call__(self, event: dict, context: dict) -> dict:
+    def __call__(self, event: dict, context: "LambdaContext") -> dict:
         self.logger.debug("Event received.")
 
         with ExitStack() as stack:
