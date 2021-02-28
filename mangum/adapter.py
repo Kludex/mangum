@@ -6,7 +6,7 @@ import urllib.parse
 from dataclasses import dataclass, InitVar
 from contextlib import ExitStack
 
-from mangum.types import ASGIApp, Scope
+from mangum.types import ASGIApp, Scope, EventSource
 from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.exceptions import ConfigurationError
@@ -84,6 +84,8 @@ class Mangum:
     def __call__(self, event: dict, context: "LambdaContext") -> dict:
         self.logger.debug("Event received.")
 
+        event_source = EventSource.get_event_source(event)
+
         with ExitStack() as stack:
             if self.lifespan != "off":
                 lifespan_cycle: typing.ContextManager = LifespanCycle(
@@ -98,13 +100,18 @@ class Mangum:
             elif not isinstance(initial_body, bytes):
                 initial_body = initial_body.encode()
 
-            scope = self._create_scope(event, context)
+            scope = self._create_scope(event, event_source, context)
+
             http_cycle = HTTPCycle(scope, text_mime_types=self.text_mime_types)
+            # TODO: we should construct response according to request event type.
+            # Take event_source into account in the future.
             response = http_cycle(self.app, initial_body)
 
         return response
 
-    def _create_scope(self, event: dict, context: "LambdaContext") -> Scope:
+    def _create_scope(
+        self, event: dict, event_source: EventSource, context: "LambdaContext"
+    ) -> Scope:
         """Creates a scope object according to ASGI specification from a Lambda Event.
 
         https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
@@ -127,7 +134,7 @@ class Mangum:
             headers = {}
 
         # API Gateway v2
-        if event.get("version") == "2.0":
+        if event_source == EventSource.API_GW_V2:
             source_ip = request_context["http"]["sourceIp"]
             path = request_context["http"]["path"]
             http_method = request_context["http"]["method"]
@@ -138,7 +145,7 @@ class Mangum:
 
         # API Gateway v1 / ELB
         else:
-            if "elb" in request_context:
+            if event_source in {EventSource.ALB, EventSource.ALB_MULTIVALUEHEADERS}:
                 # NOTE: trust only the most right side value
                 source_ip = headers.get("x-forwarded-for", "").split(", ")[-1]
             else:
