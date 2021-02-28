@@ -89,6 +89,7 @@ def test_http_request(mock_http_event, query_string) -> None:
                 },
                 "resource": "/{proxy+}",
                 "stageVariables": {"stageVarName": "stageVarValue"},
+                "version": "1.0",
             },
             "client": ("192.168.100.1", 0),
             "headers": [
@@ -207,6 +208,7 @@ def test_http_response(mock_http_event) -> None:
                 },
                 "resource": "/{proxy+}",
                 "stageVariables": {"stageVarName": "stageVarValue"},
+                "version": "1.0",
             },
             "client": ("192.168.100.1", 0),
             "headers": [

@@ -7,6 +7,7 @@ def mock_http_event(request):
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
     event = {
+        "version": "1.0",
         "path": "/test/hello",
         "body": body,
         "headers": {
