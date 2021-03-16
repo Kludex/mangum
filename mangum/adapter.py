@@ -102,7 +102,17 @@ class Mangum:
             http_cycle = HTTPCycle(scope, text_mime_types=self.text_mime_types)
             response = http_cycle(self.app, initial_body)
 
-        return response
+        if "aws.eventType" in scope and scope["aws.eventType"] == "lambda@edge":
+            headers = {}
+            if response.get('headers'):
+                headers = {key: [{"key": key, "value": val}] for key, val in response['headers'].items()}
+            return {
+                "status": response.get("statusCode"),
+                "headers": headers,
+                "body": response.get("body")
+            }
+        else:
+            return response
 
     def _create_scope(self, event: dict, context: "LambdaContext") -> Scope:
         """
@@ -122,20 +132,60 @@ class Mangum:
         for handler in handlers:
             try:
                 return handler(event, context)
-            except KeyError:
+            except Exception:
                 # Just keep going, try the next handler
                 pass
 
         raise RuntimeError("Unable to handle event!")
 
-
     def _parse_lambda_at_edge_scope(self, event: Dict[str, Any], context: "LambdaContext") -> Scope:
-        pass
+        """
+        Creates a scope object according to ASGI specification from a CloudFront Lambda@Edge Request
 
+        Should raise if we can't handle this event.
+        """
+        cf_request = event['Records'][0]['cf']['request']
+
+        scheme_header = cf_request['headers'].get('cloudfront-forwarded-proto', [{}])
+        scheme = scheme_header[0].get('value', 'https')
+
+        host_header = cf_request['headers'].get('host', [{}])
+        server_name = host_header[0].get("value", "mangum")
+        if ":" not in server_name:
+            forwarded_port_header = cf_request['headers'].get('x-forwarded-port', [{}])
+            server_port = forwarded_port_header[0].get("value", 80)
+        else:
+            server_name, server_port = server_name.split(":")  # pragma: no cover
+        server = (server_name, int(server_port))
+
+        source_ip = cf_request['clientIp']
+        client = (source_ip, 0)
+
+        scope = {
+            "type": "http",
+            "http_version": "1.1",
+            "method": cf_request['method'],
+            "headers": [[k.encode(), v[0]['value'].encode()] for k, v in cf_request['headers'].items()],
+            "path": cf_request['uri'],
+            "raw_path": None,
+            "root_path": "",
+            "scheme": scheme,
+            "query_string": cf_request["querystring"],
+            "server": server,
+            "client": client,
+            "asgi": {"version": "3.0"},
+            "aws.event": event,
+            "aws.context": context,
+            "aws.eventType": "lambda@edge"
+        }
+
+        return scope
 
     def _parse_api_gateway_scope(self, event: Dict[str, Any], context: "LambdaContext") -> Scope:
         """
-        Creates a scope object according to ASGI specification from a, API Gateway/ELB/ALB Lambda Event.
+        Creates a scope object according to ASGI specification from an API Gateway/ELB/ALB Lambda Event.
+
+        Should raise if we can't handle this event.
         """
         request_context = event["requestContext"]
 
@@ -210,6 +260,7 @@ class Mangum:
             "asgi": {"version": "3.0"},
             "aws.event": event,
             "aws.context": context,
+            "aws.eventType": "api-gateway"
         }
 
         return scope

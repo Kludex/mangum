@@ -137,8 +137,8 @@ class HTTPCycle:
             multi_value_headers: typing.Dict[str, typing.List[str]] = {}
             cookies: typing.List[str] = []
             event = self.scope["aws.event"]
-            # ELB
-            if "elb" in event["requestContext"]:
+
+            if "requestContext" in event and "elb" in event["requestContext"]:
                 for key, value in message.get("headers", []):
                     lower_key = key.decode().lower()
                     if lower_key in multi_value_headers:

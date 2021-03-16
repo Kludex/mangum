@@ -143,6 +143,274 @@ def test_http_request(mock_http_event, query_string) -> None:
 
 
 @pytest.mark.parametrize(
+    "mock_lambda_at_edge_event",
+    [
+        (["GET", "/resource", None, None]),
+        (["GET", "/resource/id", "filter=okay&hello=world", None]),
+        (["POST", "/resource/id", "name=me", None])
+    ],
+    indirect=["mock_lambda_at_edge_event"],
+)
+def test_lambda_at_edge_http_request(mock_lambda_at_edge_event) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.context": {},
+            "aws.eventType": "lambda@edge",
+            "aws.event": {
+                'Records': [
+                    {
+                        'cf': {
+                            'config':  {
+                                'distributionDomainName': 'mock-distribution.local.localhost',
+                                'distributionId':         'ABC123DEF456G',
+                                'eventType':              'origin-request',
+                                'requestId':              'lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ=='
+                            },
+                            'request': {
+                                'clientIp':    '192.168.100.1',
+                                'headers':     {
+                                    'accept-encoding':   [
+                                        {
+                                            'key':   'accept-encoding',
+                                            'value': 'gzip,deflate'
+                                        }
+                                    ],
+                                    'x-forwarded-for':  [
+                                        {
+                                            'key':   'x-forwarded-for',
+                                            'value': '192.168.100.1'
+                                        }
+                                    ],
+                                    'x-forwarded-port':  [
+                                        {
+                                            'key':   'x-forwarded-port',
+                                            'value': '443'
+                                        }
+                                    ],
+                                    'x-forwarded-proto': [
+                                        {
+                                            'key':   'x-forwarded-proto',
+                                            'value': 'https'
+                                        }
+                                    ],
+                                    'host':           [
+                                        {
+                                            'key':   'host',
+                                            'value': 'test.execute-api.us-west-2.amazonaws.com'
+                                        }
+                                    ]
+                                },
+                                'method':      mock_lambda_at_edge_event['method'],
+                                'origin':      {
+                                    'custom': {
+                                        'customHeaders':    {
+                                            'x-lae-env-custom-var': [
+                                                {
+                                                    'key':   'x-lae-env-custom-var',
+                                                    'value': 'environment variable'
+                                                }
+                                            ]
+                                        },
+                                        'domainName':       'www.example.com',
+                                        'keepaliveTimeout': 5,
+                                        'path':             '',
+                                        'port':             80,
+                                        'protocol':         'http',
+                                        'readTimeout':      30,
+                                        'sslProtocols':     [
+                                            'TLSv1',
+                                            'TLSv1.1',
+                                            'TLSv1.2'
+                                        ]
+                                    }
+                                },
+                                'querystring': mock_lambda_at_edge_event['query_string'],
+                                'uri': mock_lambda_at_edge_event['path'],
+                            }
+                        }
+                    }
+                ]
+            },
+            "client":    ("192.168.100.1", 0),
+            "headers":  [
+                [b'accept-encoding', b'gzip,deflate'],
+                [b'x-forwarded-port', b'443'],
+                [b'x-forwarded-for', b'192.168.100.1'],
+                [b'x-forwarded-proto', b'https'],
+                [b'host', b'test.execute-api.us-west-2.amazonaws.com']
+            ],
+            "http_version": "1.1",
+            "method": mock_lambda_at_edge_event['method'],
+            "path": mock_lambda_at_edge_event['path'],
+            "query_string": mock_lambda_at_edge_event['query_string'],
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
+            "type": "http",
+        }
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": mock_lambda_at_edge_event['body']})
+
+    handler = Mangum(app, lifespan="off")
+
+    response = handler(mock_lambda_at_edge_event['event'], {})
+    assert response == {
+        "status": 200,
+        "headers": {
+            "content-type": [{
+                "key": "content-type",
+                "value": "text/plain; charset=utf-8"
+            }]
+        },
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_lambda_at_edge_event",
+    [
+        (["POST", "/resource/id", "name=me", b"Test body 1"])
+    ],
+    indirect=["mock_lambda_at_edge_event"],
+)
+def test_lambda_at_edge_http_request_with_body(mock_lambda_at_edge_event) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.context": {},
+            "aws.eventType": "lambda@edge",
+            "aws.event": {
+                'Records': [
+                    {
+                        'cf': {
+                            'config':  {
+                                'distributionDomainName': 'mock-distribution.local.localhost',
+                                'distributionId':         'ABC123DEF456G',
+                                'eventType':              'origin-request',
+                                'requestId':              'lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ=='
+                            },
+                            'request': {
+                                'clientIp':    '192.168.100.1',
+                                'headers':     {
+                                    'accept-encoding':   [
+                                        {
+                                            'key':   'accept-encoding',
+                                            'value': 'gzip,deflate'
+                                        }
+                                    ],
+                                    'x-forwarded-for':  [
+                                        {
+                                            'key':   'x-forwarded-for',
+                                            'value': '192.168.100.1'
+                                        }
+                                    ],
+                                    'x-forwarded-port':  [
+                                        {
+                                            'key':   'x-forwarded-port',
+                                            'value': '443'
+                                        }
+                                    ],
+                                    'x-forwarded-proto': [
+                                        {
+                                            'key':   'x-forwarded-proto',
+                                            'value': 'https'
+                                        }
+                                    ],
+                                    'host':           [
+                                        {
+                                            'key':   'host',
+                                            'value': 'test.execute-api.us-west-2.amazonaws.com'
+                                        }
+                                    ]
+                                },
+                                'method':      mock_lambda_at_edge_event['method'],
+                                'origin':      {
+                                    'custom': {
+                                        'customHeaders':    {
+                                            'x-lae-env-custom-var': [
+                                                {
+                                                    'key':   'x-lae-env-custom-var',
+                                                    'value': 'environment variable'
+                                                }
+                                            ]
+                                        },
+                                        'domainName':       'www.example.com',
+                                        'keepaliveTimeout': 5,
+                                        'path':             '',
+                                        'port':             80,
+                                        'protocol':         'http',
+                                        'readTimeout':      30,
+                                        'sslProtocols':     [
+                                            'TLSv1',
+                                            'TLSv1.1',
+                                            'TLSv1.2'
+                                        ]
+                                    }
+                                },
+                                'querystring': mock_lambda_at_edge_event['query_string'],
+                                'uri': mock_lambda_at_edge_event['path'],
+                                "body": {
+                                    "inputTruncated": False,
+                                    "action":         "read-only",
+                                    "encoding":       "text",
+                                    "data":           mock_lambda_at_edge_event["body"]
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "client":    ("192.168.100.1", 0),
+            "headers":  [
+                [b'accept-encoding', b'gzip,deflate'],
+                [b'x-forwarded-port', b'443'],
+                [b'x-forwarded-for', b'192.168.100.1'],
+                [b'x-forwarded-proto', b'https'],
+                [b'host', b'test.execute-api.us-west-2.amazonaws.com']
+            ],
+            "http_version": "1.1",
+            "method": mock_lambda_at_edge_event['method'],
+            "path": mock_lambda_at_edge_event['path'],
+            "query_string": mock_lambda_at_edge_event['query_string'],
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
+            "type": "http",
+        }
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": f"We received: {mock_lambda_at_edge_event['body'].decode('utf-8')}".encode()})
+
+    handler = Mangum(app, lifespan="off")
+
+    response = handler(mock_lambda_at_edge_event['event'], {})
+    assert response == {
+        "status": 200,
+        "headers": {
+            "content-type": [{
+                "key": "content-type",
+                "value": "text/plain; charset=utf-8"
+            }]
+        },
+        "body": f"We received: {mock_lambda_at_edge_event['body'].decode('utf-8')}",
+    }
+
+
+@pytest.mark.parametrize(
     "mock_http_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
 )
 def test_http_response(mock_http_event) -> None:
