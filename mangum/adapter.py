@@ -1,5 +1,5 @@
 import base64
-import typing
+from typing import Any, Callable, ContextManager, Dict, Optional, List, TYPE_CHECKING
 import logging
 import urllib.parse
 
@@ -11,7 +11,7 @@ from mangum.protocols.lifespan import LifespanCycle
 from mangum.protocols.http import HTTPCycle
 from mangum.exceptions import ConfigurationError
 
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -50,10 +50,10 @@ class Mangum:
     app: ASGIApp
     lifespan: str = "auto"
     log_level: str = "info"
-    api_gateway_base_path: typing.Optional[str] = None
-    text_mime_types: InitVar[typing.Optional[typing.List[str]]] = None
+    api_gateway_base_path: Optional[str] = None
+    text_mime_types: InitVar[Optional[List[str]]] = None
 
-    def __post_init__(self, text_mime_types: typing.Optional[typing.List[str]]) -> None:
+    def __post_init__(self, text_mime_types: Optional[List[str]]) -> None:
         if self.lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
@@ -86,7 +86,7 @@ class Mangum:
 
         with ExitStack() as stack:
             if self.lifespan != "off":
-                lifespan_cycle: typing.ContextManager = LifespanCycle(
+                lifespan_cycle: ContextManager = LifespanCycle(
                     self.app, self.lifespan
                 )
                 stack.enter_context(lifespan_cycle)
@@ -105,7 +105,8 @@ class Mangum:
         return response
 
     def _create_scope(self, event: dict, context: "LambdaContext") -> Scope:
-        """Creates a scope object according to ASGI specification from a Lambda Event.
+        """
+        Creates a scope object according to ASGI specification from a Lambda Event.
 
         https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
 
@@ -113,6 +114,28 @@ class Mangum:
         versions and configurations(multivalue header, etc).
         Thus, some heuristics is applied to guess an event type.
 
+        """
+        handlers: List[Callable[[Dict[str, Any], "LambdaContext"], Scope]] = [
+            self._parse_api_gateway_scope,
+            self._parse_lambda_at_edge_scope
+        ]
+        for handler in handlers:
+            try:
+                return handler(event, context)
+            except KeyError:
+                # Just keep going, try the next handler
+                pass
+
+        raise RuntimeError("Unable to handle event!")
+
+
+    def _parse_lambda_at_edge_scope(self, event: Dict[str, Any], context: "LambdaContext") -> Scope:
+        pass
+
+
+    def _parse_api_gateway_scope(self, event: Dict[str, Any], context: "LambdaContext") -> Scope:
+        """
+        Creates a scope object according to ASGI specification from a, API Gateway/ELB/ALB Lambda Event.
         """
         request_context = event["requestContext"]
 
