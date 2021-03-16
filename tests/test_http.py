@@ -29,6 +29,7 @@ def test_http_request(mock_http_event, query_string) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "api-gateway",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -257,7 +258,7 @@ def test_lambda_at_edge_http_request(mock_lambda_at_edge_event) -> None:
                 "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
             }
         )
-        await send({"type": "http.response.body", "body": mock_lambda_at_edge_event['body']})
+        await send({"type": "http.response.body", "body": b"Response body placeholder"})
 
     handler = Mangum(app, lifespan="off")
 
@@ -270,7 +271,7 @@ def test_lambda_at_edge_http_request(mock_lambda_at_edge_event) -> None:
                 "value": "text/plain; charset=utf-8"
             }]
         },
-        "body": "Hello, world!",
+        "body": "Response body placeholder",
     }
 
 
@@ -417,6 +418,7 @@ def test_http_response(mock_http_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "api-gateway",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -543,6 +545,7 @@ def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "api-gateway",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -621,6 +624,7 @@ def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "api-gateway",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -984,6 +988,7 @@ def test_api_request(mock_http_api_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "api-gateway",
             "aws.context": {},
             "aws.event": {
                 "version": "2.0",
