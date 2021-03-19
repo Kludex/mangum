@@ -1,8 +1,16 @@
-## 0.10.1 (Future release)
+## 0.11.0
 
-* Added CONTRIBUTING.md to outline contribution guidelines.
+* Remove deprecated `enable_lifespan` parameter [#109](https://github.com/jordaneremieff/mangum/issues/109).
 
-* Remove deprecated `enable_lifespan` parameter [109](https://github.com/jordaneremieff/mangum/issues/109)
+* Include API Gateway v2 event cookies in scope headers [#153](https://github.com/jordaneremieff/mangum/pull/153). Thanks [araki-yzrh](https://github.com/araki-yzrh)!
+
+* Support ELB and fix APIGW v2 cookies response [#155](https://github.com/jordaneremieff/mangum/pull/155). Thanks [araki-yzrh](https://github.com/araki-yzrh)!
+
+* Add flake8 to CI checks [#157](https://github.com/jordaneremieff/mangum/pull/157). Thanks [emcpow2](https://github.com/emcpow2)!
+
+* Add type hints for lambda handler context parameter [#158](https://github.com/jordaneremieff/mangum/pull/158).  Thanks [emcpow2](https://github.com/emcpow2)!
+
+* Extract ASGI scope creation into function [#162](https://github.com/jordaneremieff/mangum/pull/162).  Thanks [emcpow2](https://github.com/emcpow2)!
 
 ## 0.10.0 
 
@@ -24,13 +32,9 @@
 
 ## 0.9.1
 
-* Improve documentation, include CHANGELOG in repo, and include release notes in documentation [#111](https://github.com/jordaneremieff/mangum/pull/111)
-
 * Bugfix lifespan startup behaviour and refactor lifespan cycle, deprecate `enable_lifespan` parameter, document protocols. [#108](https://github.com/jordaneremieff/mangum/pull/108)
 
 ## 0.9.0
-
-* Improve documentation [#48](https://github.com/jordaneremieff/mangum/issues/48)
 
 * Resolve issue with `rawQueryString` in HTTP APIs using wrong type [#105](https://github.com/jordaneremieff/mangum/issues/105)
 

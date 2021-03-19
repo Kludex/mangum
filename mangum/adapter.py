@@ -98,14 +98,15 @@ class Mangum:
             elif not isinstance(initial_body, bytes):
                 initial_body = initial_body.encode()
 
-            scope = self._create_scope(event, context)
+            scope = self.create_scope(event, context)
             http_cycle = HTTPCycle(scope, text_mime_types=self.text_mime_types)
             response = http_cycle(self.app, initial_body)
 
         return response
 
-    def _create_scope(self, event: dict, context: "LambdaContext") -> Scope:
-        """Creates a scope object according to ASGI specification from a Lambda Event.
+    def create_scope(self, event: dict, context: "LambdaContext") -> Scope:
+        """
+        Creates a scope object according to ASGI specification from a Lambda Event.
 
         https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
 

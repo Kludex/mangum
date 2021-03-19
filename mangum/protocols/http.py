@@ -174,7 +174,7 @@ class HTTPCycle:
             self.response["headers"] = headers
             if multi_value_headers:
                 self.response["multiValueHeaders"] = multi_value_headers
-            if len(cookies):
+            if cookies:
                 self.response["cookies"] = cookies
             self.state = HTTPCycleState.RESPONSE
 
