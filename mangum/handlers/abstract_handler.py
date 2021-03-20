@@ -1,6 +1,5 @@
 import base64
 from abc import ABCMeta, abstractmethod
-
 from typing import Dict, Any, TYPE_CHECKING, Tuple, List
 
 from mangum.response import Response
@@ -11,7 +10,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class AbstractHandler(metaclass=ABCMeta):
-    def __init__(self, trigger_event: Dict[str, Any], trigger_context: "LambdaContext"):
+    def __init__(
+        self,
+        trigger_event: Dict[str, Any],
+        trigger_context: "LambdaContext",
+        **kwargs: Dict[str, Any]
+    ):
         self.trigger_event = trigger_event
         self.trigger_context = trigger_context
 
@@ -37,8 +41,10 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @staticmethod
     def from_trigger(
-        trigger_event: Dict[str, Any], trigger_context: "LambdaContext", **kwargs
-    ):
+        trigger_event: Dict[str, Any],
+        trigger_context: "LambdaContext",
+        **kwargs: Dict[str, Any]
+    ) -> "AbstractHandler":
         """
         A factory method that determines which handler to use. All this code should probably stay in one place to make
         sure we are able to uniquely find each handler correctly.
@@ -70,13 +76,13 @@ class AbstractHandler(metaclass=ABCMeta):
         if "resource" in trigger_event:
             from . import AwsApiGateway
 
-            return AwsApiGateway(trigger_event, trigger_context, **kwargs)
+            return AwsApiGateway(trigger_event, trigger_context, **kwargs)  # type: ignore
 
         raise TypeError("Unable to determine handler from trigger event")
 
     @staticmethod
     def _handle_multi_value_headers(
-        response_headers,
+        response_headers: List[List[bytes]],
     ) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
         headers: Dict[str, str] = {}
         multi_value_headers: Dict[str, List[str]] = {}
@@ -104,21 +110,22 @@ class AbstractHandler(metaclass=ABCMeta):
         compatibility with binary data, base64 encode it.
         """
         is_base64_encoded = False
+        output_body = ""
         if body != b"":
             from ..adapter import DEFAULT_TEXT_MIME_TYPES
 
             for text_mime_type in DEFAULT_TEXT_MIME_TYPES:
                 if text_mime_type in headers.get("content-type", ""):
                     try:
-                        body = body.decode()
+                        output_body = body.decode()
                     except UnicodeDecodeError:
                         # Can't decode it, base64 it and be done
-                        body = base64.b64encode(body).decode()
+                        output_body = base64.b64encode(body).decode()
                         is_base64_encoded = True
                     break
             else:
                 # Not text, base64 encode
-                body = base64.b64encode(body).decode()
+                output_body = base64.b64encode(body).decode()
                 is_base64_encoded = True
 
-        return body, is_base64_encoded
+        return output_body, is_base64_encoded

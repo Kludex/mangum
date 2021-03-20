@@ -1,7 +1,6 @@
 import base64
 import gzip
 import json
-import urllib.parse
 
 import pytest
 import brotli

@@ -146,3 +146,6 @@ class AwsHttpGateway(AbstractHandler):
                 "body": body,
                 "isBase64Encoded": is_base64_encoded,
             }
+        raise RuntimeError(  # pragma: no cover
+            "Misconfigured event unable to return value, unsupported version."
+        )

@@ -1,11 +1,9 @@
-import base64
 import enum
 import asyncio
-from typing import Optional, Generator, Dict, List
-import cgi
+from typing import Optional
 import logging
 from io import BytesIO
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from mangum.response import Response
 from mangum.types import ASGIApp, Message, ScopeDict
@@ -65,6 +63,13 @@ class HTTPCycle:
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
 
+        if self.response is None:
+            # Something really bad happened and we puked before we could get a response out
+            self.response = Response(
+                status=500,
+                body=b"Internal Server Error",
+                headers=[[b"content-type", b"text/plain; charset=utf-8"]],
+            )
         return self.response
 
     async def run(self, app: ASGIApp) -> None:
@@ -87,11 +92,11 @@ class HTTPCycle:
                     {"type": "http.response.body", "body": b"Internal Server Error"}
                 )
             elif self.state is not HTTPCycleState.COMPLETE:
-                self.response.status = 500
-                self.response.body = b"Internal Server Error"
-                self.response.headers = [
-                    [b"content-type", b"text/plain; charset=utf-8"]
-                ]
+                self.response = Response(
+                    status=500,
+                    body=b"Internal Server Error",
+                    headers=[[b"content-type", b"text/plain; charset=utf-8"]],
+                )
 
     async def receive(self) -> Message:
         """
@@ -129,7 +134,7 @@ class HTTPCycle:
             # The body must be completely read before returning the response.
             self.body.write(body)
 
-            if not more_body:
+            if not more_body and self.response is not None:
                 body = self.body.getvalue()
                 self.body.close()
                 self.response.body = body

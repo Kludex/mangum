@@ -1,6 +1,5 @@
 import base64
-import urllib.parse
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from .abstract_handler import AbstractHandler
 from ..response import Response
@@ -63,21 +62,19 @@ class AwsCfLambdaAtEdge(AbstractHandler):
         return body
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
-        headers, multi_value_headers = self._handle_multi_value_headers(
-            response.headers
-        )
-
+        headers_dict, _ = self._handle_multi_value_headers(response.headers)
         body, is_base64_encoded = self._handle_base64_response_body(
-            response.body, headers
+            response.body, headers_dict
         )
 
-        headers = {
-            key.decode().lower(): [{"key": key.decode().lower(), "value": val}]
+        # Expand headers to weird list of Dict[str, List[Dict[str, str]]]
+        headers_expanded: Dict[str, List[Dict[str, str]]] = {
+            key.decode().lower(): [{"key": key.decode().lower(), "value": val.decode()}]
             for key, val in response.headers
         }
         return {
             "status": response.status,
-            "headers": headers,
+            "headers": headers_expanded,
             "body": body,
             "isBase64Encoded": is_base64_encoded,
         }

@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional, Dict, Any, Union, TYPE_CHECKING
 
 from mangum.types import ScopeDict
+
+if TYPE_CHECKING:  # pragma: no cover
+    from awslambdaric.lambda_context import LambdaContext
 
 
 @dataclass
@@ -13,16 +16,16 @@ class Scope:
     """
 
     method: str
-    headers: List[Tuple[bytes, bytes]]
+    headers: List[List[bytes]]
     path: str
     scheme: str
-    query_string: str
+    query_string: bytes
     server: Tuple[str, int]
     client: Tuple[str, int]
 
     # Invocation event
     trigger_event: Dict[str, Any]
-    trigger_context: Dict[str, Any]
+    trigger_context: Union["LambdaContext", Dict[str, Any]]
     event_type: str
 
     type: str = "http"

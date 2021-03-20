@@ -280,6 +280,8 @@ def test_aws_lambda_at_edge_response(
     assert response == {
         "status": 200,
         "isBase64Encoded": res_base64_encoded,
-        "headers": {"content-type": [{"key": "content-type", "value": content_type}]},
+        "headers": {
+            "content-type": [{"key": "content-type", "value": content_type.decode()}]
+        },
         "body": res_body,
     }

@@ -1,17 +1,12 @@
-import base64
-from typing import Any, Callable, ContextManager, Dict, Optional, List, TYPE_CHECKING
 import logging
-import urllib.parse
-
-from dataclasses import dataclass, InitVar
 from contextlib import ExitStack
+from typing import Any, ContextManager, Dict, TYPE_CHECKING
 
-from mangum.handlers import AbstractHandler
-from mangum.response import Response
-from mangum.types import ASGIApp, ScopeDict
-from mangum.protocols.lifespan import LifespanCycle
-from mangum.protocols.http import HTTPCycle
 from mangum.exceptions import ConfigurationError
+from mangum.handlers import AbstractHandler
+from mangum.protocols.http import HTTPCycle
+from mangum.protocols.lifespan import LifespanCycle
+from mangum.types import ASGIApp
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
@@ -48,7 +43,7 @@ class Mangum:
         self,
         app: ASGIApp,
         lifespan: str = "auto",
-        **handler_kwargs,
+        **handler_kwargs: Dict[str, Any],
     ):
         self.app = app
         self.lifespan = lifespan

@@ -1,9 +1,7 @@
-import urllib.parse
-
 import pytest
 
 from mangum import Mangum
-from mangum.handlers import AwsHttpGateway, AwsAlb
+from mangum.handlers import AwsAlb
 
 
 def get_mock_aws_alb_event(
@@ -12,7 +10,7 @@ def get_mock_aws_alb_event(
     return {
         "requestContext": {
             "elb": {
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"  # noqa: E501
             }
         },
         "httpMethod": method,
@@ -27,7 +25,7 @@ def get_mock_aws_alb_event(
             "connection": "keep-alive",
             "host": "lambda-alb-123578498.us-east-2.elb.amazonaws.com",
             "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",  # noqa: E501
             "x-amzn-trace-id": "Root=1-5c536348-3d683b8b04734faae651f476",
             "x-forwarded-for": "72.12.164.125",
             "x-forwarded-port": "80",
@@ -46,7 +44,7 @@ def test_aws_alb_basic():
     example_event = {
         "requestContext": {
             "elb": {
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"  # noqa: E501
             }
         },
         "httpMethod": "GET",
@@ -59,7 +57,7 @@ def test_aws_alb_basic():
             "connection": "keep-alive",
             "host": "lambda-alb-123578498.us-east-2.elb.amazonaws.com",
             "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",  # noqa: E501
             "x-amzn-trace-id": "Root=1-5c536348-3d683b8b04734faae651f476",
             "x-forwarded-for": "72.12.164.125",
             "x-forwarded-port": "80",
