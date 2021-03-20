@@ -1,7 +1,16 @@
 # HTTP
 
-Mangum provides support for both [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) and the newer [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) APIs in API Gateway. It also includes configurable binary response support.
+Mangum provides support for the following AWS HTTP Lambda Event Source:
 
+ * [API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html)
+   ([Event Examples](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html))
+ * [HTTP Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html)
+   ([Event Examples](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html))
+ * [Application Load Balancer (ALB)](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html)
+   ([Event Examples](https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html))
+ * [CloudFront Lambda@Edge](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html)
+   ([Event Examples](https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html))
+   
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware

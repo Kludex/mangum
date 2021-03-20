@@ -13,142 +13,15 @@ from mangum import Mangum
 
 
 @pytest.mark.parametrize(
-    "mock_http_event,query_string",
-    [
-        (["GET", None, None], b""),
-        (["GET", None, {"name": ["me"]}], b"name=me"),
-        (["GET", None, {"name": ["me", "you"]}], b"name=me&name=you"),
-        (
-            ["GET", None, {"name": ["me", "you"], "pet": ["dog"]}],
-            b"name=me&name=you&pet=dog",
-        ),
-    ],
-    indirect=["mock_http_event"],
+    "mock_aws_api_gateway_event",
+    [["GET", None, {"name": ["me", "you"]}]],
+    indirect=True,
 )
-def test_http_request(mock_http_event, query_string) -> None:
+def test_http_response(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws.context": {},
-            "aws.event": {
-                "body": None,
-                "headers": {
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
-                    "Accept-Language": "en-US,en;q=0.8",
-                    "CloudFront-Forwarded-Proto": "https",
-                    "CloudFront-Is-Desktop-Viewer": "true",
-                    "CloudFront-Is-Mobile-Viewer": "false",
-                    "CloudFront-Is-SmartTV-Viewer": "false",
-                    "CloudFront-Is-Tablet-Viewer": "false",
-                    "CloudFront-Viewer-Country": "US",
-                    "Cookie": "cookie1; cookie2",
-                    "Host": "test.execute-api.us-west-2.amazonaws.com",
-                    "Upgrade-Insecure-Requests": "1",
-                    "X-Forwarded-For": "192.168.100.1, 192.168.1.1",
-                    "X-Forwarded-Port": "443",
-                    "X-Forwarded-Proto": "https",
-                },
-                "httpMethod": "GET",
-                "path": "/test/hello",
-                "pathParameters": {"proxy": "hello"},
-                "queryStringParameters": mock_http_event["queryStringParameters"],
-                "multiValueQueryStringParameters": mock_http_event[
-                    "multiValueQueryStringParameters"
-                ],
-                "requestContext": {
-                    "accountId": "123456789012",
-                    "apiId": "123",
-                    "httpMethod": "GET",
-                    "identity": {
-                        "accountId": "",
-                        "apiKey": "",
-                        "caller": "",
-                        "cognitoAuthenticationProvider": "",
-                        "cognitoAuthenticationType": "",
-                        "cognitoIdentityId": "",
-                        "cognitoIdentityPoolId": "",
-                        "sourceIp": "192.168.100.1",
-                        "user": "",
-                        "userAgent": "Mozilla/5.0 "
-                        "(Macintosh; "
-                        "Intel Mac OS "
-                        "X 10_11_6) "
-                        "AppleWebKit/537.36 "
-                        "(KHTML, like "
-                        "Gecko) "
-                        "Chrome/52.0.2743.82 "
-                        "Safari/537.36 "
-                        "OPR/39.0.2256.48",
-                        "userArn": "",
-                    },
-                    "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
-                    "resourceId": "us4z18",
-                    "resourcePath": "/{proxy+}",
-                    "stage": "Prod",
-                },
-                "resource": "/{proxy+}",
-                "stageVariables": {"stageVarName": "stageVarValue"},
-            },
-            "client": ("192.168.100.1", 0),
-            "headers": [
-                [
-                    b"accept",
-                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/"
-                    b"webp,*/*;q=0.8",
-                ],
-                [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
-                [b"accept-language", b"en-US,en;q=0.8"],
-                [b"cloudfront-forwarded-proto", b"https"],
-                [b"cloudfront-is-desktop-viewer", b"true"],
-                [b"cloudfront-is-mobile-viewer", b"false"],
-                [b"cloudfront-is-smarttv-viewer", b"false"],
-                [b"cloudfront-is-tablet-viewer", b"false"],
-                [b"cloudfront-viewer-country", b"US"],
-                [b"cookie", b"cookie1; cookie2"],
-                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
-                [b"upgrade-insecure-requests", b"1"],
-                [b"x-forwarded-for", b"192.168.100.1, 192.168.1.1"],
-                [b"x-forwarded-port", b"443"],
-                [b"x-forwarded-proto", b"https"],
-            ],
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/test/hello",
-            "query_string": query_string,
-            "raw_path": None,
-            "root_path": "",
-            "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
-            "type": "http",
-        }
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app, lifespan="off")
-
-    response = handler(mock_http_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize(
-    "mock_http_event", [["GET", None, {"name": ["me", "you"]}]], indirect=True
-)
-def test_http_response(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope == {
-            "asgi": {"version": "3.0"},
+            "aws.eventType": "AWS_API_GATEWAY",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -254,7 +127,7 @@ def test_http_response(mock_http_event) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -267,289 +140,30 @@ def test_http_response(mock_http_event) -> None:
 
 
 @pytest.mark.parametrize(
-    "mock_http_elb_singlevalue_event",
-    [["GET", None, {"name": ["me", "you"]}]],
-    indirect=True,
+    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
 )
-def test_elb_singlevalue_http_response(mock_http_elb_singlevalue_event) -> None:
-    async def app(scope, receive, send):
-        assert scope == {
-            "asgi": {"version": "3.0"},
-            "aws.context": {},
-            "aws.event": {
-                "body": None,
-                "isBase64Encoded": False,
-                "headers": {
-                    "accept-encoding": "gzip, deflate",
-                    "cookie": "cookie1; cookie2",
-                    "host": "test.execute-api.us-west-2.amazonaws.com",
-                    "x-forwarded-for": "192.168.100.3, 192.168.100.2, 192.168.100.1",
-                    "x-forwarded-port": "443",
-                    "x-forwarded-proto": "https",
-                },
-                "httpMethod": "GET",
-                "path": "/my/path",
-                "queryStringParameters": {"name": "you"},
-                "requestContext": {
-                    "elb": {
-                        "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
-                    }
-                },
-            },
-            "client": ("192.168.100.1", 0),
-            "headers": [
-                [b"accept-encoding", b"gzip, deflate"],
-                [b"cookie", b"cookie1; cookie2"],
-                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
-                [b"x-forwarded-for", b"192.168.100.3, 192.168.100.2, 192.168.100.1"],
-                [b"x-forwarded-port", b"443"],
-                [b"x-forwarded-proto", b"https"],
-            ],
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/my/path",
-            "query_string": b"name=you",
-            "raw_path": None,
-            "root_path": "",
-            "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
-            "type": "http",
-        }
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    [b"content-type", b"text/plain; charset=utf-8"],
-                    [b"set-cookie", b"cookie1=cookie1; Secure"],
-                    [b"set-cookie", b"cookie2=cookie2; Secure"],
-                    [b"set-cookie", b"cookie3=cookie3; Secure"],
-                ],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_elb_singlevalue_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {
-            "content-type": "text/plain; charset=utf-8",
-            "set-cookie": "cookie1=cookie1; Secure",
-            "Set-cookie": "cookie2=cookie2; Secure",
-            "sEt-cookie": "cookie3=cookie3; Secure",
-        },
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize(
-    "mock_http_elb_multivalue_event",
-    [["GET", None, {"name": ["me", "you"]}]],
-    indirect=True,
-)
-def test_elb_multivalue_http_response(mock_http_elb_multivalue_event) -> None:
-    async def app(scope, receive, send):
-        assert scope == {
-            "asgi": {"version": "3.0"},
-            "aws.context": {},
-            "aws.event": {
-                "body": None,
-                "isBase64Encoded": False,
-                "multiValueHeaders": {
-                    "accept-encoding": ["gzip, deflate"],
-                    "cookie": ["cookie1; cookie2"],
-                    "host": ["test.execute-api.us-west-2.amazonaws.com"],
-                    "x-forwarded-for": ["192.168.100.3, 192.168.100.2, 192.168.100.1"],
-                    "x-forwarded-port": ["443"],
-                    "x-forwarded-proto": ["https"],
-                },
-                "httpMethod": "GET",
-                "path": "/my/path",
-                "multiValueQueryStringParameters": {"name": ["me", "you"]},
-                "requestContext": {
-                    "elb": {
-                        "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
-                    }
-                },
-            },
-            "client": ("192.168.100.1", 0),
-            "headers": [
-                [b"accept-encoding", b"gzip, deflate"],
-                [b"cookie", b"cookie1; cookie2"],
-                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
-                [b"x-forwarded-for", b"192.168.100.3, 192.168.100.2, 192.168.100.1"],
-                [b"x-forwarded-port", b"443"],
-                [b"x-forwarded-proto", b"https"],
-            ],
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/my/path",
-            "query_string": b"name=me&name=you",
-            "raw_path": None,
-            "root_path": "",
-            "scheme": "https",
-            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
-            "type": "http",
-        }
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    [b"content-type", b"text/plain; charset=utf-8"],
-                    [b"set-cookie", b"cookie1=cookie1; Secure"],
-                    [b"set-cookie", b"cookie2=cookie2; Secure"],
-                ],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_elb_multivalue_event, {})
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {},
-        "multiValueHeaders": {
-            "content-type": ["text/plain; charset=utf-8"],
-            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
-        },
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", "123", None]], indirect=True)
-def test_http_response_with_body(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-
-        body = [b"4", b"5", b"6"]
-
-        while True:
-            message = await receive()
-            if "body" in message:
-                body.append(message["body"])
-
-            if not message.get("more_body", False):
-                body = b"".join(body)
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 200,
-                        "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                    }
-                )
-                await send({"type": "http.response.body", "body": body})
-                return
-
-    handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "456123",
-    }
-
-
-@pytest.mark.parametrize(
-    "mock_http_event", [["GET", base64.b64encode(b"123"), None]], indirect=True
-)
-def test_http_binary_request_with_body(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-
-        body = []
-        message = await receive()
-
-        if "body" in message:
-            body.append(message["body"])
-
-        if not message.get("more_body", False):
-
-            body = b"".join(body)
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": body})
-
-    mock_http_event["isBase64Encoded"] = True
-    handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "123",
-    }
-
-
-@pytest.mark.parametrize(
-    "mock_http_event", [["GET", base64.b64encode(b"123"), None]], indirect=True
-)
-def test_http_binary_request_and_response(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-
-        body = []
-        message = await receive()
-
-        if "body" in message:
-            body.append(message["body"])
-
-        if not message.get("more_body", False):
-
-            body = b"".join(body)
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [[b"content-type", b"application/octet-stream"]],
-                }
-            )
-            await send({"type": "http.response.body", "body": b"abc"})
-
-    mock_http_event["isBase64Encoded"] = True
-    handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": True,
-        "headers": {"content-type": "application/octet-stream"},
-        "body": base64.b64encode(b"abc").decode(),
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_http_exception(mock_http_event) -> None:
+def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         await send({"type": "http.response.start", "status": 200})
         raise Exception()
-        await send({"type": "http.response.body", "body": b"1", "more_body": True})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
 
     assert response == {
         "body": "Internal Server Error",
         "headers": {"content-type": "text/plain; charset=utf-8"},
         "isBase64Encoded": False,
+        "multiValueHeaders": {},
         "statusCode": 500,
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", None, None]], indirect=True)
-def test_http_exception_handler(mock_http_event) -> None:
-    path = mock_http_event["path"]
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
+)
+def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
+    path = mock_aws_api_gateway_event["path"]
     app = Starlette()
 
     @app.exception_handler(Exception)
@@ -562,27 +176,31 @@ def test_http_exception_handler(mock_http_event) -> None:
         return PlainTextResponse("Hello, world!")
 
     handler = Mangum(app)
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
 
     assert response == {
         "body": "Error!",
         "headers": {"content-length": "6", "content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_cycle_state(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
+)
+def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
     assert response == {
         "body": "Internal Server Error",
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
@@ -594,80 +212,20 @@ def test_http_cycle_state(mock_http_event) -> None:
 
     handler = Mangum(app, lifespan="off")
 
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
     assert response == {
         "body": "Internal Server Error",
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
         "isBase64Encoded": False,
         "statusCode": 500,
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_api_gateway_base_path(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        assert scope["path"] == urllib.parse.unquote(mock_http_event["path"])
-        await send({"type": "http.response.start", "status": 200})
-        await send({"type": "http.response.body", "body": b"Hello world!"})
-
-    handler = Mangum(app, lifespan="off", api_gateway_base_path=None)
-    response = handler(mock_http_event, {})
-
-    assert response == {
-        "body": "Hello world!",
-        "headers": {},
-        "isBase64Encoded": False,
-        "statusCode": 200,
-    }
-
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        assert scope["path"] == urllib.parse.unquote(
-            mock_http_event["path"][len(f"/{api_gateway_base_path}") :]
-        )
-        await send({"type": "http.response.start", "status": 200})
-        await send({"type": "http.response.body", "body": b"Hello world!"})
-
-    api_gateway_base_path = "test"
-    handler = Mangum(app, lifespan="off", api_gateway_base_path=api_gateway_base_path)
-    response = handler(mock_http_event, {})
-    assert response == {
-        "body": "Hello world!",
-        "headers": {},
-        "isBase64Encoded": False,
-        "statusCode": 200,
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_text_mime_types(mock_http_event) -> None:
-    async def app(scope, receive, send):
-        assert scope["type"] == "http"
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
-            }
-        )
-        await send({"type": "http.response.body", "body": b"Hello, world!"})
-
-    handler = Mangum(
-        app, lifespan="off", text_mime_types=["application/vnd.apple.pkpass"]
-    )
-    response = handler(mock_http_event, {})
-
-    assert response == {
-        "statusCode": 200,
-        "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
-        "body": "Hello, world!",
-    }
-
-
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_binary_gzip_response(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True
+)
+def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
     body = json.dumps({"abc": "defg"})
 
     async def app(scope, receive, send):
@@ -683,7 +241,7 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
         await send({"type": "http.response.body", "body": body.encode()})
 
     handler = Mangum(GZipMiddleware(app, minimum_size=1), lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
 
     assert response["isBase64Encoded"]
     assert response["headers"] == {
@@ -712,10 +270,11 @@ def test_http_binary_gzip_response(mock_http_event) -> None:
     ],
     indirect=["mock_http_api_event"],
 )
-def test_api_request(mock_http_api_event) -> None:
+def test_set_cookies(mock_http_api_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
+            "aws.eventType": "AWS_HTTP_GATEWAY",
             "aws.context": {},
             "aws.event": {
                 "version": "2.0",
@@ -800,13 +359,17 @@ def test_api_request(mock_http_api_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "cookies": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+        "multiValueHeaders": {
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]
+        },
         "body": "Hello, world!",
     }
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_empty_header(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
+)
+def test_http_empty_header(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         await send(
@@ -820,19 +383,20 @@ def test_http_empty_header(mock_http_event) -> None:
 
     handler = Mangum(app, lifespan="off")
 
-    mock_http_event["headers"] = None
+    mock_aws_api_gateway_event["headers"] = None
 
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
         "body": "Hello, world!",
     }
 
 
 @pytest.mark.parametrize(
-    "mock_http_event,response_headers,expected_headers,expected_multi_value_headers",
+    "mock_aws_api_gateway_event,response_headers,expected_headers,expected_multi_value_headers",
     [
         [
             ["GET", None, None],
@@ -854,11 +418,14 @@ def test_http_empty_header(mock_http_event) -> None:
         ],
         [["GET", None, None], [], {}, {}],
     ],
-    indirect=["mock_http_event"],
+    indirect=["mock_aws_api_gateway_event"],
 )
 def test_http_response_headers(
-    mock_http_event, response_headers, expected_headers, expected_multi_value_headers
-) -> None:
+    mock_aws_api_gateway_event,
+    response_headers,
+    expected_headers,
+    expected_multi_value_headers,
+):
     async def app(scope, receive, send):
         await send(
             {
@@ -871,11 +438,12 @@ def test_http_response_headers(
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
     expected = {
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
         "body": "Hello, world!",
     }
     if expected_headers:
@@ -885,8 +453,10 @@ def test_http_response_headers(
     assert response == expected
 
 
-@pytest.mark.parametrize("mock_http_event", [["GET", "", None]], indirect=True)
-def test_http_binary_br_response(mock_http_event) -> None:
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
+)
+def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
     body = json.dumps({"abc": "defg"})
 
     async def app(scope, receive, send):
@@ -902,7 +472,7 @@ def test_http_binary_br_response(mock_http_event) -> None:
         await send({"type": "http.response.body", "body": body.encode()})
 
     handler = Mangum(BrotliMiddleware(app, minimum_size=1), lifespan="off")
-    response = handler(mock_http_event, {})
+    response = handler(mock_aws_api_gateway_event, {})
 
     assert response["isBase64Encoded"]
     assert response["headers"] == {
