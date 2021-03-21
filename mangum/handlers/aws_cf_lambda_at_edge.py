@@ -2,8 +2,7 @@ import base64
 from typing import Dict, Any, List
 
 from .abstract_handler import AbstractHandler
-from ..response import Response
-from ..scope import Scope
+from .. import Response, Scope
 
 
 class AwsCfLambdaAtEdge(AbstractHandler):

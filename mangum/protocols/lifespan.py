@@ -5,8 +5,8 @@ import typing
 import enum
 from dataclasses import dataclass
 
-from mangum.types import ASGIApp, Message
-from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
+from ..types import ASGIApp, Message
+from ..exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
 
 
 class LifespanCycleState(enum.Enum):

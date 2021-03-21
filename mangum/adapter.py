@@ -2,11 +2,10 @@ import logging
 from contextlib import ExitStack
 from typing import Any, ContextManager, Dict, TYPE_CHECKING
 
-from mangum.exceptions import ConfigurationError
-from mangum.handlers import AbstractHandler
-from mangum.protocols.http import HTTPCycle
-from mangum.protocols.lifespan import LifespanCycle
-from mangum.types import ASGIApp
+from .exceptions import ConfigurationError
+from .handlers import AbstractHandler
+from .protocols import HTTPCycle, LifespanCycle
+from .types import ASGIApp
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
@@ -65,7 +64,7 @@ class Mangum:
             handler = AbstractHandler.from_trigger(
                 event, context, **self.handler_kwargs
             )
-            http_cycle = HTTPCycle(handler.scope.as_dict())
+            http_cycle = HTTPCycle(handler.scope)
             response = http_cycle(self.app, handler.body)
 
         return handler.transform_response(response)

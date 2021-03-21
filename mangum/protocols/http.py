@@ -5,9 +5,9 @@ import logging
 from io import BytesIO
 from dataclasses import dataclass
 
-from mangum.response import Response
-from mangum.types import ASGIApp, Message, ScopeDict
-from mangum.exceptions import UnexpectedMessage
+from .. import Response, Scope
+from ..types import ASGIApp, Message
+from ..exceptions import UnexpectedMessage
 
 
 class HTTPCycleState(enum.Enum):
@@ -44,7 +44,7 @@ class HTTPCycle:
     * **response** - A dictionary containing the response data to return in AWS Lambda.
     """
 
-    scope: ScopeDict
+    scope: Scope
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: Optional[Response] = None
 
@@ -77,7 +77,7 @@ class HTTPCycle:
         Calls the application with the `http` connection scope.
         """
         try:
-            await app(self.scope, self.receive, self.send)
+            await app(self.scope.as_dict(), self.receive, self.send)
         except BaseException as exc:
             self.logger.error("Exception in 'http' protocol.", exc_info=exc)
             if self.state is HTTPCycleState.REQUEST:

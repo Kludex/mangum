@@ -3,8 +3,7 @@ import urllib.parse
 from typing import Dict, Any, TYPE_CHECKING
 
 from .abstract_handler import AbstractHandler
-from ..response import Response
-from ..scope import Scope
+from .. import Response, Scope
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext

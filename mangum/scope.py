@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict, Any, Union, TYPE_CHECKING
 
-from mangum.types import ScopeDict
+from .types import ScopeDict
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext

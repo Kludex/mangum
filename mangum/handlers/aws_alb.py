@@ -3,8 +3,7 @@ import urllib.parse
 from typing import Dict, Any
 
 from .abstract_handler import AbstractHandler
-from ..response import Response
-from ..scope import Scope
+from .. import Response, Scope
 
 
 class AwsAlb(AbstractHandler):

@@ -2,8 +2,7 @@ import base64
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, TYPE_CHECKING, Tuple, List
 
-from mangum.response import Response
-from mangum.scope import Scope
+from .. import Response, Scope
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
