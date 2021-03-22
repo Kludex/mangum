@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.fixture
-def mock_http_event(request):
+def mock_aws_api_gateway_event(request):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
@@ -119,62 +119,72 @@ def mock_http_api_event(request):
 
 
 @pytest.fixture
-def mock_http_elb_singlevalue_event(request):
+def mock_lambda_at_edge_event(request):
     method = request.param[0]
-    body = request.param[1]
-    multi_value_query_parameters = request.param[2]
+    path = request.param[1]
+    query_string = request.param[2]
+    body = request.param[3]
+
+    headers_raw = {
+        "accept-encoding": "gzip,deflate",
+        "x-forwarded-port": "443",
+        "x-forwarded-for": "192.168.100.1",
+        "x-forwarded-proto": "https",
+        "host": "test.execute-api.us-west-2.amazonaws.com",
+    }
+    headers = {}
+    for key, value in headers_raw.items():
+        headers[key.lower()] = [{"key": key, "value": value}]
+
     event = {
-        "requestContext": {
-            "elb": {
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
+        "Records": [
+            {
+                "cf": {
+                    "config": {
+                        "distributionDomainName": "mock-distribution.local.localhost",
+                        "distributionId": "ABC123DEF456G",
+                        "eventType": "origin-request",
+                        "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",
+                    },
+                    "request": {
+                        "clientIp": "192.168.100.1",
+                        "headers": headers,
+                        "method": method,
+                        "origin": {
+                            "custom": {
+                                "customHeaders": {
+                                    "x-lae-env-custom-var": [
+                                        {
+                                            "key": "x-lae-env-custom-var",
+                                            "value": "environment variable",
+                                        }
+                                    ],
+                                },
+                                "domainName": "www.example.com",
+                                "keepaliveTimeout": 5,
+                                "path": "",
+                                "port": 80,
+                                "protocol": "http",
+                                "readTimeout": 30,
+                                "sslProtocols": ["TLSv1", "TLSv1.1", "TLSv1.2"],
+                            }
+                        },
+                        "querystring": query_string,
+                        "uri": path,
+                    },
+                }
             }
-        },
-        "httpMethod": method,
-        "path": "/my/path",
-        "queryStringParameters": {
-            k: v[-1] for k, v in multi_value_query_parameters.items()
+        ]
+    }
+
+    if body is not None:
+        event["Records"][0]["cf"]["request"]["body"] = {
+            "inputTruncated": False,
+            "action": "read-only",
+            "encoding": "text",
+            "data": body,
         }
-        if multi_value_query_parameters
-        else None,
-        "headers": {
-            "accept-encoding": "gzip, deflate",
-            "cookie": "cookie1; cookie2",
-            "host": "test.execute-api.us-west-2.amazonaws.com",
-            "x-forwarded-for": "192.168.100.3, 192.168.100.2, 192.168.100.1",
-            "x-forwarded-port": "443",
-            "x-forwarded-proto": "https",
-        },
-        "body": body,
-        "isBase64Encoded": False,
-    }
 
-    return event
-
-
-@pytest.fixture
-def mock_http_elb_multivalue_event(request):
-    method = request.param[0]
-    body = request.param[1]
-    multi_value_query_parameters = request.param[2]
-    event = {
-        "requestContext": {
-            "elb": {
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:0:targetgroup/test/0"
-            }
-        },
-        "httpMethod": method,
-        "path": "/my/path",
-        "multiValueQueryStringParameters": multi_value_query_parameters or None,
-        "multiValueHeaders": {
-            "accept-encoding": ["gzip, deflate"],
-            "cookie": ["cookie1; cookie2"],
-            "host": ["test.execute-api.us-west-2.amazonaws.com"],
-            "x-forwarded-for": ["192.168.100.3, 192.168.100.2, 192.168.100.1"],
-            "x-forwarded-port": ["443"],
-            "x-forwarded-proto": ["https"],
-        },
-        "body": body,
-        "isBase64Encoded": False,
-    }
-
-    return event
+    return dict(
+        method=method, path=path, query_string=query_string, body=body, event=event
+    )
