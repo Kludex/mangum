@@ -17,7 +17,7 @@ class AwsAlb(AbstractHandler):
     TYPE = "AWS_ALB"
 
     @property
-    def scope(self) -> Request:
+    def request(self) -> Request:
         event = self.trigger_event
 
         headers = {}

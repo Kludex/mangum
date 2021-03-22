@@ -5,6 +5,7 @@ from typing import Dict, Any, TYPE_CHECKING
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
 
+
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
@@ -30,7 +31,7 @@ class AwsApiGateway(AbstractHandler):
         self.base_path = base_path
 
     @property
-    def scope(self) -> Request:
+    def request(self) -> Request:
         event = self.trigger_event
 
         # multiValue versions of headers take precedence over their plain versions

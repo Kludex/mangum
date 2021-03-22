@@ -195,7 +195,7 @@ def test_aws_http_gateway_scope_basic_v1():
     }
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
@@ -225,7 +225,7 @@ def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     del example_event["multiValueQueryStringParameters"]
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
-    assert handler.scope.as_dict()["query_string"] == b"hello=world"
+    assert handler.request.scope["query_string"] == b"hello=world"
 
 
 def test_aws_http_gateway_scope_v1_no_headers():
@@ -239,7 +239,7 @@ def test_aws_http_gateway_scope_v1_no_headers():
     del example_event["queryStringParameters"]
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
-    assert handler.scope.as_dict()["query_string"] == b""
+    assert handler.request.scope["query_string"] == b""
 
 
 def test_aws_http_gateway_scope_basic_v2():
@@ -297,7 +297,7 @@ def test_aws_http_gateway_scope_basic_v2():
     }
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
@@ -332,7 +332,7 @@ def test_aws_http_gateway_scope_bad_version():
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
     with pytest.raises(RuntimeError):
-        handler.scope.as_dict()
+        handler.request.scope
 
 
 @pytest.mark.parametrize(
@@ -373,7 +373,7 @@ def test_aws_http_gateway_scope_real_v1(
     if scope_path == "":
         scope_path = "/"
 
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
@@ -437,7 +437,7 @@ def test_aws_http_gateway_scope_real_v2(
     if scope_path == "":
         scope_path = "/"
 
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
@@ -508,11 +508,7 @@ def test_aws_http_gateway_response_v1(
             headers.append([b"content-type", content_type])
 
         await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": headers,
-            }
+            {"type": "http.response.start", "status": 200, "headers": headers,}
         )
         await send({"type": "http.response.body", "body": raw_res_body})
 
@@ -575,11 +571,7 @@ def test_aws_http_gateway_response_v2(
             headers.append([b"content-type", content_type])
 
         await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": headers,
-            }
+            {"type": "http.response.start", "status": 200, "headers": headers,}
         )
         await send({"type": "http.response.body", "body": raw_res_body})
 

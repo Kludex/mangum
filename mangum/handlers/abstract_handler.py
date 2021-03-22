@@ -4,6 +4,7 @@ from typing import Dict, Any, TYPE_CHECKING, Tuple, List
 
 from .. import Response, Request
 
+
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
@@ -20,7 +21,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def scope(self) -> Request:
+    def request(self) -> Request:
         """
         Parse an ASGI scope from the request event
         """

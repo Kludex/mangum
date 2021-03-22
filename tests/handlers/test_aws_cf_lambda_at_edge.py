@@ -136,7 +136,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
     example_context = {}
     handler = AwsCfLambdaAtEdge(example_event, example_context)
 
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
@@ -217,7 +217,7 @@ def test_aws_api_gateway_scope_real(
     example_context = {}
     handler = AwsCfLambdaAtEdge(event, example_context)
 
-    assert handler.scope.as_dict() == {
+    assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
