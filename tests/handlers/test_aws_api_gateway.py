@@ -224,7 +224,9 @@ def test_aws_api_gateway_scope_real(
 @pytest.mark.parametrize(
     "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
     "query_string,scope_body",
-    [("GET", "/test/hello", None, None, False, b"", None),],
+    [
+        ("GET", "/test/hello", None, None, False, b"", None),
+    ],
 )
 def test_aws_api_gateway_base_path(
     method,

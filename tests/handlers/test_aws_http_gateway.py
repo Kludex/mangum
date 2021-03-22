@@ -508,7 +508,11 @@ def test_aws_http_gateway_response_v1(
             headers.append([b"content-type", content_type])
 
         await send(
-            {"type": "http.response.start", "status": 200, "headers": headers,}
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": headers,
+            }
         )
         await send({"type": "http.response.body", "body": raw_res_body})
 
@@ -571,7 +575,11 @@ def test_aws_http_gateway_response_v2(
             headers.append([b"content-type", content_type])
 
         await send(
-            {"type": "http.response.start", "status": 200, "headers": headers,}
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": headers,
+            }
         )
         await send({"type": "http.response.body", "body": raw_res_body})
 
