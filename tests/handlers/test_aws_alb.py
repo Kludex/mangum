@@ -19,13 +19,16 @@ def get_mock_aws_alb_event(
         if multi_value_query_parameters
         else {},
         "headers": {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+            "image/webp,image/apng,*/*;q=0.8",
             "accept-encoding": "gzip",
             "accept-language": "en-US,en;q=0.9",
             "connection": "keep-alive",
             "host": "lambda-alb-123578498.us-east-2.elb.amazonaws.com",
             "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",  # noqa: E501
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/71.0.3578.98 Safari/537.36",
             "x-amzn-trace-id": "Root=1-5c536348-3d683b8b04734faae651f476",
             "x-forwarded-for": "72.12.164.125",
             "x-forwarded-port": "80",
@@ -51,7 +54,8 @@ def test_aws_alb_basic():
         "path": "/lambda",
         "queryStringParameters": {"query": "1234ABCD"},
         "headers": {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+            "image/webp,image/apng,*/*;q=0.8",
             "accept-encoding": "gzip",
             "accept-language": "en-US,en;q=0.9",
             "connection": "keep-alive",
@@ -111,7 +115,8 @@ def test_aws_alb_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
+    "query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         ("POST", "/", {"name": ["me"]}, None, False, b"name=me", None),

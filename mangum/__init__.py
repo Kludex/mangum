@@ -1,5 +1,4 @@
-from .response import Response
-from .scope import Scope
+from .types import Request, Response
 from .adapter import Mangum  # noqa: F401
 
-__all__ = ["Mangum", "Response", "Scope"]
+__all__ = ["Mangum", "Request", "Response"]

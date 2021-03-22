@@ -2,21 +2,21 @@ import base64
 from typing import Dict, Any, List
 
 from .abstract_handler import AbstractHandler
-from .. import Response, Scope
+from .. import Response, Request
 
 
 class AwsCfLambdaAtEdge(AbstractHandler):
     """
-    Handles AWS Elastic Load Balancer, really Application Load Balancer events transforming them into ASGI Scope
-    and handling responses
+    Handles AWS Elastic Load Balancer, really Application Load Balancer events
+    transforming them into ASGI Scope and handling responses
 
-    See: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
+    See: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html  # noqa: E501
     """
 
     TYPE = "AWS_CF_LAMBDA_AT_EDGE"
 
     @property
-    def scope(self) -> Scope:
+    def scope(self) -> Request:
         event = self.trigger_event
 
         cf_request = event["Records"][0]["cf"]["request"]
@@ -36,7 +36,7 @@ class AwsCfLambdaAtEdge(AbstractHandler):
         source_ip = cf_request["clientIp"]
         client = (source_ip, 0)
 
-        return Scope(
+        return Request(
             method=cf_request["method"],
             headers=[
                 [k.encode(), v[0]["value"].encode()]

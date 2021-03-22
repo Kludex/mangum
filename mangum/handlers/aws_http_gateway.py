@@ -3,14 +3,15 @@ import urllib.parse
 from typing import Dict, Any
 
 from .abstract_handler import AbstractHandler
-from .. import Response, Scope
+from .. import Response, Request
 
 
 class AwsHttpGateway(AbstractHandler):
     """
-    Handles AWS HTTP Gateway events (v1.0 and v2.0), transforming them into ASGI Scope and handling responses
+    Handles AWS HTTP Gateway events (v1.0 and v2.0), transforming them into ASGI Scope
+    and handling responses
 
-    See: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
+    See: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html  # noqa: E501
     """
 
     TYPE = "AWS_HTTP_GATEWAY"
@@ -20,7 +21,7 @@ class AwsHttpGateway(AbstractHandler):
         return self.trigger_event.get("version", "")
 
     @property
-    def scope(self) -> Scope:
+    def scope(self) -> Request:
         event = self.trigger_event
 
         headers = {}
@@ -56,9 +57,9 @@ class AwsHttpGateway(AbstractHandler):
             http_method = event["httpMethod"]
 
             # AWS Blog Post on this:
-            # https://aws.amazon.com/blogs/compute/support-for-multi-value-parameters-in-amazon-api-gateway/
-            # A multi value param will be in multi value _and_ regular queryStringParameters. Multi value takes
-            # precedence.
+            # https://aws.amazon.com/blogs/compute/support-for-multi-value-parameters-in-amazon-api-gateway/  # noqa: E501
+            # A multi value param will be in multi value _and_ regular
+            # queryStringParameters. Multi value takes precedence.
             if event.get("multiValueQueryStringParameters", False):
                 query_string = urllib.parse.urlencode(
                     event.get("multiValueQueryStringParameters", {}), doseq=True
@@ -71,7 +72,8 @@ class AwsHttpGateway(AbstractHandler):
                 query_string = b""
         else:
             raise RuntimeError(
-                "Unsupported version of HTTP Gateway Spec, only v1.0 and v2.0 are supported."
+                "Unsupported version of HTTP Gateway Spec, only v1.0 and v2.0 are "
+                "supported."
             )
 
         server_name = headers.get("host", "mangum")
@@ -85,7 +87,7 @@ class AwsHttpGateway(AbstractHandler):
         if not path:
             path = "/"
 
-        return Scope(
+        return Request(
             method=http_method,
             headers=[[k.encode(), v.encode()] for k, v in headers.items()],
             path=urllib.parse.unquote(path),
@@ -130,8 +132,8 @@ class AwsHttpGateway(AbstractHandler):
                 "isBase64Encoded": is_base64_encoded,
             }
         elif self.event_version == "2.0":
-            # The API Gateway will infer stuff for us, but we'll just do that inference here and keep the output
-            # consistent
+            # The API Gateway will infer stuff for us, but we'll just do that inference
+            # here and keep the output consistent
             if "content-type" not in headers and response.body is not None:
                 headers["content-type"] = "application/json"
 

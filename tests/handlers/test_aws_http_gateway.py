@@ -216,7 +216,8 @@ def test_aws_http_gateway_scope_basic_v1():
 
 def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     """
-    Ensure only queryStringParameters headers still works (unsure if this is possible from HTTP Gateway)
+    Ensure only queryStringParameters headers still works (unsure if this is possible
+    from HTTP Gateway)
     """
     example_event = get_mock_aws_http_gateway_event_v1(
         "GET", "/test", {"hello": ["world", "life"]}, None, False
@@ -322,8 +323,10 @@ def test_aws_http_gateway_scope_basic_v2():
 def test_aws_http_gateway_scope_bad_version():
     """
     Set a version we don't support
+
+    Version is the only thing that is different here, we should be checking that
+    specifically
     """
-    # Version is the only thing that is different here, we should be checking that specifically
     example_event = get_mock_aws_http_gateway_event_v2("GET", "/test", {}, None, False)
     example_event["version"] = "9001.1"
     example_context = {}

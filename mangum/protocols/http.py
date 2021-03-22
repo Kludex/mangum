@@ -5,7 +5,7 @@ import logging
 from io import BytesIO
 from dataclasses import dataclass
 
-from .. import Response, Scope
+from .. import Response, Request
 from ..types import ASGIApp, Message
 from ..exceptions import UnexpectedMessage
 
@@ -44,7 +44,7 @@ class HTTPCycle:
     * **response** - A dictionary containing the response data to return in AWS Lambda.
     """
 
-    scope: Scope
+    scope: Request
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: Optional[Response] = None
 
@@ -64,7 +64,8 @@ class HTTPCycle:
         self.loop.run_until_complete(asgi_task)
 
         if self.response is None:
-            # Something really bad happened and we puked before we could get a response out
+            # Something really bad happened and we puked before we could get a
+            # response out
             self.response = Response(
                 status=500,
                 body=b"Internal Server Error",

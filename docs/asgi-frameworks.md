@@ -11,14 +11,15 @@ We can think about the ASGI framework support without referencing an existing im
 Let's invent an API for a non-existent microframework to demonstrate things further. This could represent *any* ASGI framework application:
 
 ```python
+import mangum.adapter
 import framework
-from mangum import Mangum
+from mangum import Mangum, Request
 
 app = framework.applications.Application()
 
 
 @app.route("/")
-def endpoint(request: framework.requests.Request) -> dict:
+def endpoint(request: Request) -> dict:
     return {"hi": "there"}
 
 

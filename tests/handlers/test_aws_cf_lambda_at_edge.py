@@ -28,7 +28,7 @@ def mock_lambda_at_edge_event(
                         "distributionDomainName": "mock-distribution.local.localhost",
                         "distributionId": "ABC123DEF456G",
                         "eventType": "origin-request",
-                        "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",
+                        "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",  # noqa: E501
                     },
                     "request": {
                         "clientIp": "192.168.100.1",
@@ -88,7 +88,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
                         "distributionDomainName": "d111111abcdef8.cloudfront.net",
                         "distributionId": "EDFDVBD6EXAMPLE",
                         "eventType": "origin-request",
-                        "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==",
+                        "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==",  # noqa: E501
                     },
                     "request": {
                         "clientIp": "203.0.113.178",
@@ -102,7 +102,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
                             "via": [
                                 {
                                     "key": "Via",
-                                    "value": "2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)",
+                                    "value": "2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)",  # noqa: E501
                                 }
                             ],
                             "host": [{"key": "Host", "value": "example.org"}],
@@ -165,7 +165,8 @@ def test_aws_cf_lambda_at_edge_scope_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,"
+    "body_base64_encoded,query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         ("POST", "/", {"name": ["me"]}, None, False, b"name=me", None),

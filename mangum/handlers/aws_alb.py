@@ -3,13 +3,13 @@ import urllib.parse
 from typing import Dict, Any
 
 from .abstract_handler import AbstractHandler
-from .. import Response, Scope
+from .. import Response, Request
 
 
 class AwsAlb(AbstractHandler):
     """
-    Handles AWS Elastic Load Balancer, really Application Load Balancer events transforming them into ASGI Scope
-    and handling responses
+    Handles AWS Elastic Load Balancer, really Application Load Balancer events
+    transforming them into ASGI Scope and handling responses
 
     See: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
     """
@@ -17,7 +17,7 @@ class AwsAlb(AbstractHandler):
     TYPE = "AWS_ALB"
 
     @property
-    def scope(self) -> Scope:
+    def scope(self) -> Request:
         event = self.trigger_event
 
         headers = {}
@@ -42,7 +42,7 @@ class AwsAlb(AbstractHandler):
         if not path:
             path = "/"
 
-        return Scope(
+        return Request(
             method=http_method,
             headers=[[k.encode(), v.encode()] for k, v in headers.items()],
             path=urllib.parse.unquote(path),

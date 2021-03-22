@@ -1,6 +1,11 @@
 import logging
 from contextlib import ExitStack
-from typing import Any, ContextManager, Dict, TYPE_CHECKING
+from typing import (
+    Any,
+    ContextManager,
+    Dict,
+    TYPE_CHECKING,
+)
 
 from .exceptions import ConfigurationError
 from .handlers import AbstractHandler

@@ -3,7 +3,7 @@ import urllib.parse
 from typing import Dict, Any, TYPE_CHECKING
 
 from .abstract_handler import AbstractHandler
-from .. import Response, Scope
+from .. import Response, Request
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
@@ -11,7 +11,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class AwsApiGateway(AbstractHandler):
     """
-    Handles AWS API Gateway events, transforming them into ASGI Scope and handling responses
+    Handles AWS API Gateway events, transforming them into ASGI Scope and handling
+    responses
 
     See: https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html
     """
@@ -29,7 +30,7 @@ class AwsApiGateway(AbstractHandler):
         self.base_path = base_path
 
     @property
-    def scope(self) -> Scope:
+    def scope(self) -> Request:
         event = self.trigger_event
 
         # multiValue versions of headers take precedence over their plain versions
@@ -78,7 +79,7 @@ class AwsApiGateway(AbstractHandler):
             if path.startswith(self.base_path):
                 path = path[len(self.base_path) :]
 
-        return Scope(
+        return Request(
             method=http_method,
             headers=[[k.encode(), v.encode()] for k, v in headers.items()],
             path=urllib.parse.unquote(path),

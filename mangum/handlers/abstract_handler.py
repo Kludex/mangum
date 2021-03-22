@@ -2,7 +2,7 @@ import base64
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, TYPE_CHECKING, Tuple, List
 
-from .. import Response, Scope
+from .. import Response, Request
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
@@ -20,7 +20,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def scope(self) -> Scope:
+    def scope(self) -> Request:
         """
         Parse an ASGI scope from the request event
         """
@@ -35,7 +35,8 @@ class AbstractHandler(metaclass=ABCMeta):
     @abstractmethod
     def transform_response(self, response: Response) -> Dict[str, Any]:
         """
-        After running our application, transform the response to the correct format for this handler
+        After running our application, transform the response to the correct format for
+        this handler
         """
 
     @staticmethod
@@ -45,8 +46,9 @@ class AbstractHandler(metaclass=ABCMeta):
         **kwargs: Dict[str, Any]
     ) -> "AbstractHandler":
         """
-        A factory method that determines which handler to use. All this code should probably stay in one place to make
-        sure we are able to uniquely find each handler correctly.
+        A factory method that determines which handler to use. All this code should
+        probably stay in one place to make sure we are able to uniquely find each
+        handler correctly.
         """
 
         # These should be ordered from most specific to least for best accuracy
@@ -75,7 +77,9 @@ class AbstractHandler(metaclass=ABCMeta):
         if "resource" in trigger_event:
             from . import AwsApiGateway
 
-            return AwsApiGateway(trigger_event, trigger_context, **kwargs)  # type: ignore
+            return AwsApiGateway(
+                trigger_event, trigger_context, **kwargs  # type: ignore
+            )
 
         raise TypeError("Unable to determine handler from trigger event")
 
@@ -105,8 +109,8 @@ class AbstractHandler(metaclass=ABCMeta):
         body: bytes, headers: Dict[str, str]
     ) -> Tuple[str, bool]:
         """
-        To ease debugging for our users, try and return strings where we can, otherwise to ensure maximum
-        compatibility with binary data, base64 encode it.
+        To ease debugging for our users, try and return strings where we can,
+        otherwise to ensure maximum compatibility with binary data, base64 encode it.
         """
         is_base64_encoded = False
         output_body = ""
