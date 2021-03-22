@@ -35,8 +35,8 @@ class HTTPCycle:
     """
     Manages the application cycle for an ASGI `http` connection.
 
-    * **scope** - A dictionary containing the connection scope used to run the ASGI
-    application instance.
+    * **request** - A request object containing the event and context for the connection
+    scope used to run the ASGI application instance.
     * **state** - An enumerated `HTTPCycleState` type that indicates the state of the
     ASGI connection.
     * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
@@ -44,7 +44,7 @@ class HTTPCycle:
     * **response** - A dictionary containing the response data to return in AWS Lambda.
     """
 
-    scope: Request
+    request: Request
     state: HTTPCycleState = HTTPCycleState.REQUEST
     response: Optional[Response] = None
 
@@ -78,7 +78,7 @@ class HTTPCycle:
         Calls the application with the `http` connection scope.
         """
         try:
-            await app(self.scope.as_dict(), self.receive, self.send)
+            await app(self.request.scope, self.receive, self.send)
         except BaseException as exc:
             self.logger.error("Exception in 'http' protocol.", exc_info=exc)
             if self.state is HTTPCycleState.REQUEST:

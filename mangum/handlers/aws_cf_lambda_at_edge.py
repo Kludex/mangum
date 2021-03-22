@@ -16,7 +16,7 @@ class AwsCfLambdaAtEdge(AbstractHandler):
     TYPE = "AWS_CF_LAMBDA_AT_EDGE"
 
     @property
-    def scope(self) -> Request:
+    def request(self) -> Request:
         event = self.trigger_event
 
         cf_request = event["Records"][0]["cf"]["request"]

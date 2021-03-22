@@ -21,7 +21,7 @@ class AwsHttpGateway(AbstractHandler):
         return self.trigger_event.get("version", "")
 
     @property
-    def scope(self) -> Request:
+    def request(self) -> Request:
         event = self.trigger_event
 
         headers = {}

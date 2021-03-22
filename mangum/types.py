@@ -1,20 +1,31 @@
-import typing
 from dataclasses import dataclass, field
-from typing import List, Tuple, Dict, Any, Union, Optional, TYPE_CHECKING
-
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Any,
+    Union,
+    Optional,
+    MutableMapping,
+    Awaitable,
+    Callable,
+    TYPE_CHECKING,
+)
 from typing_extensions import Protocol
 
-Message = typing.MutableMapping[str, typing.Any]
-ScopeDict = typing.MutableMapping[str, typing.Any]
-Receive = typing.Callable[[], typing.Awaitable[Message]]
-Send = typing.Callable[[Message], typing.Awaitable[None]]
+
+Message = MutableMapping[str, Any]
+Scope = MutableMapping[str, Any]
+Receive = Callable[[], Awaitable[Message]]
+Send = Callable[[Message], Awaitable[None]]
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
 
 class ASGIApp(Protocol):
-    async def __call__(self, scope: ScopeDict, receive: Receive, send: Send) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         ...  # pragma: no cover
 
 
@@ -46,7 +57,8 @@ class Request:
     root_path: str = ""
     asgi: Dict[str, str] = field(default_factory=lambda: {"version": "3.0"})
 
-    def as_dict(self) -> ScopeDict:
+    @property
+    def scope(self) -> Scope:
         return {
             "type": self.type,
             "http_version": self.http_version,
