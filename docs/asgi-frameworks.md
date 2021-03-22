@@ -13,13 +13,13 @@ Let's invent an API for a non-existent microframework to demonstrate things furt
 ```python
 import mangum.adapter
 import framework
-from mangum import Mangum, Request
+from mangum import Mangum
 
 app = framework.applications.Application()
 
 
 @app.route("/")
-def endpoint(request: Request) -> dict:
+def endpoint(request: framework.requests.Request) -> dict:
     return {"hi": "there"}
 
 
