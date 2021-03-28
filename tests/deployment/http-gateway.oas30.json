@@ -1,0 +1,64 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "test-mangum-http"
+  },
+  "paths": {
+    "/": {
+      "x-amazon-apigateway-any-method": {
+        "responses": {
+          "default": {
+            "description": "Default response for ANY /"
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "2.0",
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${lambda_arn}/invocations",
+          "connectionType": "INTERNET"
+        }
+      }
+    },
+    "/mangum-test": {
+      "x-amazon-apigateway-any-method": {
+        "responses": {
+          "default": {
+            "description": "Default response for ANY /mangum-test"
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "2.0",
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${lambda_arn}/invocations",
+          "connectionType": "INTERNET"
+        }
+      }
+    }
+  },
+  "x-amazon-apigateway-cors": {
+    "allowMethods": [
+      "DELETE",
+      "GET",
+      "HEAD",
+      "OPTIONS",
+      "PATCH",
+      "POST",
+      "PUT"
+    ],
+    "allowHeaders": [
+      "content-type",
+      "authorization",
+      "x-amz-date",
+      "x-api-key",
+      "x-amz-security-token"
+    ],
+    "maxAge": 0,
+    "allowCredentials": false,
+    "allowOrigins": [
+      "*"
+    ]
+  },
+  "x-amazon-apigateway-importexport-version": "1.0"
+}
