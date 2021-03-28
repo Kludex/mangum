@@ -40,10 +40,17 @@ resource "aws_lambda_function" "mangum" {
   filename = data.archive_file.lambda.output_path
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
 
-  environment {
-    variables = {
-      TEST_FOO = "bar"
-    }
+  publish = true
+
+  # Lambda@Edge functions cannot have environment variables
+  # environment {
+  #  variables = {
+  #    TEST_FOO = "bar"
+  #  }
+  #}
+
+  lifecycle {
+    ignore_changes = [filename]
   }
 }
 
