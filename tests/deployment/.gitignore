@@ -1,0 +1,6 @@
+*.backup
+*.lock.info
+
+.terraform
+lambda_code.zip
+terraform.tfstate
