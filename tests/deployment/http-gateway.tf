@@ -6,13 +6,8 @@ resource "aws_apigatewayv2_api" "mangum_http" {
   })
 }
 
-resource "aws_apigatewayv2_route" "mangum_http" {
-  api_id    = aws_apigatewayv2_api.mangum_http.id
-  route_key = "$default"
-}
-
 resource "aws_apigatewayv2_deployment" "mangum_http" {
-  api_id      = aws_apigatewayv2_route.mangum_http.api_id
+  api_id      = aws_apigatewayv2_api.mangum_http.id
   description = "Example deployment"
 
   triggers = {
@@ -27,6 +22,7 @@ resource "aws_apigatewayv2_deployment" "mangum_http" {
 resource "aws_apigatewayv2_stage" "mangum_http" {
   api_id = aws_apigatewayv2_api.mangum_http.id
   name   = "test-stage"
+  deployment_id = aws_apigatewayv2_deployment.mangum_http.id
 }
 
 resource "aws_lambda_permission" "from_http_gateway" {
