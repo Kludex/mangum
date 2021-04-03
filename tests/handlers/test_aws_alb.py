@@ -7,6 +7,7 @@ from mangum.handlers import AwsAlb
 def get_mock_aws_alb_event(
     method, path, multi_value_query_parameters, body, body_base64_encoded
 ):
+    multi_value_query_parameters = multi_value_query_parameters or {}
     return {
         "requestContext": {
             "elb": {
@@ -15,9 +16,7 @@ def get_mock_aws_alb_event(
         },
         "httpMethod": method,
         "path": path,
-        "queryStringParameters": multi_value_query_parameters
-        if multi_value_query_parameters
-        else {},
+        "queryStringParameters": multi_value_query_parameters,
         "headers": {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
             "image/webp,image/apng,*/*;q=0.8",

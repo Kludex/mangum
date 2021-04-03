@@ -31,6 +31,12 @@ def mock_lambda_at_edge_event(
                         "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",  # noqa: E501
                     },
                     "request": {
+                        "body": {
+                            "action": "read-only",
+                            "data": body,
+                            "encoding": "base64" if body_base64_encoded else "text",
+                            "inputTruncated": False,
+                        },
                         "clientIp": "192.168.100.1",
                         "headers": headers,
                         "method": method,
@@ -65,14 +71,6 @@ def mock_lambda_at_edge_event(
             }
         ]
     }
-
-    if body is not None:
-        event["Records"][0]["cf"]["request"]["body"] = {
-            "inputTruncated": False,
-            "action": "read-only",
-            "encoding": "base64" if body_base64_encoded else "text",
-            "data": body,
-        }
     return event
 
 

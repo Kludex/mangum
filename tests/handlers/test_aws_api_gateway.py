@@ -9,10 +9,14 @@ from mangum.handlers import AwsApiGateway
 def get_mock_aws_api_gateway_event(
     method, path, multi_value_query_parameters, body, body_base64_encoded
 ):
+    multi_value_query_parameters = multi_value_query_parameters or {}
+    parsed_multi_qs_values = None
+    if multi_value_query_parameters:
+        parsed_multi_qs_values = {k: v for k, v in multi_value_query_parameters.items()}
     return {
+        "resource": "/{proxy+}",
         "path": path,
-        "body": body,
-        "isBase64Encoded": body_base64_encoded,
+        "httpMethod": method,
         "headers": {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
             "image/webp,*/*;q=0.8",
@@ -31,7 +35,6 @@ def get_mock_aws_api_gateway_event(
             "X-Forwarded-Port": "443",
             "X-Forwarded-Proto": "https",
         },
-        "pathParameters": {"proxy": "hello"},
         "requestContext": {
             "accountId": "123456789012",
             "resourceId": "us4z18",
@@ -54,14 +57,12 @@ def get_mock_aws_api_gateway_event(
             "httpMethod": method,
             "apiId": "123",
         },
-        "resource": "/{proxy+}",
-        "httpMethod": method,
-        "multiValueQueryStringParameters": {
-            k: v for k, v in multi_value_query_parameters.items()
-        }
-        if multi_value_query_parameters
-        else None,
+        "queryStringParameters": None,
+        "multiValueQueryStringParameters": parsed_multi_qs_values,
+        "pathParameters": {"proxy": "hello"},
         "stageVariables": {"stageVarName": "stageVarValue"},
+        "body": body,
+        "isBase64Encoded": body_base64_encoded,
     }
 
 
