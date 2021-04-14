@@ -52,7 +52,7 @@ def test_aws_alb_basic():
         },
         "httpMethod": "GET",
         "path": "/lambda",
-        "queryStringParameters": {"query": "1234ABCD"},
+        "queryStringParameters": {"query": "1234ABCD", "a": "b%20c"},
         "headers": {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
             "image/webp,image/apng,*/*;q=0.8",
@@ -74,6 +74,13 @@ def test_aws_alb_basic():
 
     example_context = {}
     handler = AwsAlb(example_event, example_context)
+    print(
+        f"wrong? "
+        f"{example_event['queryStringParameters']}"
+        f" -> "
+        f"{handler.request.scope['query_string']}"
+    )
+    # wrong? {'query': '1234ABCD', 'a': 'b%20c'} -> b'query=1234ABCD&a=b%2520c'
     assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
