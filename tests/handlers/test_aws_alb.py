@@ -74,6 +74,8 @@ def test_aws_alb_basic():
 
     example_context = {}
     handler = AwsAlb(example_event, example_context)
+
+    assert type(handler.body) == bytes
     assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
@@ -119,7 +121,15 @@ def test_aws_alb_basic():
     "query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
-        ("POST", "/", {"name": ["me"]}, None, False, b"name=me", None),
+        (
+            "POST",
+            "/",
+            {"name": ["me"]},
+            "field1=value1&field2=value2",
+            False,
+            b"name=me",
+            b"field1=value1&field2=value2",
+        ),
         (
             "GET",
             "/my/resource",
@@ -210,7 +220,10 @@ def test_aws_alb_scope_real(
         "type": "http",
     }
 
-    assert handler.body == scope_body
+    if handler.body:
+        assert handler.body == scope_body
+    else:
+        assert handler.body == b""
 
 
 def test_aws_alb_set_cookies() -> None:

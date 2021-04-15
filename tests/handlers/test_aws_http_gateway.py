@@ -195,6 +195,8 @@ def test_aws_http_gateway_scope_basic_v1():
     }
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
+
+    assert type(handler.body) == bytes
     assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
@@ -297,6 +299,8 @@ def test_aws_http_gateway_scope_basic_v2():
     }
     example_context = {}
     handler = AwsHttpGateway(example_event, example_context)
+
+    assert type(handler.body) == bytes
     assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
@@ -396,7 +400,10 @@ def test_aws_http_gateway_scope_real_v1(
         "type": "http",
     }
 
-    assert handler.body == scope_body
+    if handler.body:
+        assert handler.body == scope_body
+    else:
+        assert handler.body == b""
 
 
 @pytest.mark.parametrize(
@@ -461,7 +468,10 @@ def test_aws_http_gateway_scope_real_v2(
         "type": "http",
     }
 
-    assert handler.body == scope_body
+    if handler.body:
+        assert handler.body == scope_body
+    else:
+        assert handler.body == b""
 
 
 @pytest.mark.parametrize(

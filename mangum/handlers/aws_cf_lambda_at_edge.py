@@ -56,8 +56,14 @@ class AwsCfLambdaAtEdge(AbstractHandler):
     def body(self) -> bytes:
         request = self.trigger_event["Records"][0]["cf"]["request"]
         body = request.get("body", {}).get("data", None)
+
+        if not body:
+            body = b""
         if request.get("body", {}).get("encoding", "") == "base64":
-            body = base64.b64decode(body)
+            return base64.b64decode(body)
+        if not isinstance(body, bytes):
+            body = body.encode()
+
         return body
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
