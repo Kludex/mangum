@@ -16,6 +16,43 @@ class AwsAlb(AbstractHandler):
 
     TYPE = "AWS_ALB"
 
+    def encode_query_string(self) -> bytes:
+        """
+        Encodes the queryStringParameters.
+
+        The parameters must be decoded, and then encoded again to prevent double
+        encoding.
+
+        See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
+        "If the query parameters are URL-encoded, the load balancer does not decode
+        them. You must decode them in your Lambda function."
+
+        Issue: https://github.com/jordaneremieff/mangum/issues/178
+        """
+
+        params = self.trigger_event.get("multiValueQueryStringParameters")
+        if not params:
+            params = self.trigger_event.get("queryStringParameters")
+        if not params:
+            return b""  # No query parameters, exit early with an empty byte string.
+
+        # Loop through the query parameters, unquote each key and value and append the
+        # pair as a tuple to the query list. If value is a list or a tuple, loop
+        # through the nested struture and unqote.
+        query = []
+        for key, value in params.items():
+            if isinstance(value, (tuple, list)):
+                for v in value:
+                    query.append(
+                        (urllib.parse.unquote_plus(key), urllib.parse.unquote_plus(v))
+                    )
+            else:
+                query.append(
+                    (urllib.parse.unquote_plus(key), urllib.parse.unquote_plus(value))
+                )
+
+        return urllib.parse.urlencode(query).encode()
+
     @property
     def request(self) -> Request:
         event = self.trigger_event
@@ -27,9 +64,7 @@ class AwsAlb(AbstractHandler):
         source_ip = headers.get("x-forwarded-for", "")
         path = event["path"]
         http_method = event["httpMethod"]
-        query_string = urllib.parse.urlencode(
-            event.get("queryStringParameters", {}), doseq=True
-        ).encode()
+        query_string = self.encode_query_string()
 
         server_name = headers.get("host", "mangum")
         if ":" not in server_name:
