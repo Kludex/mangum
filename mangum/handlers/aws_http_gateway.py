@@ -102,7 +102,7 @@ class AwsHttpGateway(AbstractHandler):
 
     @property
     def body(self) -> bytes:
-        body = self.trigger_event.get("body", b"")
+        body = self.trigger_event.get("body", b"") or b""
 
         if not body:
             body = b""

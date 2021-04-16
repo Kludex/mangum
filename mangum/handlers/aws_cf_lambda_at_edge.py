@@ -55,10 +55,8 @@ class AwsCfLambdaAtEdge(AbstractHandler):
     @property
     def body(self) -> bytes:
         request = self.trigger_event["Records"][0]["cf"]["request"]
-        body = request.get("body", {}).get("data", None)
+        body = request.get("body", {}).get("data", None) or b""
 
-        if not body:
-            body = b""
         if request.get("body", {}).get("encoding", "") == "base64":
             return base64.b64decode(body)
         if not isinstance(body, bytes):
