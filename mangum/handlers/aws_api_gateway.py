@@ -96,7 +96,7 @@ class AwsApiGateway(AbstractHandler):
     @property
     def body(self) -> bytes:
         body = self.trigger_event.get("body", b"") or b""
-    
+
         if self.trigger_event.get("isBase64Encoded", False):
             return base64.b64decode(body)
         if not isinstance(body, bytes):
