@@ -53,7 +53,7 @@ class AwsAlb(AbstractHandler):
                     (urllib.parse.unquote_plus(key), urllib.parse.unquote_plus(value))
                 )
 
-        return urllib.parse.urlencode(query, quote_via=urllib.parse.quote_plus).encode()
+        return urllib.parse.urlencode(query).encode()
 
     @property
     def request(self) -> Request:
