@@ -54,7 +54,7 @@ def test_aws_alb_basic():
         "path": "/lambda",
         "queryStringParameters": {
             "q1": "1234ABCD",
-            "q2": "b+c",  # not encoded
+            "q2": "b c",  # not encoded
             "q3": "b%20c",  # encoded
             "q4": "/some/path/",  # not encoded
             "q5": "%2Fsome%2Fpath%2F",  # encoded
