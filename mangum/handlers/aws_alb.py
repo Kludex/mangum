@@ -100,6 +100,15 @@ class AwsAlb(AbstractHandler):
         return body
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
+        # TODO: Fix this to be consistent with AWS docs.
+        #  Currently one of the return values from _handle_multi_value_headers
+        #  will be empty, with no respect for whether multivalue headers are
+        #  enabled or not. This is different to API gateway
+        #  (https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
+        #  and this is also different to HTTP API
+        #  (https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html).
+        #  "You must use multiValueHeaders if you have enabled multi-value headers and headers otherwise"
+        #  https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
         headers, multi_value_headers = self._handle_multi_value_headers(
             response.headers
         )
