@@ -11,7 +11,9 @@ class AwsAlb(AbstractHandler):
     Handles AWS Elastic Load Balancer, really Application Load Balancer events
     transforming them into ASGI Scope and handling responses
 
-    See: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
+    See:
+        1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
+        2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
     """
 
     TYPE = "AWS_ALB"
