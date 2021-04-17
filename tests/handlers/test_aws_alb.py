@@ -111,7 +111,9 @@ def test_aws_alb_basic():
         "http_version": "1.1",
         "method": "GET",
         "path": "/lambda",
-        "query_string": b"q1=1234ABCD&q2=b+c&q3=b+c&q4=%2Fsome%2Fpath%2F&q5=%2Fsome%2Fpath%2F",
+        "query_string": (
+            b"q1=1234ABCD&q2=b+c&q3=b+c&q4=%2Fsome%2Fpath%2F&q5=%2Fsome%2Fpath%2F"
+        ),
         "raw_path": None,
         "root_path": "",
         "scheme": "http",

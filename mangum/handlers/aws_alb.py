@@ -13,7 +13,8 @@ class AwsAlb(AbstractHandler):
 
     See:
         1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
-        2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
+        2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/
+           lambda-functions.html
     """
 
     TYPE = "AWS_ALB"
@@ -25,7 +26,8 @@ class AwsAlb(AbstractHandler):
         The parameters must be decoded, and then encoded again to prevent double
         encoding.
 
-        See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
+        See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/
+             lambda-functions.html
         "If the query parameters are URL-encoded, the load balancer does not decode
         them. You must decode them in your Lambda function."
 
@@ -106,9 +108,12 @@ class AwsAlb(AbstractHandler):
         #  enabled or not. This is different to API gateway
         #  (https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
         #  and this is also different to HTTP API
-        #  (https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html).
-        #  "You must use multiValueHeaders if you have enabled multi-value headers and headers otherwise"
-        #  https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
+        #  (https://docs.aws.amazon.com/apigateway/latest/developerguide/
+        #   http-api-develop-integrations-lambda.html).
+        #  "You must use multiValueHeaders if you have enabled multi-value headers
+        #   and headers otherwise"
+        #  https://docs.aws.amazon.com/elasticloadbalancing/latest/application/
+        #  lambda-functions.html
         headers, multi_value_headers = self._handle_multi_value_headers(
             response.headers
         )
