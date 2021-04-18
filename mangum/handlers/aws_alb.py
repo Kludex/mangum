@@ -23,7 +23,7 @@ class AwsAlb(AbstractHandler):
         The parameters must be decoded, and then encoded again to prevent double
         encoding.
 
-        See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html
+        See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
         "If the query parameters are URL-encoded, the load balancer does not decode
         them. You must decode them in your Lambda function."
 
