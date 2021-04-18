@@ -106,6 +106,19 @@ def get_mock_aws_alb_event(
             False,
         ),
         ("POST", "/", {"name": ["me"]}, None, None, False, b"name=me", None, False),
+        # Duplicate query params with multi-value headers disabled
+        (
+            "POST",
+            "/",
+            {"name": ["me", "you"]},
+            None,
+            None,
+            False,
+            b"name=you",
+            None,
+            False,
+        ),
+        #  Duplicate query params with multi-value headers enable:
         (
             "GET",
             "/my/resource",
