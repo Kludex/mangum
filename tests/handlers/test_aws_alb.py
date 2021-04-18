@@ -83,70 +83,28 @@ def get_mock_aws_alb_event(
     return resp
 
 
-def test_aws_alb_basic():
-    """
-    Test the event from the AWS docs
-    """
-    event_query_params = {
-        "q1": ["1234ABCD"],
-        "q2": ["b+c"],  # not encoded
-        "q3": ["b%20c"],  # encoded
-        "q4": ["/some/path/"],  # not encoded
-        "q5": ["%2Fsome%2Fpath%2F"],  # encoded
-    }
-    example_event = get_mock_aws_alb_event(
-        "GET", "/lambda", event_query_params, None, "", False, False
-    )
-
-    example_context = {}
-    handler = AwsAlb(example_event, example_context)
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
-        "aws.context": {},
-        "aws.event": example_event,
-        "aws.eventType": "AWS_ALB",
-        "client": ("72.12.164.125", 0),
-        "headers": [
-            [
-                b"accept",
-                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/"
-                b"webp,image/apng,*/*;q=0.8",
-            ],
-            [b"accept-encoding", b"gzip"],
-            [b"accept-language", b"en-US,en;q=0.9"],
-            [b"connection", b"keep-alive"],
-            [b"host", b"lambda-alb-123578498.us-east-2.elb.amazonaws.com"],
-            [b"upgrade-insecure-requests", b"1"],
-            [
-                b"user-agent",
-                b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                b" (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
-            ],
-            [b"x-amzn-trace-id", b"Root=1-5c536348-3d683b8b04734faae651f476"],
-            [b"x-forwarded-for", b"72.12.164.125"],
-            [b"x-forwarded-port", b"80"],
-            [b"x-forwarded-proto", b"http"],
-            [b"x-imforwards", b"20"],
-        ],
-        "http_version": "1.1",
-        "method": "GET",
-        "path": "/lambda",
-        "query_string": (
-            b"q1=1234ABCD&q2=b+c&q3=b+c&q4=%2Fsome%2Fpath%2F&q5=%2Fsome%2Fpath%2F"
-        ),
-        "raw_path": None,
-        "root_path": "",
-        "scheme": "http",
-        "server": ("lambda-alb-123578498.us-east-2.elb.amazonaws.com", 80),
-        "type": "http",
-    }
-
-
 @pytest.mark.parametrize(
     "method,path,query_parameters,headers,req_body,body_base64_encoded,"
     "query_string,scope_body,multi_value_headers",
     [
         ("GET", "/hello/world", None, None, None, False, b"", None, False),
+        (
+            "GET",
+            "/lambda",
+            {
+                "q1": ["1234ABCD"],
+                "q2": ["b+c"],  # not encoded
+                "q3": ["b%20c"],  # encoded
+                "q4": ["/some/path/"],  # not encoded
+                "q5": ["%2Fsome%2Fpath%2F"],  # encoded
+            },
+            None,
+            "",
+            False,
+            b"q1=1234ABCD&q2=b+c&q3=b+c&q4=%2Fsome%2Fpath%2F&q5=%2Fsome%2Fpath%2F",
+            "",
+            False,
+        ),
         ("POST", "/", {"name": ["me"]}, None, None, False, b"name=me", None, False),
         (
             "GET",
