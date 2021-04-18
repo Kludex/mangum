@@ -105,8 +105,18 @@ def get_mock_aws_alb_event(
             "",
             False,
         ),
-        ("POST", "/", {"name": ["me"]}, None, None, False, b"name=me", None, False),
-        # Duplicate query params with multi-value headers disabled
+        (
+            "POST",
+            "/",
+            {"name": ["me"]},
+            None,
+            "field1=value1&field2=value2",
+            False,
+            b"name=me",
+            b"field1=value1&field2=value2",
+            False,
+        ),
+        # Duplicate query params with multi-value headers disabled:
         (
             "POST",
             "/",
@@ -194,6 +204,7 @@ def test_aws_alb_scope_real(
     if scope_path == "":
         scope_path = "/"
 
+    assert type(handler.body) == bytes
     assert handler.request.scope == {
         "asgi": {"version": "3.0"},
         "aws.context": {},
@@ -233,7 +244,10 @@ def test_aws_alb_scope_real(
         "type": "http",
     }
 
-    assert handler.body == scope_body
+    if handler.body:
+        assert handler.body == scope_body
+    else:
+        assert handler.body == b""
 
 
 @pytest.mark.parametrize("multi_value_headers_enabled", (True, False))

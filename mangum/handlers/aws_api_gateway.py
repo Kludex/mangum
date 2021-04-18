@@ -95,9 +95,13 @@ class AwsApiGateway(AbstractHandler):
 
     @property
     def body(self) -> bytes:
-        body = self.trigger_event.get("body", b"")
+        body = self.trigger_event.get("body", b"") or b""
+
         if self.trigger_event.get("isBase64Encoded", False):
-            body = base64.b64decode(body)
+            return base64.b64decode(body)
+        if not isinstance(body, bytes):
+            body = body.encode()
+
         return body
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
