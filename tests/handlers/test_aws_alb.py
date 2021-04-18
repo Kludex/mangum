@@ -15,7 +15,7 @@ def get_mock_aws_alb_event(
         },
         "httpMethod": method,
         "path": path,
-        "queryStringParameters": multi_value_query_parameters
+        "multiValueQueryStringParameters": multi_value_query_parameters
         if multi_value_query_parameters
         else {},
         "headers": {
@@ -52,7 +52,13 @@ def test_aws_alb_basic():
         },
         "httpMethod": "GET",
         "path": "/lambda",
-        "queryStringParameters": {"query": "1234ABCD"},
+        "queryStringParameters": {
+            "q1": "1234ABCD",
+            "q2": "b c",  # not encoded
+            "q3": "b%20c",  # encoded
+            "q4": "/some/path/",  # not encoded
+            "q5": "%2Fsome%2Fpath%2F",  # encoded
+        },
         "headers": {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
             "image/webp,image/apng,*/*;q=0.8",
@@ -107,7 +113,7 @@ def test_aws_alb_basic():
         "http_version": "1.1",
         "method": "GET",
         "path": "/lambda",
-        "query_string": b"query=1234ABCD",
+        "query_string": b"q1=1234ABCD&q2=b+c&q3=b+c&q4=%2Fsome%2Fpath%2F&q5=%2Fsome%2Fpath%2F",  # noqa: E501
         "raw_path": None,
         "root_path": "",
         "scheme": "http",
