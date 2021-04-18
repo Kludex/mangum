@@ -14,6 +14,7 @@ def get_mock_aws_alb_event(
     method,
     path,
     query_parameters: Optional[Dict[str, List[str]]],
+    headers: Optional[Dict[str, List[str]]],
     body,
     body_base64_encoded,
     multi_value_headers: bool,
@@ -24,6 +25,9 @@ def get_mock_aws_alb_event(
     `multiValueQueryStringParameters` format - and if `multi_value_headers`
     is disabled, then they are simply transformed in to the
     `queryStringParameters` format.
+    Similarly for `headers`.
+    If `headers` is None, then some defaults will be used.
+    if `query_parameters` is None, then no query parameters will be used.
     """
     resp = {
         "requestContext": {
@@ -37,23 +41,27 @@ def get_mock_aws_alb_event(
         "isBase64Encoded": body_base64_encoded,
     }
 
-    _headers = {
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
-        "image/webp,image/apng,*/*;q=0.8",
-        "accept-encoding": "gzip",
-        "accept-language": "en-US,en;q=0.9",
-        "connection": "keep-alive",
-        "host": "lambda-alb-123578498.us-east-2.elb.amazonaws.com",
-        "upgrade-insecure-requests": "1",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/71.0.3578.98 Safari/537.36",
-        "x-amzn-trace-id": "Root=1-5c536348-3d683b8b04734faae651f476",
-        "x-forwarded-for": "72.12.164.125",
-        "x-forwarded-port": "80",
-        "x-forwarded-proto": "http",
-        "x-imforwards": "20",
-    }
+    if headers is None:
+        headers = {
+            "accept": [
+                "text/html,application/xhtml+xml,application/xml;"
+                "q=0.9,image/webp,image/apng,*/*;q=0.8"
+            ],
+            "accept-encoding": ["gzip"],
+            "accept-language": ["en-US,en;q=0.9"],
+            "connection": ["keep-alive"],
+            "host": ["lambda-alb-123578498.us-east-2.elb.amazonaws.com"],
+            "upgrade-insecure-requests": ["1"],
+            "user-agent": [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
+            ],
+            "x-amzn-trace-id": ["Root=1-5c536348-3d683b8b04734faae651f476"],
+            "x-forwarded-for": ["72.12.164.125"],
+            "x-forwarded-port": ["80"],
+            "x-forwarded-proto": ["http"],
+            "x-imforwards": ["20"],
+        }
 
     query_parameters = {} if query_parameters is None else query_parameters
 
@@ -61,13 +69,13 @@ def get_mock_aws_alb_event(
     # and one of `headers`/multiValueHeaders (per AWS docs for ALB/lambda)
     if multi_value_headers:
         resp["multiValueQueryStringParameters"] = query_parameters
-        resp["multiValueHeaders"] = {k: [v] for k, v in _headers.items()}
+        resp["multiValueHeaders"] = headers
     else:
-        # Take the last query parameter (per AWS docs for ALB/lambda)
+        # Take the last query parameter/cookie (per AWS docs for ALB/lambda)
         resp["queryStringParameters"] = {
             k: (v[-1] if len(v) > 0 else []) for k, v in query_parameters.items()
         }
-        resp["headers"] = _headers
+        resp["headers"] = {k: (v[-1] if len(v) > 0 else []) for k, v in headers.items()}
 
     return resp
 
@@ -155,15 +163,16 @@ def test_aws_alb_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,query_parameters,req_body,body_base64_encoded,"
+    "method,path,query_parameters,headers,req_body,body_base64_encoded,"
     "query_string,scope_body,multi_value_headers",
     [
-        ("GET", "/hello/world", None, None, False, b"", None, False),
-        ("POST", "/", {"name": ["me"]}, None, False, b"name=me", None, False),
+        ("GET", "/hello/world", None, None, None, False, b"", None, False),
+        ("POST", "/", {"name": ["me"]}, None, None, False, b"name=me", None, False),
         (
             "GET",
             "/my/resource",
             {"name": ["me", "you"]},
+            None,
             None,
             False,
             b"name=me&name=you",
@@ -175,6 +184,7 @@ def test_aws_alb_basic():
             "",
             {"name": ["me", "you"], "pet": ["dog"]},
             None,
+            None,
             False,
             b"name=me&name=you&pet=dog",
             None,
@@ -184,6 +194,7 @@ def test_aws_alb_basic():
         (
             "POST",
             "/img",
+            None,
             None,
             b"R0lGODdhAQABAIABAP8AAAAAACwAAAAAAQABAAACAkQBADs=",
             True,
@@ -195,6 +206,7 @@ def test_aws_alb_basic():
         (
             "POST",
             "/form-submit",
+            None,
             None,
             b"say=Hi&to=Mom",
             False,
@@ -208,6 +220,7 @@ def test_aws_alb_scope_real(
     method,
     path,
     query_parameters,
+    headers,
     req_body,
     body_base64_encoded,
     query_string,
@@ -218,6 +231,7 @@ def test_aws_alb_scope_real(
         method,
         path,
         query_parameters,
+        headers,
         req_body,
         body_base64_encoded,
         multi_value_headers,
@@ -287,7 +301,7 @@ def test_aws_alb_set_cookies() -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    event = get_mock_aws_alb_event("GET", "/test", {}, None, False, False)
+    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, False)
     response = handler(event, {})
     assert response == {
         "statusCode": 200,
@@ -329,7 +343,7 @@ def test_aws_alb_response(
         )
         await send({"type": "http.response.body", "body": raw_res_body})
 
-    event = get_mock_aws_alb_event(method, "/test", {}, None, False, False)
+    event = get_mock_aws_alb_event(method, "/test", {}, None, None, False, False)
 
     handler = Mangum(app, lifespan="off")
 
