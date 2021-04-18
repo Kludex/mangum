@@ -1,9 +1,28 @@
 import base64
 import urllib.parse
-from typing import Dict, Any
+from typing import Any, Dict, Generator, List, Tuple
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
+
+
+def all_casings(input_string: str) -> Generator:
+    """
+    Permute all casings of a given string.
+    A pretty algoritm, via @Amber
+    http://stackoverflow.com/questions/6792803/finding-all-possible-case-permutations-in-python
+    """
+    if not input_string:
+        yield ""
+    else:
+        first = input_string[:1]
+        if first.lower() == first.upper():
+            for sub_casing in all_casings(input_string[1:]):
+                yield first + sub_casing
+        else:
+            for sub_casing in all_casings(input_string[1:]):
+                yield first.lower() + sub_casing
+                yield first.upper() + sub_casing
 
 
 class AwsAlb(AbstractHandler):
@@ -66,10 +85,27 @@ class AwsAlb(AbstractHandler):
 
         return body
 
-    def transform_response(self, response: Response) -> Dict[str, Any]:
+    def handle_headers(
+        self,
+        response_headers: List[List[bytes]],
+    ) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
         headers, multi_value_headers = self._handle_multi_value_headers(
-            response.headers
+            response_headers
         )
+        if "multiValueHeaders" not in self.trigger_event:
+            # If there are multiple occurrences of headers, create case-mutated
+            # variations: https://github.com/logandk/serverless-wsgi/issues/11
+            for key, values in multi_value_headers.items():
+                if len(values) > 1:
+                    for value, cased_key in zip(values, all_casings(key)):
+                        headers[cased_key] = value
+
+            multi_value_headers = {}
+
+        return headers, multi_value_headers
+
+    def transform_response(self, response: Response) -> Dict[str, Any]:
+        headers, multi_value_headers = self.handle_headers(response.headers)
 
         body, is_base64_encoded = self._handle_base64_response_body(
             response.body, headers
