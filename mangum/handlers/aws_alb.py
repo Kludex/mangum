@@ -1,6 +1,6 @@
 import base64
 import urllib.parse
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
@@ -57,22 +57,38 @@ class AwsAlb(AbstractHandler):
 
         return urllib.parse.urlencode(query).encode()
 
+    def encode_headers(self) -> List[Tuple[bytes, bytes]]:
+        """Convert headers to a list of two-tuples per ASGI spec.
+
+        Only one of `multiValueHeaders` or `headers` should be defined in the
+        trigger event.
+        """
+        headers = []
+        if self.trigger_event.get("multiValueHeaders"):
+            for k, v in self.trigger_event.get("multiValueHeaders", {}).items():
+                for inner_v in v:
+                    headers.append((k.lower().encode(), inner_v.encode()))
+        elif self.trigger_event.get("headers"):
+            for k, v in self.trigger_event.get("headers", {}).items():
+                headers.append((k.lower().encode(), v.encode()))
+        return headers
+
     @property
     def request(self) -> Request:
         event = self.trigger_event
 
-        headers = {}
-        if event.get("headers"):
-            headers = {k.lower(): v for k, v in event.get("headers", {}).items()}
+        headers = self.encode_headers()
+        # Unique headers. If there are duplicates, it will use the last defined.
+        uq_headers = {k.decode(): v.decode() for k, v in headers}
 
-        source_ip = headers.get("x-forwarded-for", "")
+        source_ip = uq_headers.get("x-forwarded-for", "")
         path = event["path"]
         http_method = event["httpMethod"]
         query_string = self.encode_query_string()
 
-        server_name = headers.get("host", "mangum")
+        server_name = uq_headers.get("host", "mangum")
         if ":" not in server_name:
-            server_port = headers.get("x-forwarded-port", 80)
+            server_port = uq_headers.get("x-forwarded-port", 80)
         else:
             server_name, server_port = server_name.split(":")  # pragma: no cover
         server = (server_name, int(server_port))
@@ -83,9 +99,9 @@ class AwsAlb(AbstractHandler):
 
         return Request(
             method=http_method,
-            headers=[[k.encode(), v.encode()] for k, v in headers.items()],
+            headers=[list(x) for x in headers],
             path=urllib.parse.unquote(path),
-            scheme=headers.get("x-forwarded-proto", "https"),
+            scheme=uq_headers.get("x-forwarded-proto", "https"),
             query_string=query_string,
             server=server,
             client=client,
