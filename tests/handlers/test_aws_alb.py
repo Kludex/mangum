@@ -32,7 +32,10 @@ def get_mock_aws_alb_event(
     resp = {
         "requestContext": {
             "elb": {
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"  # noqa: E501
+                "targetGroupArn": (
+                    "arn:aws:elasticloadbalancing:us-east-2:123456789012:"
+                    "targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"
+                )
             }
         },
         "httpMethod": method,
