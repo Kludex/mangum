@@ -236,7 +236,8 @@ def test_aws_alb_scope_real(
     assert handler.body == scope_body
 
 
-def test_aws_alb_set_cookies() -> None:
+@pytest.mark.parametrize("multi_value_headers_enabled", (True, False))
+def test_aws_alb_set_cookies(multi_value_headers_enabled) -> None:
     async def app(scope, receive, send):
         await send(
             {
@@ -252,17 +253,28 @@ def test_aws_alb_set_cookies() -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, True)
+    event = get_mock_aws_alb_event(
+        "GET", "/test", {}, None, None, False, multi_value_headers_enabled
+    )
     response = handler(event, {})
-    assert response == {
+
+    expected_response = {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "multiValueHeaders": {
-            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
-            "content-type": ["text/plain; charset=utf-8"],
-        },
         "body": "Hello, world!",
     }
+    if multi_value_headers_enabled:
+        expected_response["multiValueHeaders"] = {
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+            "content-type": ["text/plain; charset=utf-8"],
+        }
+    else:
+        expected_response["headers"] = {
+            "content-type": "text/plain; charset=utf-8",
+            # Should be cookie2 as it's the *last* `set-cookie` in the list.
+            "set-cookie": "cookie2=cookie2; Secure",
+        }
+    assert response == expected_response
 
 
 @pytest.mark.parametrize(
