@@ -61,16 +61,15 @@ class AwsAlb(AbstractHandler):
         """Convert headers to a list of two-tuples per ASGI spec.
 
         Only one of `multiValueHeaders` or `headers` should be defined in the
-        trigger event.
+        trigger event. However, we pretend they both might exist and pull
+        headers out of both.
         """
         headers = []
-        if self.trigger_event.get("multiValueHeaders"):
-            for k, v in self.trigger_event.get("multiValueHeaders", {}).items():
-                for inner_v in v:
-                    headers.append((k.lower().encode(), inner_v.encode()))
-        elif self.trigger_event.get("headers"):
-            for k, v in self.trigger_event.get("headers", {}).items():
-                headers.append((k.lower().encode(), v.encode()))
+        for k, v in self.trigger_event.get("multiValueHeaders", {}).items():
+            for inner_v in v:
+                headers.append((k.lower().encode(), inner_v.encode()))
+        for k, v in self.trigger_event.get("headers", {}).items():
+            headers.append((k.lower().encode(), v.encode()))
         return headers
 
     @property
