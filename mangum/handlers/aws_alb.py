@@ -57,7 +57,7 @@ class AwsAlb(AbstractHandler):
 
         return urllib.parse.urlencode(query).encode()
 
-    def encode_headers(self) -> List[Tuple[bytes, bytes]]:
+    def transform_headers(self) -> List[Tuple[bytes, bytes]]:
         """Convert headers to a list of two-tuples per ASGI spec.
 
         Only one of `multiValueHeaders` or `headers` should be defined in the
@@ -77,7 +77,7 @@ class AwsAlb(AbstractHandler):
     def request(self) -> Request:
         event = self.trigger_event
 
-        headers = self.encode_headers()
+        headers = self.transform_headers()
         # Unique headers. If there are duplicates, it will use the last defined.
         uq_headers = {k.decode(): v.decode() for k, v in headers}
 
