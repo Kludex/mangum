@@ -252,14 +252,14 @@ def test_aws_alb_set_cookies() -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, False)
+    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, True)
     response = handler(event, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
-        "headers": {"content-type": "text/plain; charset=utf-8"},
         "multiValueHeaders": {
             "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+            "content-type": ["text/plain; charset=utf-8"],
         },
         "body": "Hello, world!",
     }
@@ -303,6 +303,5 @@ def test_aws_alb_response(
         "statusCode": 200,
         "isBase64Encoded": res_base64_encoded,
         "headers": {"content-type": content_type.decode()},
-        "multiValueHeaders": {},
         "body": res_body,
     }

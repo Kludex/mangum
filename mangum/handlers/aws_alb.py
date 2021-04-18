@@ -118,30 +118,33 @@ class AwsAlb(AbstractHandler):
         return body
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
-        # TODO: Fix this to be consistent with AWS docs.
-        #  Currently one of the return values from _handle_multi_value_headers
-        #  will be empty, with no respect for whether multivalue headers are
-        #  enabled or not. This is different to API gateway
-        #  (https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
-        #  and this is also different to HTTP API
-        #  (https://docs.aws.amazon.com/apigateway/latest/developerguide/
-        #   http-api-develop-integrations-lambda.html).
-        #  "You must use multiValueHeaders if you have enabled multi-value headers
-        #   and headers otherwise"
-        #  https://docs.aws.amazon.com/elasticloadbalancing/latest/application/
-        #  lambda-functions.html
-        headers, multi_value_headers = self._handle_multi_value_headers(
-            response.headers
-        )
+
+        multi_value_headers: Dict[str, List[str]] = {}
+        for key, value in response.headers:
+            lower_key = key.decode().lower()
+            if lower_key not in multi_value_headers:
+                multi_value_headers[lower_key] = []
+            multi_value_headers[lower_key].append(value.decode())
+        headers: Dict[str, str] = {k: v[-1] for k, v in multi_value_headers.items()}
 
         body, is_base64_encoded = self._handle_base64_response_body(
             response.body, headers
         )
 
-        return {
+        out = {
             "statusCode": response.status,
-            "headers": headers,
-            "multiValueHeaders": multi_value_headers,
             "body": body,
             "isBase64Encoded": is_base64_encoded,
         }
+
+        #  "You must use multiValueHeaders if you have enabled multi-value headers
+        #  and headers otherwise"
+        #  https://docs.aws.amazon.com/elasticloadbalancing/latest/application/
+        #  lambda-functions.html
+        multi_value_headers_enabled = "multiValueHeaders" in self.trigger_event
+        if multi_value_headers_enabled:
+            out["multiValueHeaders"] = multi_value_headers
+        else:
+            out["headers"] = headers
+
+        return out
