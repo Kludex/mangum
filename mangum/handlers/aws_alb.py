@@ -1,9 +1,41 @@
 import base64
 import urllib.parse
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Iterator
+from itertools import islice
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
+
+
+def all_casings(input_string: str) -> Iterator[str]:
+    """
+    Permute all casings of a given string.
+    A pretty algoritm, via @Amber
+    http://stackoverflow.com/questions/6792803/finding-all-possible-case-permutations-in-python
+    """
+    if not input_string:
+        yield ""
+    else:
+        first = input_string[:1]
+        if first.lower() == first.upper():
+            for sub_casing in all_casings(input_string[1:]):
+                yield first + sub_casing
+        else:
+            for sub_casing in all_casings(input_string[1:]):
+                yield first.lower() + sub_casing
+                yield first.upper() + sub_casing
+
+
+def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str, str]:
+    """Create str/str key/value headers, with duplicate keys case mutated."""
+    headers = {}
+    for key, values in multi_value_headers.items():
+        if len(values) > 0:
+            casings = list(islice(all_casings(key), len(values)))
+            assert casings[0].islower()  # Future code depends on this.
+            for value, cased_key in zip(values, casings):
+                headers[cased_key] = value
+    return headers
 
 
 class AwsAlb(AbstractHandler):
@@ -128,7 +160,8 @@ class AwsAlb(AbstractHandler):
             if lower_key not in multi_value_headers:
                 multi_value_headers[lower_key] = []
             multi_value_headers[lower_key].append(value.decode())
-        headers: Dict[str, str] = {k: v[-1] for k, v in multi_value_headers.items()}
+
+        headers = case_mutated_headers(multi_value_headers)
 
         body, is_base64_encoded = self._handle_base64_response_body(
             response.body, headers

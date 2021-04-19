@@ -285,8 +285,9 @@ def test_aws_alb_set_cookies(multi_value_headers_enabled) -> None:
     else:
         expected_response["headers"] = {
             "content-type": "text/plain; charset=utf-8",
-            # Should be cookie2 as it's the *last* `set-cookie` in the list.
-            "set-cookie": "cookie2=cookie2; Secure",
+            # Should see case mutated keys to avoid duplicate keys:
+            "set-cookie": "cookie1=cookie1; Secure",
+            "Set-cookie": "cookie2=cookie2; Secure",
         }
     assert response == expected_response
 
