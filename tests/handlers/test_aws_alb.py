@@ -321,7 +321,7 @@ def test_aws_alb_set_cookies_headers_multivalue() -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "multiValueHeaders": {
-            "content-type": "text/plain; charset=utf-8",
+            "content-type": ["text/plain; charset=utf-8"],
             "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
         },
         "headers": {},
