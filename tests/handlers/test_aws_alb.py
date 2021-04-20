@@ -5,9 +5,14 @@ from mangum.handlers import AwsAlb
 
 
 def get_mock_aws_alb_event(
-    method, path, multi_value_query_parameters, body, body_base64_encoded
+    method,
+    path,
+    multi_value_query_parameters,
+    body,
+    body_base64_encoded,
+    multi_value_headers=True,
 ):
-    return {
+    event = {
         "requestContext": {
             "elb": {
                 "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a"  # noqa: E501
@@ -38,6 +43,10 @@ def get_mock_aws_alb_event(
         "body": body,
         "isBase64Encoded": body_base64_encoded,
     }
+    if multi_value_headers:
+        event["multiValueHeaders"] = {}
+
+    return event
 
 
 def test_aws_alb_basic():
@@ -226,7 +235,7 @@ def test_aws_alb_scope_real(
         assert handler.body == b""
 
 
-def test_aws_alb_set_cookies() -> None:
+def test_aws_alb_set_cookies_multiValueHeaders() -> None:
     async def app(scope, receive, send):
         await send(
             {
@@ -251,6 +260,39 @@ def test_aws_alb_set_cookies() -> None:
         "multiValueHeaders": {
             "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
         },
+        "body": "Hello, world!",
+    }
+
+
+def test_aws_alb_set_cookies_headers() -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    event = get_mock_aws_alb_event(
+        "GET", "/test", {}, None, False, multi_value_headers=False
+    )
+    response = handler(event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "set-cookie": "cookie1=cookie1; Secure",
+            "Set-cookie": "cookie2=cookie2; Secure",
+        },
+        "multiValueHeaders": {},
         "body": "Hello, world!",
     }
 
