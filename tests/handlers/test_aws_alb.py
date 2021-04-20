@@ -297,6 +297,38 @@ def test_aws_alb_set_cookies_headers() -> None:
     }
 
 
+def test_aws_alb_set_cookies_headers_multivalue() -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    event = get_mock_aws_alb_event(
+        "GET", "/test", {}, None, False, multi_value_headers=True
+    )
+    response = handler(event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "multiValueHeaders": {
+            "content-type": "text/plain; charset=utf-8",
+            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+        },
+        "headers": {},
+        "body": "Hello, world!",
+    }
+
+
 @pytest.mark.parametrize(
     "method,content_type,raw_res_body,res_body,res_base64_encoded",
     [
