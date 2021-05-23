@@ -106,6 +106,7 @@ class AwsAlb(AbstractHandler):
         event = self.trigger_event
 
         headers = self.transform_headers()
+        list_headers = [list(x) for x in headers]
         # Unique headers. If there are duplicates, it will use the last defined.
         uq_headers = {k.decode(): v.decode() for k, v in headers}
 
@@ -127,7 +128,7 @@ class AwsAlb(AbstractHandler):
 
         return Request(
             method=http_method,
-            headers=[list(x) for x in headers],
+            headers=list_headers,
             path=urllib.parse.unquote(path),
             scheme=uq_headers.get("x-forwarded-proto", "https"),
             query_string=query_string,
