@@ -93,11 +93,13 @@ class AwsAlb(AbstractHandler):
         headers out of both.
         """
         headers = []
-        for k, v in self.trigger_event.get("multiValueHeaders", {}).items():
-            for inner_v in v:
-                headers.append((k.lower().encode(), inner_v.encode()))
-        for k, v in self.trigger_event.get("headers", {}).items():
-            headers.append((k.lower().encode(), v.encode()))
+        if "multiValueHeaders" in self.trigger_event:
+            for k, v in self.trigger_event["multiValueHeaders"].items():
+                for inner_v in v:
+                    headers.append((k.lower().encode(), inner_v.encode()))
+        else:
+            for k, v in self.trigger_event["headers"].items():
+                headers.append((k.lower().encode(), v.encode()))
         return headers
 
     @property
