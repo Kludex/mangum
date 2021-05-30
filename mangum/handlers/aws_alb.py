@@ -32,7 +32,6 @@ def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str,
     for key, values in multi_value_headers.items():
         if len(values) > 0:
             casings = list(islice(all_casings(key), len(values)))
-            assert casings[0].islower()  # Future code depends on this.
             for value, cased_key in zip(values, casings):
                 headers[cased_key] = value
     return headers
