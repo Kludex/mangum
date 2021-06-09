@@ -1,13 +1,12 @@
 import asyncio
 import logging
-import typing
+from typing import Optional, Any, Dict, Tuple
 import json
 import os
 import hashlib
 import hmac
 import datetime
 from functools import partial
-from dataclasses import dataclass, InitVar
 from urllib.parse import urlparse
 
 try:
@@ -17,6 +16,9 @@ except ImportError:
 
 from mangum.exceptions import WebSocketError, ConfigurationError
 from mangum.types import Scope
+
+from .abstract_handler import AbstractHandler
+from .. import Response, Request
 
 
 def sign(key: bytes, msg: str) -> str:
@@ -61,16 +63,57 @@ def get_sigv4_headers(body: str, region_name: str) -> dict:
     return headers
 
 
-@dataclass
-class WebSocket:
+def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
+    headers = (
+        {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
+        if event.get("headers")
+        else {}
+    )
 
-    dsn: InitVar[str]
-    connection_id: str
-    api_gateway_endpoint_url: str
-    api_gateway_region_name: str
-    broadcast: bool
+    server_name = headers.get("host", "mangum")
+    if ":" not in server_name:
+        server_port = headers.get("x-forwarded-port", 80)
+    else:
+        server_name, server_port = server_name.split(":")
+    server = (server_name, int(server_port))
 
-    def __post_init__(self, dsn: str) -> None:
+    return server, headers
+
+
+class AwsWsGateway(AbstractHandler):
+    """
+    Handles AWS API Gateway Websocket events, transforming them into ASGI Scope and handling
+    responses
+
+    See: https://docs.aws.amazon.com/code-samples/latest/catalog/python-apigateway-websocket-lambda_chat.py.html
+    https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-develop-routes.html
+    https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api-mapping-template-reference.html
+    https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+    """
+
+    TYPE = "AWS_WS_GATEWAY"
+
+    # dsn: InitVar[str]
+    # connection_id: str
+    # api_gateway_endpoint_url: str
+    # api_gateway_region_name: str
+    # broadcast: bool
+
+    def __init__(
+        self,
+        trigger_event: Dict[str, Any],
+        trigger_context: "LambdaContext",
+        dsn: Optional[str] = None,
+        api_gateway_endpoint_url: Optional[str] = None,
+        api_gateway_region_name: Optional[str] = None,
+        **kwargs: Dict[str, Any],
+    ):
+        super().__init__(trigger_event, trigger_context, **kwargs)
+
+        self.dsn = dsn
+        self.api_gateway_endpoint_url = api_gateway_endpoint_url
+        self.api_gateway_region_name = api_gateway_region_name
+
         if httpx is None:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
 
@@ -89,9 +132,10 @@ class WebSocket:
                 "The `SQLiteBackend` should be only be used for local "
                 "debugging. It will not work in a deployed environment."
             )
-            from mangum.backends.sqlite import SQLiteBackend
+            # TODO commented because I couldn't find it
+            # from mangum.backends.sqlite import SQLiteBackend
 
-            self._backend = SQLiteBackend(dsn)  # type: ignore
+            # self._backend = SQLiteBackend(dsn)  # type: ignore
 
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
@@ -117,7 +161,71 @@ class WebSocket:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
 
-    async def load_scope(self, request_context: dict = None) -> typing.Optional[Scope]:
+    # TODO
+    @property
+    def request(self) -> Request:
+        event = self.trigger_event
+        request_context = event["requestContext"]
+        event_type = request_context.get("eventType")
+        # route_key = event.get("requestContext", {}).get("routeKey")
+        # if route_key == "$connect":
+
+        if event_type == "CONNECT":
+            server, headers = get_server_and_headers(event)
+            source_ip = request_context.get("identity", {}).get("sourceIp")
+            client = (source_ip, 0)
+            initial_scope = {
+                "type": "websocket",
+                "path": "/",
+                "headers": headers,
+                "raw_path": None,
+                "root_path": "",
+                "scheme": headers.get("x-forwarded-proto", "wss"),
+                "query_string": "",
+                "server": server,
+                "client": client,
+                "asgi": {"version": "3.0"},
+                "aws.events": {"connect": event, "message": {}},
+            }
+            # if self.config.broadcast:
+            #    initial_scope["aws.subscriptions"] = []
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.on_connect(initial_scope))
+
+            return Request(
+                method="GET",  # TODO don't exist in websocket's scope
+                headers=headers,
+                path="/",
+                scheme=headers.get("x-forwarded-proto", "wss"),
+                query_string=b"",
+                server=server,
+                client=client,
+                trigger_event=self.trigger_event,
+                trigger_context=self.trigger_context,
+                event_type=self.TYPE,
+            )
+        elif event_type == "MESSAGE":
+            body = event.get("body", "")
+            asgi_cycle = WebSocketCycle(body, websocket=websocket)
+            response = asgi_cycle(self.app, request_context=request_context)
+
+            return response
+        elif event_type == "DISCONNECT":
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(websocket.on_disconnect())
+
+        raise RuntimeError(f"Unknown eventType: {event_type}")
+
+    # TODO
+    @property
+    def body(self) -> bytes:
+        pass
+
+    # TODO
+    def transform_response(self, response: Response) -> Dict[str, Any]:
+        pass
+
+    async def load_scope(self, request_context: dict = None) -> Optional[Scope]:
         scope = await self._backend.retrieve(self.connection_id)
         if scope:
             scope = json.loads(scope)
@@ -220,9 +328,9 @@ class WebSocket:
         self,
         connection_id: str = None,
         *,
-        client: httpx.AsyncClient,
+        client,  #: httpx.AsyncClient, Commented because httpx may not be installed
         body: bytes,
-        channel: typing.Optional[str] = None,
+        channel: Optional[str] = None,
     ) -> None:  # pragma: no cover
         loop = asyncio.get_event_loop()
         headers = await loop.run_in_executor(

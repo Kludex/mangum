@@ -62,6 +62,14 @@ class AbstractHandler(metaclass=ABCMeta):
             return AwsAlb(trigger_event, trigger_context, **kwargs)
 
         if (
+            "requestContext" in trigger_event
+            and "routeKey" in trigger_event["requestContext"]
+        ):
+            from . import AwsWsGateway
+
+            return AwsWsGateway(trigger_event, trigger_context, **kwargs)
+
+        if (
             "Records" in trigger_event
             and len(trigger_event["Records"]) > 0
             and "cf" in trigger_event["Records"][0]

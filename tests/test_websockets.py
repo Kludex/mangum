@@ -1,4 +1,6 @@
-import mock
+# import mock
+# from unittest import mock
+
 
 from mangum import Mangum
 

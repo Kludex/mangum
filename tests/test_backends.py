@@ -1,4 +1,4 @@
-import mock
+# import mock
 
 import pytest
 import boto3
