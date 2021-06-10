@@ -1,5 +1,4 @@
-import asyncio
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 
 from mangum.backends import WebSocket
@@ -20,8 +19,6 @@ def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
     else:
         server_name, server_port = server_name.split(":")
     server = (server_name, int(server_port))
-
-    headers = [(k.encode(), v.encode()) for k, v in headers.items()]
 
     return server, headers
 
@@ -68,57 +65,34 @@ class AwsWsGateway(AbstractHandler):
     # TODO
     @property
     def request(self) -> Request:
-        event = self.trigger_event
-        request_context = event["requestContext"]
-        event_type = request_context.get("eventType")
-
-        server, headers = get_server_and_headers(event)
+        request_context = self.trigger_event["requestContext"]
+        server, headers = get_server_and_headers(self.trigger_event)
         source_ip = request_context.get("identity", {}).get("sourceIp")
         client = (source_ip, 0)
+        headers_list = [[k.encode(), v.encode()] for k, v in headers.items()]
 
-        initial_scope: Dict[str, Any] = dict(
+        return Request(
             type="websocket",
             method="GET",  # TODO don't exist in websocket's scope
-            headers=headers,
+            headers=headers_list,
             path="/",
-            # scheme=headers.get("x-forwarded-proto", "wss"),
-            scheme="wss",
+            scheme=headers.get("x-forwarded-proto", "wss"),
             query_string=b"",
             server=server,
             client=client,
-            # TODO subprotocols entry is missing
+            # TODO subprotocols
             # https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-connect-route-subprotocol.html
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
             event_type=self.TYPE,
         )
 
-        """
-        if event_type == "CONNECT":
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.websocket.on_connect(initial_scope))
-        elif event_type == "MESSAGE":
-            pass
-        elif event_type == "DISCONNECT":
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.websocket.on_disconnect())
-        """
-
-        return Request(**initial_scope)
-
     @property
     def body(self) -> bytes:
-        event = self.trigger_event
-        request_context = event["requestContext"]
-        event_type = request_context.get("eventType")
-
         # TODO binary payloads support ?
         # https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-develop-binary-media-types.html
-        if event_type == "MESSAGE":
-            body = event.get("body", "")
-            return body.encode()
-
-        return b""
+        body = self.trigger_event.get("body", "")
+        return body.encode()
 
     def transform_response(self, response: Response) -> Dict[str, Any]:
         return {"statusCode": response.status}

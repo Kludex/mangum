@@ -165,7 +165,7 @@ class WebSocketCycle:
         ):
 
             # The application requested to send some data in response to the
-            # "websocket.send" event. After it's sent, a "websocket.disconnect"
+            # "websocket.receive" event. After it's sent, a "websocket.disconnect"
             # event is generated to let the application finish gracefully.
             # Then the lambda's execution is ended.
 
@@ -174,7 +174,7 @@ class WebSocketCycle:
             body = message_text.encode()
 
             await self.websocket.post_to_connection(body=body)
-            await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
+            await self.app_queue.put({"type": "websocket.disconnect", "code": 1000})
 
         else:
             raise UnexpectedMessage(

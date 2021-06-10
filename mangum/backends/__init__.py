@@ -109,12 +109,12 @@ class WebSocket:
             from mangum.backends.postgresql import PostgreSQLBackend
 
             self._backend = PostgreSQLBackend(dsn)  # type: ignore
-
+            """
         elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 
             self._backend = RedisBackend(dsn)  # type: ignore
-            """
+
         else:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
@@ -123,15 +123,6 @@ class WebSocket:
         loaded_scope = await self._backend.retrieve(self.connection_id)
         if loaded_scope:
             scope = json.loads(loaded_scope)
-            """
-            if request_context:
-                message_events = scope["aws.events"]["message"]
-                if message_events:
-                    order_id = list(message_events.keys())[-1]
-                else:
-                    order_id = 0
-                scope["aws.events"]["message"][order_id] = request_context
-            """
             scope.update(
                 {
                     "query_string": scope["query_string"].encode(),
@@ -145,18 +136,17 @@ class WebSocket:
 
         return scope
 
-    async def save_scope(self, scope: dict, decode: bool = True) -> None:
-        if decode:
-            scope.update(
-                {
-                    "query_string": scope["query_string"].decode(),
-                    "headers": {h[0].decode(): h[1].decode() for h in scope["headers"]},
-                }
-            )
+    async def save_scope(self, scope: Scope) -> None:
+        scope.update(
+            {
+                "query_string": scope["query_string"].decode(),
+                "headers": {h[0].decode(): h[1].decode() for h in scope["headers"]},
+            }
+        )
         json_scope = json.dumps(scope)
         await self._backend.save(self.connection_id, json_scope=json_scope)
 
-    async def on_connect(self, initial_scope: dict) -> None:
+    async def on_connect(self, initial_scope: Scope) -> None:
         await self._backend.connect()
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         await self.save_scope(initial_scope)
