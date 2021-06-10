@@ -10,7 +10,7 @@ from typing import (
 
 from .exceptions import ConfigurationError
 from .handlers import AbstractHandler
-from .protocols import HTTPCycle, LifespanCycle, WebSocketCycle
+from .protocols import HTTPCycle, WebSocketCycle, LifespanCycle
 from .types import ASGIApp
 
 
