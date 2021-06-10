@@ -1,12 +1,13 @@
 import enum
 import asyncio
+from typing import Optional
 import logging
-import json
-from dataclasses import dataclass, field
+from io import BytesIO
+from dataclasses import dataclass
 
 from mangum.backends import WebSocket
 from mangum.exceptions import UnexpectedMessage, WebSocketClosed
-from mangum.types import ASGIApp, Message
+from mangum.types import ASGIApp, Message, Request, Response
 
 
 class WebSocketCycleState(enum.Enum):
@@ -43,7 +44,6 @@ class WebSocketCycle:
     """
     Manages the application cycle for an ASGI `websocket` connection.
 
-    * **body** -  A string containing the body content of the request.
     * **websocket** - A `WebSocket` connection handler interface for the selected
     `WebSocketBackend` subclass. Contains the ASGI connection `scope` and client
     connection identifier.
@@ -55,41 +55,44 @@ class WebSocketCycle:
     This will only contain a `statusCode` for WebSocket connections.
     """
 
-    body: str
     websocket: WebSocket
+    request: Request
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
-    response: dict = field(default_factory=dict)
+    response: Response = Response(200, [], b"")
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.websockets")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
-        self.response["statusCode"] = 200
+        self.body: BytesIO = BytesIO()
 
-    def __call__(self, app: ASGIApp, *, request_context: dict) -> dict:
+    def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:
         self.logger.debug("WebSocket cycle starting.")
         self.app_queue.put_nowait({"type": "websocket.connect"})
-        asgi_instance = self.run(app, request_context)
+        asgi_instance = self.run(app)
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
 
+        if self.response is None:
+            raise RuntimeError("Invalid response")  # TODO
+
         return self.response
 
-    async def run(self, app: ASGIApp, request_context: dict) -> None:
+    async def run(self, app: ASGIApp) -> None:
         """
         Calls the application with the `websocket` connection scope.
         """
-        self.scope = await self.websocket.on_message(request_context=request_context)
+        self.scope = await self.websocket.on_message()
         scope = self.scope.copy()
         try:
             await app(scope, self.receive, self.send)
         except WebSocketClosed:
-            self.response["statusCode"] = 403
+            self.response.status = 403
         except UnexpectedMessage:
-            self.response["statusCode"] = 500
+            self.response.status = 500
         except BaseException as exc:
             self.logger.error("Exception in ASGI application", exc_info=exc)
-            self.response["statusCode"] = 500
+            self.response.status = 500
 
     async def receive(self) -> Message:
         """
@@ -128,6 +131,7 @@ class WebSocketCycle:
             # may choose to close the connection at this point. This process does not
             # support subprotocols.
             if message_type == "websocket.accept":
+                # TODO Are we going to support binary payloads ?
                 await self.app_queue.put(
                     {"type": "websocket.receive", "bytes": None, "text": self.body}
                 )
@@ -148,24 +152,8 @@ class WebSocketCycle:
             "websocket.send",
         ):
             message_text = message.get("text", "")
-            if self.websocket.broadcast:
-                data = json.loads(message_text)
-                message_type = data.get("type")
-                if message_type in ("broadcast.publish", "broadcast.subscribe"):
-                    channel = data["channel"]
-                    body = data.get("body")
-                    message = {"type": message_type, "channel": channel, "body": body}
 
-                    if message["type"] == "broadcast.subscribe":
-                        channel = message["channel"]
-                        await self.websocket.subscribe(channel, scope=self.scope)
-
-                    if message["type"] == "broadcast.publish":
-                        channel = message["channel"]
-                        body = message["body"].encode()
-                        await self.websocket.publish(channel, body=body)
-
-            elif message["type"] == "websocket.send":
+            if message["type"] == "websocket.send":
                 body = message_text.encode()
                 await self.websocket.post_to_connection(body=body)
 

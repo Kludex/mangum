@@ -141,3 +141,9 @@ class AbstractHandler(metaclass=ABCMeta):
                 is_base64_encoded = True
 
         return output_body, is_base64_encoded
+
+    @property
+    def is_websocket(self) -> bool:
+        from . import AwsWsGateway
+
+        return isinstance(self, AwsWsGateway)

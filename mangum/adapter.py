@@ -2,7 +2,7 @@ import logging
 from contextlib import ExitStack
 from typing import (
     Any,
-    Optional,
+    # Optional,
     ContextManager,
     Dict,
     TYPE_CHECKING,
@@ -10,7 +10,7 @@ from typing import (
 
 from .exceptions import ConfigurationError
 from .handlers import AbstractHandler
-from .protocols import HTTPCycle, LifespanCycle
+from .protocols import HTTPCycle, LifespanCycle, WebSocketCycle
 from .types import ASGIApp
 
 
@@ -51,19 +51,10 @@ class Mangum:
     lifespan: str = "auto"
 
     def __init__(
-        self,
-        app: ASGIApp,
-        lifespan: str = "auto",
-        # dsn: Optional[str] = None,
-        # api_gateway_endpoint_url: Optional[str] = None,
-        # api_gateway_region_name: Optional[str] = None,
-        **handler_kwargs: Dict[str, Any]
+        self, app: ASGIApp, lifespan: str = "auto", **handler_kwargs: Dict[str, Any]
     ) -> None:
         self.app = app
         self.lifespan = lifespan
-        # self.dsn = dsn
-        # self.api_gateway_endpoint_url = api_gateway_endpoint_url
-        # self.api_gateway_region_name = api_gateway_region_name
         self.handler_kwargs = handler_kwargs
 
         if self.lifespan not in ("auto", "on", "off"):
@@ -82,8 +73,12 @@ class Mangum:
             handler = AbstractHandler.from_trigger(
                 event, context, **self.handler_kwargs
             )
-            # TODO websockets ??
-            http_cycle = HTTPCycle(handler.request)
-            response = http_cycle(self.app, handler.body)
+            # TODO
+            if handler.is_websocket:
+                websocket_cycle = WebSocketCycle(handler.websocket, handler.request)
+                response = websocket_cycle(self.app, handler.body)
+            else:
+                http_cycle = HTTPCycle(handler.request)
+                response = http_cycle(self.app, handler.body)
 
         return handler.transform_response(response)

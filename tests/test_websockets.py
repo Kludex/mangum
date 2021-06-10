@@ -1,5 +1,7 @@
 # import mock
-# from unittest import mock
+from types import coroutine
+from typing import Any
+from unittest import mock
 
 
 from mangum import Mangum
@@ -14,15 +16,37 @@ def test_websocket_close(tmp_path, mock_ws_connect_event, mock_ws_send_event) ->
             while True:
                 message = await receive()
                 if message["type"] == "websocket.connect":
-                    await send({"type": "websocket.close"})
+                    await send({"type": "websocket.accept"})
+                    # websocket.receive comes after
+                    return
 
-    handler = Mangum(app, dsn=dsn)
+    handler = Mangum(app, lifespan="off", dsn=dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 
-    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
-        send.return_value = None
-        response = handler(mock_ws_send_event, {})
+
+def test_websocket_close_on_connect(
+    tmp_path, mock_ws_connect_event, mock_ws_send_event
+) -> None:
+
+    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
+
+    async def app(scope, receive, send):
+        if scope["type"] == "websocket":
+            while True:
+                message = await receive()
+                if message["type"] == "websocket.connect":
+                    # Connection refused
+                    await send({"type": "websocket.close"})
+
+    async def dummy_coroutine() -> None:
+        pass
+
+    with mock.patch(
+        "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
+    ):
+        handler = Mangum(app, lifespan="off", dsn=dsn)
+        response = handler(mock_ws_connect_event, {})
         assert response == {"statusCode": 403}
 
 
@@ -51,7 +75,8 @@ def test_websocket_exception(
     dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
 
     handler = Mangum(app, dsn=dsn)
-    handler(mock_ws_connect_event, {})
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 500}
 
     handler = Mangum(app, dsn=dsn)
     response = handler(mock_ws_send_event, {})

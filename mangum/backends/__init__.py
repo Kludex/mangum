@@ -63,12 +63,14 @@ def get_sigv4_headers(body: str, region_name: str) -> dict:
 
 @dataclass
 class WebSocket:
+    """
+    A `WebSocket` connection handler interface for the selected `WebSocketBackend` subclass
+    """
 
     dsn: InitVar[str]
     connection_id: str
-    api_gateway_endpoint_url: str
-    api_gateway_region_name: str
-    broadcast: bool
+    api_gateway_endpoint_url: typing.Optional[str] = None
+    api_gateway_region_name: typing.Optional[str] = None
 
     def __post_init__(self, dsn: str) -> None:
         if httpx is None:  # pragma: no cover
@@ -157,90 +159,39 @@ class WebSocket:
         self.logger.debug("Creating scope entry for %s", self.connection_id)
         await self.save_scope(initial_scope, decode=False)
 
-    async def on_message(self, request_context: dict) -> Scope:
+    async def on_message(self) -> Scope:
         await self._backend.connect()
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
-        return await self.load_scope(request_context=request_context)
+        return await self.load_scope()
 
     async def on_disconnect(self) -> None:
         await self._backend.connect()
         self.logger.debug("Deleting scope entry for %s", self.connection_id)
-
-        if self.broadcast:
-            scope = await self.load_scope()
-            if scope:
-                subscriptions = scope["aws.subscriptions"]
-                if subscriptions:
-                    for channel in subscriptions:
-                        await self._backend.unsubscribe(
-                            channel, connection_id=self.connection_id
-                        )
-
-        await self._backend.delete(self.connection_id)
-
-    async def publish(self, channel: str, *, body: bytes) -> None:
-        subscribers = await self._backend.get_subscribers(channel)
-        tasks = []
-        async with httpx.AsyncClient() as client:
-            for connection_id in subscribers:
-                if isinstance(connection_id, bytes):
-                    connection_id = connection_id.decode()
-
-                task = asyncio.create_task(
-                    self._post_to_connection(
-                        connection_id, client=client, body=body, channel=channel
-                    )
-                )
-                tasks.append(task)
-
-            await asyncio.gather(*tasks)
-
-    async def subscribe(self, channel: str, *, scope: Scope) -> None:
-        await self._backend.subscribe(channel, connection_id=self.connection_id)
-        scope["aws.subscriptions"].append(channel)
-        await self.save_scope(scope)
-
-    async def unsubscribe(self, channel: str, *, scope: Scope) -> None:
-        await self._backend.unsubscribe(channel, connection_id=self.connection_id)
-        scope["aws.subscriptions"].remove(channel)
-        await self.save_scope(scope)
+        await self._backend.delete()
 
     async def post_to_connection(self, body: bytes) -> None:
-        client = httpx.AsyncClient()
-        await self._post_to_connection(
-            connection_id=self.connection_id, client=client, body=body
-        )
+        async with httpx.AsyncClient() as client:
+            await self._post_to_connection(client=client, body=body)
 
     async def delete_connection(self) -> None:
         async with httpx.AsyncClient() as client:
-            url = f"{self.api_gateway_endpoint_url}/@connections/{self.connection_id}"
-            await client.delete(url)
+            await client.delete(self.api_gateway_endpoint_url)
 
     async def _post_to_connection(
         self,
-        connection_id: str = None,
         *,
         client: httpx.AsyncClient,
         body: bytes,
-        channel: typing.Optional[str] = None,
     ) -> None:  # pragma: no cover
         loop = asyncio.get_event_loop()
         headers = await loop.run_in_executor(
             None, partial(get_sigv4_headers, body, self.api_gateway_region_name)
         )
-        url = f"{self.api_gateway_endpoint_url}/@connections/{connection_id}"
 
-        response = await client.post(url, data=body, headers=headers)
+        response = await client.post(
+            self.api_gateway_endpoint_url, data=body, headers=headers
+        )
         if response.status_code == 410:
-            if channel:
-                self.logger.debug(
-                    "Deleting scope entry for %s and unsubscribing from %s",
-                    connection_id,
-                    channel,
-                )
-                await self._backend.delete(connection_id)
-                await self._backend.unsubscribe(channel, connection_id=connection_id)
-            else:
-                await self.on_disconnect()
+            await self.on_disconnect()
         elif response.status_code != 200:
             raise WebSocketError(f"Error: {response.status_code}")
