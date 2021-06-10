@@ -1,6 +1,5 @@
 import enum
 import asyncio
-from typing import Optional
 import logging
 from io import BytesIO
 from dataclasses import dataclass
@@ -57,24 +56,31 @@ class WebSocketCycle:
 
     websocket: WebSocket
     request: Request
+    message_type: str
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
     response: Response = Response(200, [], b"")
 
     def __post_init__(self) -> None:
-        self.logger: logging.Logger = logging.getLogger("mangum.websockets")
+        self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.body: BytesIO = BytesIO()
 
     def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:
         self.logger.debug("WebSocket cycle starting.")
-        self.app_queue.put_nowait({"type": "websocket.connect"})
-        asgi_instance = self.run(app)
-        asgi_task = self.loop.create_task(asgi_instance)
-        self.loop.run_until_complete(asgi_task)
+        self.initial_body = initial_body
 
-        if self.response is None:
-            raise RuntimeError("Invalid response")  # TODO
+        if self.message_type == "CONNECT":
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.websocket.on_connect(self.request.scope))
+        elif self.message_type == "DISCONNECT":
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.websocket.on_disconnect())
+        elif self.message_type == "MESSAGE":
+            self.app_queue.put_nowait({"type": "websocket.connect"})
+            asgi_instance = self.run(app)
+            asgi_task = self.loop.create_task(asgi_instance)
+            self.loop.run_until_complete(asgi_task)
 
         return self.response
 
@@ -131,9 +137,13 @@ class WebSocketCycle:
             # may choose to close the connection at this point. This process does not
             # support subprotocols.
             if message_type == "websocket.accept":
-                # TODO Are we going to support binary payloads ?
+                # TODO Handle text/bytes payload
                 await self.app_queue.put(
-                    {"type": "websocket.receive", "bytes": None, "text": self.body}
+                    {
+                        "type": "websocket.receive",
+                        "bytes": self.initial_body,
+                        "text": None,
+                    }
                 )
             elif message_type == "websocket.close":
                 self.state = WebSocketCycleState.CLOSED
@@ -141,22 +151,29 @@ class WebSocketCycle:
                 raise WebSocketClosed
 
         elif (
-            self.state is WebSocketCycleState.RESPONSE and message == "websocket.close"
+            self.state is WebSocketCycleState.RESPONSE
+            and message_type == "websocket.close"
         ):
 
             # The application is explicitly closing the connection. It should be
             # disconnected and removed in API Gateway.
             await self.websocket.delete_connection()
 
-        elif self.state is WebSocketCycleState.RESPONSE and message_type in (
-            "websocket.send",
+        elif (
+            self.state is WebSocketCycleState.RESPONSE
+            and message_type == "websocket.send"
         ):
+
+            # The application requested to send some data in response to the
+            # "websocket.send" event. After it's sent, a "websocket.disconnect"
+            # event is generated to let the application finish gracefully.
+            # Then the lambda's execution is ended.
+
+            # TODO what if the client sends a binary payload ?
             message_text = message.get("text", "")
+            body = message_text.encode()
 
-            if message["type"] == "websocket.send":
-                body = message_text.encode()
-                await self.websocket.post_to_connection(body=body)
-
+            await self.websocket.post_to_connection(body=body)
             await self.app_queue.put({"type": "websocket.disconnect", "code": "1000"})
 
         else:

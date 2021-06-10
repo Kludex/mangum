@@ -73,9 +73,11 @@ class Mangum:
             handler = AbstractHandler.from_trigger(
                 event, context, **self.handler_kwargs
             )
-            # TODO
+            # TODO this goes against https://github.com/jordaneremieff/mangum/issues/132#issuecomment-762739983
             if handler.is_websocket:
-                websocket_cycle = WebSocketCycle(handler.websocket, handler.request)
+                websocket_cycle = WebSocketCycle(
+                    handler.websocket, handler.request, handler.message_type
+                )
                 response = websocket_cycle(self.app, handler.body)
             else:
                 http_cycle = HTTPCycle(handler.request)

@@ -69,7 +69,7 @@ class WebSocket:
 
     dsn: InitVar[str]
     connection_id: str
-    api_gateway_endpoint_url: typing.Optional[str] = None
+    api_gateway_endpoint_url: str
     api_gateway_region_name: typing.Optional[str] = None
 
     def __post_init__(self, dsn: str) -> None:
@@ -94,7 +94,7 @@ class WebSocket:
             from mangum.backends.sqlite import SQLiteBackend
 
             self._backend = SQLiteBackend(dsn)  # type: ignore
-
+            """
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
@@ -114,15 +114,16 @@ class WebSocket:
             from mangum.backends.redis import RedisBackend
 
             self._backend = RedisBackend(dsn)  # type: ignore
-
+            """
         else:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
 
     async def load_scope(self, request_context: dict = None) -> typing.Optional[Scope]:
-        scope = await self._backend.retrieve(self.connection_id)
-        if scope:
-            scope = json.loads(scope)
+        loaded_scope = await self._backend.retrieve(self.connection_id)
+        if loaded_scope:
+            scope = json.loads(loaded_scope)
+            """
             if request_context:
                 message_events = scope["aws.events"]["message"]
                 if message_events:
@@ -130,6 +131,7 @@ class WebSocket:
                 else:
                     order_id = 0
                 scope["aws.events"]["message"][order_id] = request_context
+            """
             scope.update(
                 {
                     "query_string": scope["query_string"].encode(),
@@ -151,15 +153,15 @@ class WebSocket:
                     "headers": {h[0].decode(): h[1].decode() for h in scope["headers"]},
                 }
             )
-        scope = json.dumps(scope)
-        await self._backend.save(self.connection_id, json_scope=scope)
+        json_scope = json.dumps(scope)
+        await self._backend.save(self.connection_id, json_scope=json_scope)
 
     async def on_connect(self, initial_scope: dict) -> None:
         await self._backend.connect()
         self.logger.debug("Creating scope entry for %s", self.connection_id)
-        await self.save_scope(initial_scope, decode=False)
+        await self.save_scope(initial_scope)
 
-    async def on_message(self) -> Scope:
+    async def on_message(self) -> typing.Optional[Scope]:
         await self._backend.connect()
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
         return await self.load_scope()
@@ -167,7 +169,7 @@ class WebSocket:
     async def on_disconnect(self) -> None:
         await self._backend.connect()
         self.logger.debug("Deleting scope entry for %s", self.connection_id)
-        await self._backend.delete()
+        await self._backend.delete(self.connection_id)
 
     async def post_to_connection(self, body: bytes) -> None:
         async with httpx.AsyncClient() as client:
@@ -180,7 +182,7 @@ class WebSocket:
     async def _post_to_connection(
         self,
         *,
-        client: httpx.AsyncClient,
+        client: httpx.AsyncClient,  # TODO this can cause a failure on import
         body: bytes,
     ) -> None:  # pragma: no cover
         loop = asyncio.get_event_loop()
