@@ -9,7 +9,7 @@ class RedisBackend(WebSocketBackend):
         self.connection = await aioredis.create_redis(self.dsn)
 
     async def disconnect(self) -> None:
-        await self.connection.close()
+        self.connection.close()
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.set(connection_id, json_scope)
