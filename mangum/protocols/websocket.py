@@ -71,11 +71,11 @@ class WebSocketCycle:
         self.initial_body = initial_body
 
         if self.message_type == "CONNECT":
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.websocket.on_connect(self.request.scope))
+            # loop = asyncio.get_event_loop()
+            self.loop.run_until_complete(self.websocket.on_connect(self.request.scope))
         elif self.message_type == "DISCONNECT":
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.websocket.on_disconnect())
+            # loop = asyncio.get_event_loop()
+            self.loop.run_until_complete(self.websocket.on_disconnect())
         elif self.message_type == "MESSAGE":
             self.app_queue.put_nowait({"type": "websocket.connect"})
             asgi_instance = self.run(app)

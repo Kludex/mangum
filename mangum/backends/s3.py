@@ -2,12 +2,7 @@ import os
 import logging
 from urllib.parse import urlparse, parse_qs
 
-
 import aioboto3
-
-# import boto3
-
-# from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from mangum.backends.base import WebSocketBackend
@@ -35,6 +30,7 @@ class S3Backend(WebSocketBackend):
             "s3",
             region_name=region_name,
             # config=Config(connect_timeout=2, retries={"max_attempts": 0}),
+            endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
         ).__aenter__()  # Workaround limitation
 
         create_bucket = False
@@ -50,13 +46,13 @@ class S3Backend(WebSocketBackend):
                 create_bucket = True
 
         if create_bucket:
-            self.connection.create_bucket(
+            await self.connection.create_bucket(
                 Bucket=self.bucket,
-                CreateBucketConfiguration={"LocationConstraint": region_name},
+                # CreateBucketConfiguration={"LocationConstraint": region_name},
             )
 
     async def disconnect(self) -> None:
-        await self.connection.__aexit__()
+        await self.connection.__aexit__(None, None, None)
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.put_object(
@@ -69,7 +65,9 @@ class S3Backend(WebSocketBackend):
         s3_object = await self.connection.get_object(
             Bucket=self.bucket, Key=f"{self.key}{connection_id}"
         )
-        json_scope = s3_object["Body"].read().decode()
+        async with s3_object["Body"] as body:
+            scope = await body.read()
+            json_scope = scope.decode()
 
         return json_scope
 

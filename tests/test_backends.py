@@ -2,14 +2,31 @@ from unittest import mock
 from typing import Any
 import pytest
 
-# import boto3
+
+# import aioboto3
+# import botocore.awsrequest
+# from botocore.awsrequest import AWSResponse
 import testing.redis
 import testing.postgresql
 from sqlalchemy import create_engine
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb2
+import subprocess as sp
+import shutil
+
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
+
+"""
+class MonkeyPatchedAWSResponse(AWSResponse):
+    raw_headers = {}
+
+    async def read(self):
+        return self.text
+
+
+botocore.awsrequest.AWSResponse = MonkeyPatchedAWSResponse
+"""
 
 
 async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
@@ -111,32 +128,44 @@ def test_dynamodb_backend(
         "s3://mangum-bucket-12345/mykey",
     ],
 )
-@mock_s3
 def test_s3_backend(
-    tmp_path,
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
     mock_websocket_app,
     dsn,
 ) -> None:
-    # bucket = "mangum-bucket-12345"
-    # conn = boto3.resource("s3")
-    # conn.create_bucket(Bucket=bucket)
+    service_name = "s3"
+    host = "127.0.0.1"
+    port = 8000
 
-    handler = Mangum(mock_websocket_app, dsn=dsn)
-    response = handler(mock_ws_connect_event, {})
-    assert response == {"statusCode": 200}
+    moto_svr_path = shutil.which("moto_server")
+    args = [moto_svr_path, service_name, "-H", host, "-p", str(port)]
 
-    handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
-        send.return_value = None
-        response = handler(mock_ws_send_event, {})
+    process = sp.Popen(args, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    url = "http://{host}:{port}".format(host=host, port=port)
+
+    with mock.patch.dict(
+        "os.environ", {"AWS_REGION": "ap-southeast-1", "AWS_ENDPOINT_URL": url}
+    ):  # TODO alter region
+        handler = Mangum(mock_websocket_app, dsn=dsn)
+        response = handler(mock_ws_connect_event, {})
         assert response == {"statusCode": 200}
 
-    handler = Mangum(mock_websocket_app, dsn=dsn)
-    response = handler(mock_ws_disconnect_event, {})
-    assert response == {"statusCode": 200}
+        handler = Mangum(mock_websocket_app, dsn=dsn)
+        with mock.patch(
+            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+        ), mock.patch(
+            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
+        ):
+            response = handler(mock_ws_send_event, {})
+            assert response == {"statusCode": 200}
+
+        handler = Mangum(mock_websocket_app, dsn=dsn)
+        response = handler(mock_ws_disconnect_event, {})
+        assert response == {"statusCode": 200}
+
+    process.kill()
 
 
 def test_postgresql_backend(
