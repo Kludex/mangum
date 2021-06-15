@@ -7,6 +7,7 @@ from .. import Response, Request
 
 
 def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
+    # TODO multi value headers
     headers = (
         {k.lower(): v for k, v in event.get("headers").items()}  # type: ignore
         if event.get("headers")

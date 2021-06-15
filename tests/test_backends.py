@@ -1,7 +1,8 @@
-# import mock
-
+from unittest import mock
+from typing import Any
 import pytest
-import boto3
+
+# import boto3
 import testing.redis
 import testing.postgresql
 from sqlalchemy import create_engine
@@ -9,6 +10,10 @@ from moto import mock_dynamodb2, mock_s3
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
+
+
+async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
+    pass
 
 
 @pytest.mark.parametrize(
@@ -33,8 +38,9 @@ def test_sqlite_3_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
-        send.return_value = None
+    with mock.patch(
+        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
         response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
 
@@ -177,8 +183,11 @@ def test_redis_backend(
         assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
-        with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
-            send.return_value = None
+        with mock.patch(
+            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+        ), mock.patch(
+            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
+        ):
             response = handler(mock_ws_send_event, {})
             assert response == {"statusCode": 200}
 

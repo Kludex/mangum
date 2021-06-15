@@ -94,7 +94,7 @@ class WebSocket:
             from mangum.backends.sqlite import SQLiteBackend
 
             self._backend = SQLiteBackend(dsn)  # type: ignore
-            """
+
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
@@ -109,7 +109,7 @@ class WebSocket:
             from mangum.backends.postgresql import PostgreSQLBackend
 
             self._backend = PostgreSQLBackend(dsn)  # type: ignore
-            """
+
         elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 

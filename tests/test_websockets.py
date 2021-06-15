@@ -7,7 +7,7 @@ from unittest import mock
 from mangum import Mangum
 
 
-async def dummy_coroutine(*args, **kwargs) -> None:
+async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
     pass
 
 

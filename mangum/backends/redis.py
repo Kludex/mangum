@@ -1,3 +1,4 @@
+# TODO handle module missing
 import aioredis
 
 from mangum.backends.base import WebSocketBackend
@@ -18,12 +19,3 @@ class RedisBackend(WebSocketBackend):
 
     async def delete(self, connection_id: str) -> None:
         await self.connection.delete(connection_id)
-
-    async def subscribe(self, channel: str, *, connection_id: str) -> None:
-        await self.connection.sadd(channel, connection_id)
-
-    async def unsubscribe(self, channel: str, *, connection_id: str) -> None:
-        await self.connection.srem(channel, connection_id)
-
-    async def get_subscribers(self, channel: str) -> set:
-        return await self.connection.smembers(channel)

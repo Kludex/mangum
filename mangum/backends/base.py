@@ -20,10 +20,11 @@ class WebSocketBackend:
 
     async def disconnect(self) -> None:
         """
+        Disconnect from data source.
         """
         raise NotImplementedError()
 
-    async def set(self, connection_id: str, *, json_scope: str) -> None:
+    async def save(self, connection_id: str, *, json_scope: str) -> None:
         """
         Save the JSON scope for a connection.
         """
