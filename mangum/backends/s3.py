@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from mangum.backends.base import WebSocketBackend
 
 
-logger = logging.getLogger("mangum.websocket.s3")
+logger = logging.getLogger("mangum.backends.s3")
 
 
 class S3Backend(WebSocketBackend):
