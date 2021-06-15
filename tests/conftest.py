@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 
@@ -374,3 +376,8 @@ def mock_websocket_app():
                     return
 
     return app
+
+
+@pytest.fixture
+def sqlite3_dsn(tmp_path):
+    return f"sqlite://{tmp_path}/mangum.sqlite3"

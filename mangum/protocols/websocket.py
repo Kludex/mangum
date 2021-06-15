@@ -58,13 +58,13 @@ class WebSocketCycle:
     request: Request
     message_type: str
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
-    response: Response = Response(200, [], b"")
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue = asyncio.Queue()
         self.body: BytesIO = BytesIO()
+        self.response: Response = Response(200, [], b"")
 
     def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:
         self.logger.debug("WebSocket cycle starting.")

@@ -1,5 +1,4 @@
 # import mock
-from types import coroutine
 from typing import Any
 from unittest import mock
 
@@ -11,9 +10,11 @@ async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
     pass
 
 
-def test_websocket_close(tmp_path, mock_ws_connect_event, mock_ws_send_event) -> None:
+def test_websocket_close(
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event
+) -> None:
 
-    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
+    # dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
 
     async def app(scope, receive, send):
         if scope["type"] == "websocket":
@@ -22,7 +23,7 @@ def test_websocket_close(tmp_path, mock_ws_connect_event, mock_ws_send_event) ->
                 if message["type"] == "websocket.connect":
                     await send({"type": "websocket.close"})
 
-    handler = Mangum(app, lifespan="off", dsn=dsn)
+    handler = Mangum(app, lifespan="off", dsn=sqlite3_dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 
@@ -34,12 +35,9 @@ def test_websocket_close(tmp_path, mock_ws_connect_event, mock_ws_send_event) ->
 
 
 def test_websocket_disconnect(
-    tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
 ) -> None:
-
-    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
-
-    handler = Mangum(mock_websocket_app, lifespan="off", dsn=dsn)
+    handler = Mangum(mock_websocket_app, lifespan="off", dsn=sqlite3_dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 

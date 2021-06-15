@@ -63,7 +63,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
         if (
             "requestContext" in trigger_event
-            and "routeKey" in trigger_event["requestContext"]
+            and "connectionId" in trigger_event["requestContext"]
         ):
             from . import AwsWsGateway
 

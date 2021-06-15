@@ -5,6 +5,9 @@ from mangum.backends.base import WebSocketBackend
 
 class SQLiteBackend(WebSocketBackend):
     async def connect(self) -> None:
+        import logging
+
+        logging.warning(self.dsn)
         self.connection = await aiosqlite.connect(self.dsn[9:])  # TODO fix
         await self.connection.execute(
             "create table if not exists mangum_websockets (id varchar(64) primary key, initial_scope text)"
