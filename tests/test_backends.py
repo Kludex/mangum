@@ -145,8 +145,11 @@ def test_postgresql_backend(
         assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
-        with mock.patch("mangum.websocket.WebSocket.post_to_connection") as send:
-            send.return_value = None
+        with mock.patch(
+            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+        ), mock.patch(
+            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
+        ):
             response = handler(mock_ws_send_event, {})
             assert response == {"statusCode": 200}
 
