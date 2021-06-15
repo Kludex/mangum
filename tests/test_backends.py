@@ -16,6 +16,7 @@ import shutil
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
+from .mock_server import s3_server, dynamodb2_server
 
 """
 class MonkeyPatchedAWSResponse(AWSResponse):
@@ -70,8 +71,8 @@ def test_sqlite_3_backend(
     "table_name",
     ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002"],
 )
-@mock_dynamodb2
 def test_dynamodb_backend(
+    dynamodb2_server,
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
@@ -129,25 +130,16 @@ def test_dynamodb_backend(
     ],
 )
 def test_s3_backend(
+    s3_server,
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
     mock_websocket_app,
     dsn,
 ) -> None:
-    service_name = "s3"
-    host = "127.0.0.1"
-    port = 8000
-
-    moto_svr_path = shutil.which("moto_server")
-    args = [moto_svr_path, service_name, "-H", host, "-p", str(port)]
-
-    process = sp.Popen(args, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
-    url = "http://{host}:{port}".format(host=host, port=port)
-
     with mock.patch.dict(
-        "os.environ", {"AWS_REGION": "ap-southeast-1", "AWS_ENDPOINT_URL": url}
-    ):  # TODO alter region
+        "os.environ", {"AWS_REGION": "ap-southeast-1", "AWS_ENDPOINT_URL": s3_server}
+    ):
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_connect_event, {})
         assert response == {"statusCode": 200}
@@ -164,8 +156,6 @@ def test_s3_backend(
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_disconnect_event, {})
         assert response == {"statusCode": 200}
-
-    process.kill()
 
 
 def test_postgresql_backend(
