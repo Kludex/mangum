@@ -6,11 +6,17 @@ black
 flake8
 starlette
 quart; python_version == '3.7'
-moto
+moto[server]
 mypy
 brotli
 brotli-asgi
 awslambdaric-stubs
+testing.postgresql
+testing.redis
+aioboto3
+aioredis
+aiosqlite
+aiopg
 # Docs
 mkdocs
 mkdocs-material

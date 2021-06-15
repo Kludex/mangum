@@ -13,9 +13,6 @@ async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
 def test_websocket_close(
     sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event
 ) -> None:
-
-    # dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
-
     async def app(scope, receive, send):
         if scope["type"] == "websocket":
             while True:
@@ -49,44 +46,37 @@ def test_websocket_disconnect(
 
 
 def test_websocket_exception(
-    tmp_path, mock_ws_connect_event, mock_ws_send_event
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event
 ) -> None:
     async def app(scope, receive, send):
         raise Exception()
 
-    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
-
-    handler = Mangum(app, dsn=dsn)
+    handler = Mangum(app, dsn=sqlite3_dsn)
     handler(mock_ws_connect_event, {})
 
-    handler = Mangum(app, dsn=dsn)
+    handler = Mangum(app, dsn=sqlite3_dsn)
     response = handler(mock_ws_send_event, {})
     assert response == {"statusCode": 500}
 
 
 def test_websocket_unexpected_message_error(
-    tmp_path, mock_ws_connect_event, mock_ws_send_event
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event
 ) -> None:
     async def app(scope, receive, send):
         await send({"type": "websocket.oops", "subprotocol": None})
 
-    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
-
-    handler = Mangum(app, dsn=dsn)
+    handler = Mangum(app, dsn=sqlite3_dsn)
     handler(mock_ws_connect_event, {})
 
-    handler = Mangum(app, dsn=dsn)
+    handler = Mangum(app, dsn=sqlite3_dsn)
     response = handler(mock_ws_send_event, {})
     assert response == {"statusCode": 500}
 
 
 def test_websocket_without_body(
-    tmp_path, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
 ) -> None:
-
-    dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
-
-    handler = Mangum(mock_websocket_app, lifespan="off", dsn=dsn)
+    handler = Mangum(mock_websocket_app, lifespan="off", dsn=sqlite3_dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 

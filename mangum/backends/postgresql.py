@@ -1,4 +1,3 @@
-# import psycopg2
 import aiopg
 
 from mangum.backends.base import WebSocketBackend
