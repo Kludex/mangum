@@ -30,15 +30,12 @@ class ASGIApp(Protocol):
 
 
 @dataclass
-class Request:
+class BaseRequest:
     """
     A holder for an ASGI scope. Contains additional meta from the event that triggered
-    the
-
-    https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
+    the Lambda function.
     """
 
-    method: str
     headers: List[List[bytes]]
     path: str
     scheme: str
@@ -51,18 +48,14 @@ class Request:
     trigger_context: Union["LambdaContext", Dict[str, Any]]
     event_type: str
 
-    type: str = "http"
-    http_version: str = "1.1"
-    raw_path: Optional[str] = None
-    root_path: str = ""
+    http_version: str = field(default="1.1", init=False)
+    raw_path: Optional[str] = field(default=None, init=False)
+    root_path: str = field(default="", init=False)
     asgi: Dict[str, str] = field(default_factory=lambda: {"version": "3.0"})
 
-    @property
     def scope(self) -> Scope:
         return {
-            "type": self.type,
             "http_version": self.http_version,
-            "method": self.method,
             "headers": self.headers,
             "path": self.path,
             "raw_path": self.raw_path,
@@ -77,6 +70,42 @@ class Request:
             "aws.context": self.trigger_context,
             "aws.eventType": self.event_type,
         }
+
+
+@dataclass
+class Request(BaseRequest):
+    """
+    A holder for an ASGI scope. Specific for usage with HTTP connections.
+
+    https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
+    """
+
+    type: str = "http"
+    method: str = "GET"
+
+    @property
+    def scope(self) -> Scope:
+        scope = super().scope()
+        scope.update({"type": self.type, "method": self.method})
+        return scope
+
+
+@dataclass
+class WsRequest(BaseRequest):
+    """
+    A holder for an ASGI scope. Specific for usage with WebSocket connections.
+
+    https://asgi.readthedocs.io/en/latest/specs/www.html#websocket-connection-scope
+    """
+
+    type: str = "websocket"
+    subprotocols: List[str] = field(default_factory=lambda: [])
+
+    @property
+    def scope(self) -> Scope:
+        scope = super().scope()
+        scope.update({"type": self.type, "subprotocols": self.subprotocols})
+        return scope
 
 
 @dataclass

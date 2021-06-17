@@ -33,6 +33,14 @@ def test_sqlite_3_backend(
     mock_websocket_app,
 ) -> None:
     dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
+
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    with mock.patch(
+        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
+        with pytest.raises(WebSocketError):
+            response = handler(mock_ws_send_event, {})
+
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}

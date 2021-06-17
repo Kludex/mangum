@@ -12,18 +12,18 @@ from urllib.parse import urlparse
 
 try:
     import httpx
-except ImportError:
-    httpx = None
+except ImportError:  # pragma: no cover <--
+    httpx = None  # type: ignore
 
 from mangum.exceptions import WebSocketError, ConfigurationError
 from mangum.types import Scope
 
 
-def sign(key: bytes, msg: str) -> str:
+def sign(key: bytes, msg: str) -> bytes:
     return hmac.new(key, msg.encode(), hashlib.sha256).digest()
 
 
-def get_sigv4_headers(body: str, region_name: str) -> dict:
+def get_sigv4_headers(body: bytes, region_name: str) -> dict:
     now = datetime.datetime.utcnow()
     amz_date = now.strftime("%Y%m%dT%H%M%SZ")
     request_date = now.strftime("%Y%m%d")
@@ -76,7 +76,7 @@ class WebSocket:
         if httpx is None:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
 
-        self.logger: logging.Logger = logging.getLogger("mangum.websocket")
+        self.logger: logging.Logger = logging.getLogger("mangum.backends")
         parsed_dsn = urlparse(dsn)
         if not any((parsed_dsn.hostname, parsed_dsn.path)):
             raise ConfigurationError("Invalid value for `dsn` provided.")
@@ -119,20 +119,17 @@ class WebSocket:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
 
-    async def load_scope(self, request_context: dict = None) -> typing.Optional[Scope]:
+    async def load_scope(self) -> Scope:
         loaded_scope = await self._backend.retrieve(self.connection_id)
-        if loaded_scope:
-            scope = json.loads(loaded_scope)
-            scope.update(
-                {
-                    "query_string": scope["query_string"].encode(),
-                    "headers": [
-                        [k.encode(), v.encode()] for k, v in scope["headers"].items()
-                    ],
-                }
-            )
-        else:
-            scope = None
+        scope = json.loads(loaded_scope)
+        scope.update(
+            {
+                "query_string": scope["query_string"].encode(),
+                "headers": [
+                    [k.encode(), v.encode()] for k, v in scope["headers"].items()
+                ],
+            }
+        )
 
         return scope
 
@@ -152,7 +149,7 @@ class WebSocket:
         await self.save_scope(initial_scope)
         await self._backend.disconnect()
 
-    async def on_message(self) -> typing.Optional[Scope]:
+    async def on_message(self) -> Scope:
         await self._backend.connect()
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
         scope = await self.load_scope()
@@ -176,7 +173,7 @@ class WebSocket:
     async def _post_to_connection(
         self,
         *,
-        client: httpx.AsyncClient,  # TODO this can cause a failure on import
+        client: "httpx.AsyncClient",
         body: bytes,
     ) -> None:  # pragma: no cover
         loop = asyncio.get_event_loop()
@@ -185,7 +182,7 @@ class WebSocket:
         )
 
         response = await client.post(
-            self.api_gateway_endpoint_url, data=body, headers=headers
+            self.api_gateway_endpoint_url, content=body, headers=headers
         )
         if response.status_code == 410:
             await self.on_disconnect()

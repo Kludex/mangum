@@ -2,7 +2,7 @@ import base64
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, TYPE_CHECKING, Tuple, List
 
-from .. import Response, Request
+from ..types import Response, BaseRequest
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -21,7 +21,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def request(self) -> Request:
+    def request(self) -> BaseRequest:
         """
         Parse an ASGI scope from the request event
         """
@@ -67,7 +67,7 @@ class AbstractHandler(metaclass=ABCMeta):
         ):
             from . import AwsWsGateway
 
-            return AwsWsGateway(trigger_event, trigger_context, **kwargs)
+            return AwsWsGateway(trigger_event, trigger_context, **kwargs)  # type: ignore
 
         if (
             "Records" in trigger_event

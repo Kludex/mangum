@@ -1,6 +1,7 @@
 import aiopg
 
 from mangum.backends.base import WebSocketBackend
+from mangum.exceptions import WebSocketError
 
 
 class PostgreSQLBackend(WebSocketBackend):
@@ -28,6 +29,8 @@ class PostgreSQLBackend(WebSocketBackend):
             (connection_id,),
         )
         row = await self.cursor.fetchone()
+        if not row:
+            raise WebSocketError(f"Connection not found: {connection_id}")
         initial_scope = row[0]
         return initial_scope
 

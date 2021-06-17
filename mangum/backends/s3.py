@@ -6,7 +6,7 @@ import aioboto3
 from botocore.exceptions import ClientError
 
 from mangum.backends.base import WebSocketBackend
-
+from mangum.exceptions import WebSocketError
 
 logger = logging.getLogger("mangum.backends.s3")
 
@@ -62,9 +62,13 @@ class S3Backend(WebSocketBackend):
         )
 
     async def retrieve(self, connection_id: str) -> str:
-        s3_object = await self.connection.get_object(
-            Bucket=self.bucket, Key=f"{self.key}{connection_id}"
-        )
+        try:
+            s3_object = await self.connection.get_object(
+                Bucket=self.bucket, Key=f"{self.key}{connection_id}"
+            )
+        except self.connection.exceptions.NoSuchKey:
+            raise WebSocketError(f"Connection not found: {connection_id}")
+
         async with s3_object["Body"] as body:
             scope = await body.read()
             json_scope = scope.decode()

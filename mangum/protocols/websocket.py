@@ -5,8 +5,8 @@ from io import BytesIO
 from dataclasses import dataclass
 
 from mangum.backends import WebSocket
-from mangum.exceptions import UnexpectedMessage, WebSocketClosed
-from mangum.types import ASGIApp, Message, Request, Response
+from mangum.exceptions import UnexpectedMessage, WebSocketClosed, WebSocketError
+from mangum.types import ASGIApp, Message, WsRequest, Response, Scope
 
 
 class WebSocketCycleState(enum.Enum):
@@ -55,7 +55,7 @@ class WebSocketCycle:
     """
 
     websocket: WebSocket
-    request: Request
+    request: WsRequest
     message_type: str
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
 
@@ -71,10 +71,8 @@ class WebSocketCycle:
         self.initial_body = initial_body
 
         if self.message_type == "CONNECT":
-            # loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.websocket.on_connect(self.request.scope))
         elif self.message_type == "DISCONNECT":
-            # loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.websocket.on_disconnect())
         elif self.message_type == "MESSAGE":
             self.app_queue.put_nowait({"type": "websocket.connect"})
@@ -89,7 +87,7 @@ class WebSocketCycle:
         Calls the application with the `websocket` connection scope.
         """
         self.scope = await self.websocket.on_message()
-        scope = self.scope.copy()
+        scope = self.scope.copy()  # type: ignore
         try:
             await app(scope, self.receive, self.send)
         except WebSocketClosed:
@@ -137,7 +135,6 @@ class WebSocketCycle:
             # may choose to close the connection at this point. This process does not
             # support subprotocols.
             if message_type == "websocket.accept":
-                # TODO Handle text/bytes payload
                 await self.app_queue.put(
                     {
                         "type": "websocket.receive",
@@ -165,11 +162,16 @@ class WebSocketCycle:
         ):
 
             # The application requested to send some data in response to the
-            # "websocket.receive" event. After it's sent, a "websocket.disconnect"
-            # event is generated to let the application finish gracefully.
+            # "websocket.receive" event. After this, a "websocket.disconnect"
+            # event is pushed to let the application finish gracefully.
             # Then the lambda's execution is ended.
 
-            # TODO what if the client sends a binary payload ?
+            if message.get("body") is not None:
+                raise WebSocketError(
+                    "Application attemped to send a binary payload, "
+                    "but it's unsupported!"
+                )
+
             message_text = message.get("text", "")
             body = message_text.encode()
 

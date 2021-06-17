@@ -1,14 +1,15 @@
+from urllib.parse import urlparse
+
 import aiosqlite
 
 from mangum.backends.base import WebSocketBackend
+from ..exceptions import WebSocketError
 
 
 class SQLiteBackend(WebSocketBackend):
     async def connect(self) -> None:
-        import logging
-
-        logging.warning(self.dsn)
-        self.connection = await aiosqlite.connect(self.dsn[9:])  # TODO fix
+        parsed_dsn = urlparse(self.dsn)
+        self.connection = await aiosqlite.connect(parsed_dsn.path)
         await self.connection.execute(
             "create table if not exists mangum_websockets (id varchar(64) primary key, initial_scope text)"
         )
@@ -30,6 +31,8 @@ class SQLiteBackend(WebSocketBackend):
             (connection_id,),
         ) as cursor:
             row = await cursor.fetchone()
+            if not row:
+                raise WebSocketError(f"Connection not found: {connection_id}")
             scope = row[0]
 
         return scope

@@ -5,6 +5,7 @@ from typing import (
     # Optional,
     ContextManager,
     Dict,
+    Optional,
     TYPE_CHECKING,
 )
 
@@ -41,14 +42,11 @@ class Mangum:
     * **text_mime_types** - A list of MIME types to include with the defaults that
     should not return a binary response in API Gateway.
     * **dsn** - A connection string required to configure a supported WebSocket backend.
-    * **api_gateway_endpoint_url** - A string endpoint url to use for API Gateway when
-    sending data to WebSocket connections. Default is `None`.
-    * **api_gateway_region_name** - A string region name to use for API Gateway when
-    sending data to WebSocket connections. Default is `AWS_REGION` environment variable.
     """
 
     app: ASGIApp
     lifespan: str = "auto"
+    dsn: Optional[str] = None
 
     def __init__(
         self, app: ASGIApp, lifespan: str = "auto", **handler_kwargs: Dict[str, Any]
@@ -73,7 +71,7 @@ class Mangum:
             handler = AbstractHandler.from_trigger(
                 event, context, **self.handler_kwargs
             )
-            # TODO this goes against https://github.com/jordaneremieff/mangum/issues/132#issuecomment-762739983
+
             if handler.is_websocket:
                 websocket_cycle = WebSocketCycle(
                     handler.websocket, handler.request, handler.message_type

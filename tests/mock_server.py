@@ -58,7 +58,7 @@ def stop_process(process):
 
 
 @pytest.fixture(scope="session")
-def dynamodb2_server():
+def dynamodb2_server(aws_credentials):
     host = "localhost"
     port = 5001
     url = "http://{host}:{port}".format(host=host, port=port)
@@ -68,7 +68,7 @@ def dynamodb2_server():
 
 
 @pytest.fixture(scope="session")
-def s3_server():
+def s3_server(aws_credentials):
     host = "localhost"
     port = 5002
     url = "http://{host}:{port}".format(host=host, port=port)
