@@ -36,10 +36,10 @@ def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
 
 class AwsWsGateway(AbstractHandler):
     """
-    Handles AWS API Gateway Websocket events, transforming them into ASGI Scope and handling
-    responses
+    Handles AWS API Gateway Websocket events, transforming
+    them into ASGI Scope and handling responses
 
-    See: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+    See: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format  # noqa: E501
     """
 
     TYPE = "AWS_WS_GATEWAY"
@@ -94,9 +94,6 @@ class AwsWsGateway(AbstractHandler):
 
     @property
     def body(self) -> bytes:
-        # API Gateway WebSocket APIs don't currently support binary frames in incoming message payloads.
-        # https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-develop-binary-media-types.html
-
         body = self.trigger_event.get("body", b"") or b""
 
         if self.trigger_event.get("isBase64Encoded", False):

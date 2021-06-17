@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from mangum.backends import WebSocket
 from mangum.exceptions import UnexpectedMessage, WebSocketClosed, WebSocketError
-from mangum.types import ASGIApp, Message, WsRequest, Response, Scope
+from mangum.types import ASGIApp, Message, WsRequest, Response
 
 
 class WebSocketCycleState(enum.Enum):
@@ -50,13 +50,11 @@ class WebSocketCycle:
     the ASGI connection.
     * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
     application.
-    * **response** - A dictionary containing the response data to return in AWS Lambda.
-    This will only contain a `statusCode` for WebSocket connections.
     """
 
-    websocket: WebSocket
     request: WsRequest
     message_type: str
+    websocket: WebSocket
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
 
     def __post_init__(self) -> None:

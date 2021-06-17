@@ -64,7 +64,8 @@ def get_sigv4_headers(body: bytes, region_name: str) -> dict:
 @dataclass
 class WebSocket:
     """
-    A `WebSocket` connection handler interface for the selected `WebSocketBackend` subclass
+    A `WebSocket` connection handler interface for the
+    selected `WebSocketBackend` subclass
     """
 
     dsn: InitVar[str]

@@ -1,15 +1,19 @@
 import base64
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TYPE_CHECKING, Tuple, List
+from typing import Dict, Any, TYPE_CHECKING, Tuple, List, Union
 
-from ..types import Response, BaseRequest
-
+from ..types import Response, Request, WsRequest
+from ..backends import WebSocket
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
 
 class AbstractHandler(metaclass=ABCMeta):
+    # Attributes used by websockets only
+    websocket: WebSocket
+    message_type: str
+
     def __init__(
         self,
         trigger_event: Dict[str, Any],
@@ -21,7 +25,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def request(self) -> BaseRequest:
+    def request(self) -> Union[Request, WsRequest]:
         """
         Parse an ASGI scope from the request event
         """
@@ -67,7 +71,9 @@ class AbstractHandler(metaclass=ABCMeta):
         ):
             from . import AwsWsGateway
 
-            return AwsWsGateway(trigger_event, trigger_context, **kwargs)  # type: ignore
+            return AwsWsGateway(
+                trigger_event, trigger_context, **kwargs  # type: ignore
+            )
 
         if (
             "Records" in trigger_event
@@ -141,9 +147,3 @@ class AbstractHandler(metaclass=ABCMeta):
                 is_base64_encoded = True
 
         return output_body, is_base64_encoded
-
-    @property
-    def is_websocket(self) -> bool:
-        from . import AwsWsGateway
-
-        return isinstance(self, AwsWsGateway)

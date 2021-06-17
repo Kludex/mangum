@@ -10,7 +10,8 @@ class PostgreSQLBackend(WebSocketBackend):
 
         self.cursor = await self.connection.cursor()
         await self.cursor.execute(
-            "create table if not exists mangum_websockets (id varchar(64) primary key, initial_scope text)"
+            "create table if not exists mangum_websockets "
+            "(id varchar(64) primary key, initial_scope text)"
         )
 
     async def disconnect(self) -> None:

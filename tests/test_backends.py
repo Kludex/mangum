@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
-from .mock_server import s3_server, dynamodb2_server
+from .mock_server import s3_server, dynamodb2_server  # noqa: F401
 
 
 async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
@@ -62,7 +62,7 @@ def test_sqlite_3_backend(
     ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002"],
 )
 def test_dynamodb_backend(
-    dynamodb2_server,
+    dynamodb2_server,  # noqa: F811
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
@@ -110,7 +110,7 @@ def test_dynamodb_backend(
     ],
 )
 def test_s3_backend(
-    s3_server,
+    s3_server,  # noqa: F811
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,

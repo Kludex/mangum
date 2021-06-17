@@ -11,7 +11,8 @@ class SQLiteBackend(WebSocketBackend):
         parsed_dsn = urlparse(self.dsn)
         self.connection = await aiosqlite.connect(parsed_dsn.path)
         await self.connection.execute(
-            "create table if not exists mangum_websockets (id varchar(64) primary key, initial_scope text)"
+            "create table if not exists mangum_websockets "
+            "(id varchar(64) primary key, initial_scope text)"
         )
         await self.connection.commit()
 

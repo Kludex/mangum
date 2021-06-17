@@ -2,7 +2,6 @@ import logging
 from contextlib import ExitStack
 from typing import (
     Any,
-    # Optional,
     ContextManager,
     Dict,
     Optional,
@@ -12,7 +11,7 @@ from typing import (
 from .exceptions import ConfigurationError
 from .handlers import AbstractHandler
 from .protocols import HTTPCycle, WebSocketCycle, LifespanCycle
-from .types import ASGIApp
+from .types import ASGIApp, WsRequest
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -71,14 +70,18 @@ class Mangum:
             handler = AbstractHandler.from_trigger(
                 event, context, **self.handler_kwargs
             )
+            request = handler.request
 
-            if handler.is_websocket:
+            if isinstance(request, WsRequest):
+                if not handler.websocket:
+                    raise Exception
+
                 websocket_cycle = WebSocketCycle(
-                    handler.websocket, handler.request, handler.message_type
+                    request, handler.message_type, handler.websocket
                 )
                 response = websocket_cycle(self.app, handler.body)
             else:
-                http_cycle = HTTPCycle(handler.request)
+                http_cycle = HTTPCycle(request)
                 response = http_cycle(self.app, handler.body)
 
         return handler.transform_response(response)

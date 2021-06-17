@@ -74,7 +74,7 @@ class DynamoDBBackend(WebSocketBackend):
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.put_item(
             Item={"connectionId": connection_id, "initial_scope": json_scope},
-            ConditionExpression=f"attribute_not_exists(connectionId)",
+            ConditionExpression="attribute_not_exists(connectionId)",
         )
 
     async def retrieve(self, connection_id: str) -> str:
