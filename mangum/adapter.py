@@ -4,7 +4,6 @@ from typing import (
     Any,
     ContextManager,
     Dict,
-    Optional,
     TYPE_CHECKING,
 )
 
@@ -45,7 +44,6 @@ class Mangum:
 
     app: ASGIApp
     lifespan: str = "auto"
-    dsn: Optional[str] = None
 
     def __init__(
         self, app: ASGIApp, lifespan: str = "auto", **handler_kwargs: Dict[str, Any]
@@ -73,9 +71,6 @@ class Mangum:
             request = handler.request
 
             if isinstance(request, WsRequest):
-                if not handler.websocket:
-                    raise Exception
-
                 websocket_cycle = WebSocketCycle(
                     request, handler.message_type, handler.websocket
                 )

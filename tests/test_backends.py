@@ -74,6 +74,7 @@ def test_dynamodb_backend(
     dsn = (
         f"dynamodb://{table_name}?region={region_name}&endpoint_url={dynamodb2_server}"
     )
+
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
@@ -121,6 +122,10 @@ def test_s3_backend(
         "os.environ", {"AWS_REGION": "ap-southeast-1", "AWS_ENDPOINT_URL": s3_server}
     ):
         handler = Mangum(mock_websocket_app, dsn=dsn)
+        with pytest.raises(WebSocketError):
+            handler(mock_ws_send_event, {})
+
+        handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_connect_event, {})
         assert response == {"statusCode": 200}
 
@@ -146,8 +151,12 @@ def test_postgresql_backend(
 ):
     with testing.postgresql.Postgresql() as postgresql:
         create_engine(postgresql.url())
-
         dsn = postgresql.url()
+
+        handler = Mangum(mock_websocket_app, dsn=dsn)
+        with pytest.raises(WebSocketError):
+            handler(mock_ws_send_event, {})
+
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_connect_event, {})
         assert response == {"statusCode": 200}
@@ -179,6 +188,10 @@ def test_redis_backend(
     with testing.redis.RedisServer() as redis_server:
         _dsn = redis_server.dsn()
         dsn = f"redis://{_dsn['host']}:{_dsn['port']}/{_dsn['db']}"
+
+        handler = Mangum(mock_websocket_app, dsn=dsn)
+        with pytest.raises(WebSocketError):
+            handler(mock_ws_send_event, {})
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_connect_event, {})

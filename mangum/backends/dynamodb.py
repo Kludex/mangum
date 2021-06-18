@@ -49,7 +49,7 @@ class DynamoDBBackend(WebSocketBackend):
                     logger.info(f"Table {self.table_name} not found, creating.")
                     create_table = True
                 else:
-                    raise WebSocketError(exc)
+                    raise WebSocketError(exc)  # pragma: no cover
 
             self.table = await resource.Table(self.table_name)
 

@@ -1,11 +1,7 @@
 import asyncio
 import logging
-import typing
+from typing import Dict, Optional
 import json
-import os
-import hashlib
-import hmac
-import datetime
 from functools import partial
 from dataclasses import dataclass, InitVar
 from urllib.parse import urlparse
@@ -15,50 +11,29 @@ try:
 except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
+import boto3
+from botocore.auth import SigV4Auth
+from botocore.awsrequest import AWSRequest
+
 from mangum.exceptions import WebSocketError, ConfigurationError
 from mangum.types import Scope
 
 
-def sign(key: bytes, msg: str) -> bytes:
-    return hmac.new(key, msg.encode(), hashlib.sha256).digest()
+def get_sigv4_headers(
+    method: str,
+    url: str,
+    data: Optional[bytes] = None,
+    region_name: Optional[str] = None,
+) -> Dict:
+    session = boto3.Session()
+    credentials = session.get_credentials()
+    creds = credentials.get_frozen_credentials()
+    region = region_name or session.region_name
 
+    request = AWSRequest(method=method, url=url, data=data)
+    SigV4Auth(creds, "execute-api", region).add_auth(request)
 
-def get_sigv4_headers(body: bytes, region_name: str) -> dict:
-    now = datetime.datetime.utcnow()
-    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
-    request_date = now.strftime("%Y%m%d")
-    host = f"apigatewaymanagementapi.{region_name}.amazonaws.com"
-    canonical_headers = f"host:{host}\nx-amz-date:{amz_date}\n"
-    signed_headers = "host;x-amz-date"
-    payload_hash = hashlib.sha256(body).hexdigest()
-    canonical_request = (
-        f"POST\n/\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
-    )
-    service = "apigatewaymanagementapi"
-    algorithm = "AWS4-HMAC-SHA256"
-    credential_scope = f"{request_date}/{region_name}/{service}/aws4_request"
-    request_hash = hashlib.sha256(canonical_request.encode()).hexdigest()
-    string_to_sign = f"{algorithm}\n{amz_date}\n{credential_scope}\n{request_hash}"
-    access_key = os.environ["AWS_ACCESS_KEY_ID"]
-    secret_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-    key_date = sign(f"AWS4{secret_key}".encode(), request_date)
-    key_region = sign(key_date, region_name)
-    key_service = sign(key_region, service)
-    signing_key = sign(key_service, "aws4_request")
-    signature = hmac.new(
-        signing_key, (string_to_sign).encode(), hashlib.sha256
-    ).hexdigest()
-    authorization_header = (
-        f"{algorithm} Credential={access_key}/{credential_scope}, "
-        f"SignedHeaders={signed_headers}, Signature={signature}"
-    )
-    headers = {
-        "Content-Type": "application/x-amz-json-1.0",
-        "X-Amz-Date": amz_date,
-        "Authorization": authorization_header,
-    }
-
-    return headers
+    return dict(request.headers)
 
 
 @dataclass
@@ -71,7 +46,7 @@ class WebSocket:
     dsn: InitVar[str]
     connection_id: str
     api_gateway_endpoint_url: str
-    api_gateway_region_name: typing.Optional[str] = None
+    api_gateway_region_name: Optional[str] = None
 
     def __post_init__(self, dsn: str) -> None:
         if httpx is None:  # pragma: no cover
@@ -166,7 +141,7 @@ class WebSocket:
 
     async def delete_connection(self) -> None:
         async with httpx.AsyncClient() as client:
-            await client.delete(self.api_gateway_endpoint_url)
+            await self._request_to_connection("DELETE", client=client)
 
     async def _post_to_connection(
         self,
@@ -174,15 +149,32 @@ class WebSocket:
         client: "httpx.AsyncClient",
         body: bytes,
     ) -> None:  # pragma: no cover
-        loop = asyncio.get_event_loop()
-        headers = await loop.run_in_executor(
-            None, partial(get_sigv4_headers, body, self.api_gateway_region_name)
-        )
+        response = await self._request_to_connection("POST", client=client, body=body)
 
-        response = await client.post(
-            self.api_gateway_endpoint_url, content=body, headers=headers
-        )
         if response.status_code == 410:
             await self.on_disconnect()
         elif response.status_code != 200:
             raise WebSocketError(f"Error: {response.status_code}")
+
+    async def _request_to_connection(
+        self,
+        method: str,
+        *,
+        client: "httpx.AsyncClient",
+        body: Optional[bytes] = None,
+    ) -> "httpx.Response":
+        loop = asyncio.get_event_loop()
+        headers = await loop.run_in_executor(
+            None,
+            partial(
+                get_sigv4_headers,
+                method,
+                self.api_gateway_endpoint_url,
+                body,
+                self.api_gateway_region_name,
+            ),
+        )
+
+        return await client.request(
+            method, self.api_gateway_endpoint_url, content=body, headers=headers
+        )

@@ -16,27 +16,29 @@ class WebSocketBackend:
     dsn: str
 
     @asynccontextmanager  # type: ignore
-    async def connect(self) -> AsyncIterator:
+    async def connect(self) -> AsyncIterator:  # pragma: no cover
         """
         Establish the connection to a data source.
         """
         yield
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
-    async def save(self, connection_id: str, *, json_scope: str) -> None:
+    async def save(
+        self, connection_id: str, *, json_scope: str
+    ) -> None:  # pragma: no cover
         """
         Save the JSON scope for a connection.
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
-    async def retrieve(self, connection_id: str) -> str:
+    async def retrieve(self, connection_id: str) -> str:  # pragma: no cover
         """
         Retrieve the JSON scope for a connection.
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
-    async def delete(self, connection_id: str) -> None:
+    async def delete(self, connection_id: str) -> None:  # pragma: no cover
         """
         Delete the JSON scope for a connection.
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()

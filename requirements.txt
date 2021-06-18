@@ -19,6 +19,7 @@ aiosqlite
 aiopg
 sqlalchemy
 httpx
+respx
 async_generator; python_version < '3.7' # Backport for asynccontextmanager
 types-dataclasses; python_version < '3.7' # For mypy
 # Docs

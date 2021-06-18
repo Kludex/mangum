@@ -32,7 +32,6 @@ class S3Backend(WebSocketBackend):
         async with aioboto3.client(
             "s3",
             region_name=region_name,
-            # config=Config(connect_timeout=2, retries={"max_attempts": 0}),
             endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
         ) as self.client:
             create_bucket = False
@@ -48,10 +47,7 @@ class S3Backend(WebSocketBackend):
                     create_bucket = True
 
             if create_bucket:
-                await self.client.create_bucket(
-                    Bucket=self.bucket,
-                    # CreateBucketConfiguration={"LocationConstraint": region_name},
-                )
+                await self.client.create_bucket(Bucket=self.bucket)
 
             yield
 
