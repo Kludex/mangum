@@ -1,13 +1,14 @@
 from typing import AsyncIterator
+
 import aiopg
-from contextlib import asynccontextmanager
 
 from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
+from .._compat import asynccontextmanager
 
 
 class PostgreSQLBackend(WebSocketBackend):
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore
     async def connect(self) -> AsyncIterator:
         async with aiopg.connect(self.dsn) as connection:
             async with connection.cursor() as self.cursor:

@@ -1,13 +1,13 @@
 from typing import AsyncIterator
 import aioredis
-from contextlib import asynccontextmanager
 
 from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
+from .._compat import asynccontextmanager
 
 
 class RedisBackend(WebSocketBackend):
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore
     async def connect(self) -> AsyncIterator:
         self.connection = await aioredis.create_redis(self.dsn)
         try:

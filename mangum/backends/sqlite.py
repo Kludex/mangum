@@ -1,15 +1,15 @@
 from typing import AsyncIterator
 from urllib.parse import urlparse
-from contextlib import asynccontextmanager
 
 import aiosqlite
 
 from mangum.backends.base import WebSocketBackend
 from ..exceptions import WebSocketError
+from .._compat import asynccontextmanager
 
 
 class SQLiteBackend(WebSocketBackend):
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore
     async def connect(self) -> AsyncIterator:
         parsed_dsn = urlparse(self.dsn)
         async with aiosqlite.connect(parsed_dsn.path) as self.connection:

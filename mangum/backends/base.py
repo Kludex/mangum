@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from contextlib import asynccontextmanager
 from typing import AsyncIterator
+
+from .._compat import asynccontextmanager
 
 
 @dataclass
@@ -19,6 +20,7 @@ class WebSocketBackend:
         """
         Establish the connection to a data source.
         """
+        yield
         raise NotImplementedError()  # pragma: no cover
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:

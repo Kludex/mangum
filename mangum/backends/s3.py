@@ -2,19 +2,19 @@ import os
 import logging
 from typing import AsyncIterator
 from urllib.parse import urlparse, parse_qs
-from contextlib import asynccontextmanager
 
 import aioboto3
 from botocore.exceptions import ClientError
 
 from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
+from .._compat import asynccontextmanager
 
 logger = logging.getLogger("mangum.backends.s3")
 
 
 class S3Backend(WebSocketBackend):
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore
     async def connect(self) -> AsyncIterator:
         parsed_dsn = urlparse(self.dsn)
         parsed_query = parse_qs(parsed_dsn.query)
