@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 try:
     import httpx
-except ImportError:  # pragma: no cover <--
+except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
 from mangum.exceptions import WebSocketError, ConfigurationError

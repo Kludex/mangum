@@ -17,6 +17,8 @@ aioboto3
 aioredis
 aiosqlite
 aiopg
+sqlalchemy
+httpx
 # Docs
 mkdocs
 mkdocs-material
