@@ -145,23 +145,20 @@ class WebSocket:
         await self._backend.save(self.connection_id, json_scope=json_scope)
 
     async def on_connect(self, initial_scope: Scope) -> None:
-        await self._backend.connect()
         self.logger.debug("Creating scope entry for %s", self.connection_id)
-        await self.save_scope(initial_scope)
-        await self._backend.disconnect()
+        async with self._backend.connect():
+            await self.save_scope(initial_scope)
 
     async def on_message(self) -> Scope:
-        await self._backend.connect()
         self.logger.debug("Retrieving scope entry for %s", self.connection_id)
-        scope = await self.load_scope()
-        await self._backend.disconnect()
+        async with self._backend.connect():
+            scope = await self.load_scope()
         return scope
 
     async def on_disconnect(self) -> None:
-        await self._backend.connect()
         self.logger.debug("Deleting scope entry for %s", self.connection_id)
-        await self._backend.delete(self.connection_id)
-        await self._backend.disconnect()
+        async with self._backend.connect():
+            await self._backend.delete(self.connection_id)
 
     async def post_to_connection(self, body: bytes) -> None:
         async with httpx.AsyncClient() as client:

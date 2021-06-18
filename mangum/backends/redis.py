@@ -1,16 +1,19 @@
-# TODO handle module missing
+from typing import AsyncIterator
 import aioredis
+from contextlib import asynccontextmanager
 
 from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
 
 
 class RedisBackend(WebSocketBackend):
-    async def connect(self) -> None:
+    @asynccontextmanager
+    async def connect(self) -> AsyncIterator:
         self.connection = await aioredis.create_redis(self.dsn)
-
-    async def disconnect(self) -> None:
-        self.connection.close()
+        try:
+            yield
+        finally:
+            self.connection.close()
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.set(connection_id, json_scope)

@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 
 @dataclass
@@ -12,15 +14,10 @@ class WebSocketBackend:
 
     dsn: str
 
-    async def connect(self) -> None:
+    @asynccontextmanager  # type: ignore
+    async def connect(self) -> AsyncIterator:
         """
         Establish the connection to a data source.
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    async def disconnect(self) -> None:
-        """
-        Disconnect from data source.
         """
         raise NotImplementedError()  # pragma: no cover
 

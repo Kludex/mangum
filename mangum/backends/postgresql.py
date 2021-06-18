@@ -1,22 +1,21 @@
+from typing import AsyncIterator
 import aiopg
+from contextlib import asynccontextmanager
 
 from mangum.backends.base import WebSocketBackend
 from mangum.exceptions import WebSocketError
 
 
 class PostgreSQLBackend(WebSocketBackend):
-    async def connect(self) -> None:
-        self.connection = await aiopg.connect(self.dsn)
-
-        self.cursor = await self.connection.cursor()
-        await self.cursor.execute(
-            "create table if not exists mangum_websockets "
-            "(id varchar(64) primary key, initial_scope text)"
-        )
-
-    async def disconnect(self) -> None:
-        self.cursor.close()
-        await self.connection.close()
+    @asynccontextmanager
+    async def connect(self) -> AsyncIterator:
+        async with aiopg.connect(self.dsn) as connection:
+            async with connection.cursor() as self.cursor:
+                await self.cursor.execute(
+                    "create table if not exists mangum_websockets "
+                    "(id varchar(64) primary key, initial_scope text)"
+                )
+                yield
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.cursor.execute(

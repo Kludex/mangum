@@ -1,4 +1,6 @@
+from typing import AsyncIterator
 from urllib.parse import urlparse
+from contextlib import asynccontextmanager
 
 import aiosqlite
 
@@ -7,17 +9,16 @@ from ..exceptions import WebSocketError
 
 
 class SQLiteBackend(WebSocketBackend):
-    async def connect(self) -> None:
+    @asynccontextmanager
+    async def connect(self) -> AsyncIterator:
         parsed_dsn = urlparse(self.dsn)
-        self.connection = await aiosqlite.connect(parsed_dsn.path)
-        await self.connection.execute(
-            "create table if not exists mangum_websockets "
-            "(id varchar(64) primary key, initial_scope text)"
-        )
-        await self.connection.commit()
-
-    async def disconnect(self) -> None:
-        await self.connection.close()
+        async with aiosqlite.connect(parsed_dsn.path) as self.connection:
+            await self.connection.execute(
+                "create table if not exists mangum_websockets "
+                "(id varchar(64) primary key, initial_scope text)"
+            )
+            await self.connection.commit()
+            yield
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.execute(
