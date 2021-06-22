@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 import aiosqlite
 
-from mangum.backends.base import WebSocketBackend
+from .base import WebSocketBackend
 from ..exceptions import WebSocketError
 from .._compat import asynccontextmanager
 

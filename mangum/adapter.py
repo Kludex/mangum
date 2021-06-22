@@ -40,6 +40,10 @@ class Mangum:
     * **text_mime_types** - A list of MIME types to include with the defaults that
     should not return a binary response in API Gateway.
     * **dsn** - A connection string required to configure a supported WebSocket backend.
+    * **api_gateway_endpoint_url** - A string endpoint url to use for API Gateway when
+    sending data to WebSocket connections. Default is to determine this automatically.
+    * **api_gateway_region_name** - A string region name to use for API Gateway when
+    sending data to WebSocket connections. Default is `AWS_REGION` environment variable.
     """
 
     app: ASGIApp

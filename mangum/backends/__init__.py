@@ -15,8 +15,8 @@ import boto3
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 
-from mangum.exceptions import WebSocketError, ConfigurationError
-from mangum.types import Scope
+from ..exceptions import WebSocketError, ConfigurationError
+from ..types import Scope
 
 
 def get_sigv4_headers(

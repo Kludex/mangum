@@ -4,9 +4,9 @@ import logging
 from io import BytesIO
 from dataclasses import dataclass
 
-from mangum.backends import WebSocket
-from mangum.exceptions import UnexpectedMessage, WebSocketClosed, WebSocketError
-from mangum.types import ASGIApp, Message, WsRequest, Response
+from ..backends import WebSocket
+from ..exceptions import UnexpectedMessage, WebSocketClosed, WebSocketError
+from ..types import ASGIApp, Message, WsRequest, Response
 
 
 class WebSocketCycleState(enum.Enum):

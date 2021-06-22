@@ -2,8 +2,8 @@ from typing import AsyncIterator
 
 import aiopg
 
-from mangum.backends.base import WebSocketBackend
-from mangum.exceptions import WebSocketError
+from .base import WebSocketBackend
+from ..exceptions import WebSocketError
 from .._compat import asynccontextmanager
 
 
