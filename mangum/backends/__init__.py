@@ -15,6 +15,7 @@ import boto3
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 
+from .base import WebSocketBackend
 from ..exceptions import WebSocketError, ConfigurationError
 from ..types import Scope
 
@@ -73,34 +74,37 @@ class WebSocket:
             )
             from mangum.backends.sqlite import SQLiteBackend
 
-            self._backend = SQLiteBackend(dsn)  # type: ignore
+            self._Backend = SQLiteBackend  # type: ignore
 
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._backend = DynamoDBBackend(dsn)  # type: ignore
+            self._Backend = DynamoDBBackend  # type: ignore
 
         elif scheme == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._backend = S3Backend(dsn)  # type: ignore
+            self._Backend = S3Backend  # type: ignore
 
         elif scheme in ("postgresql", "postgres"):
             from mangum.backends.postgresql import PostgreSQLBackend
 
-            self._backend = PostgreSQLBackend(dsn)  # type: ignore
+            self._Backend = PostgreSQLBackend  # type: ignore
 
         elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 
-            self._backend = RedisBackend(dsn)  # type: ignore
+            self._Backend = RedisBackend  # type: ignore
 
         else:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
+
+        self.dsn = dsn
+
         self.logger.info("WebSocket backend connection established.")
 
-    async def load_scope(self, connection_id: str) -> Scope:
-        loaded_scope = await self._backend.retrieve(connection_id)
+    async def load_scope(self, backend: WebSocketBackend, connection_id: str) -> Scope:
+        loaded_scope = await backend.retrieve(connection_id)
         scope = json.loads(loaded_scope)
         scope.update(
             {
@@ -113,7 +117,9 @@ class WebSocket:
 
         return scope
 
-    async def save_scope(self, connection_id: str, scope: Scope) -> None:
+    async def save_scope(
+        self, backend: WebSocketBackend, connection_id: str, scope: Scope
+    ) -> None:
         scope.update(
             {
                 "query_string": scope["query_string"].decode(),
@@ -121,23 +127,23 @@ class WebSocket:
             }
         )
         json_scope = json.dumps(scope)
-        await self._backend.save(connection_id, json_scope=json_scope)
+        await backend.save(connection_id, json_scope=json_scope)
 
     async def on_connect(self, connection_id: str, initial_scope: Scope) -> None:
         self.logger.debug("Creating scope entry for %s", connection_id)
-        async with self._backend.connect():
-            await self.save_scope(connection_id, initial_scope)
+        async with self._Backend(self.dsn) as backend:  # type: ignore
+            await self.save_scope(backend, connection_id, initial_scope)
 
     async def on_message(self, connection_id: str) -> Scope:
         self.logger.debug("Retrieving scope entry for %s", connection_id)
-        async with self._backend.connect():
-            scope = await self.load_scope(connection_id)
+        async with self._Backend(self.dsn) as backend:  # type: ignore
+            scope = await self.load_scope(backend, connection_id)
         return scope
 
     async def on_disconnect(self, connection_id: str) -> None:
         self.logger.debug("Deleting scope entry for %s", connection_id)
-        async with self._backend.connect():
-            await self._backend.delete(connection_id)
+        async with self._Backend(self.dsn) as backend:  # type: ignore
+            await backend.delete(connection_id)
 
     async def post_to_connection(self, connection_id: str, body: bytes) -> None:
         async with httpx.AsyncClient() as client:

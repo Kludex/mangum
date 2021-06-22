@@ -3,4 +3,3 @@ source =
     mangum
 omit =
     tests/*
-    mangum/_compat.py

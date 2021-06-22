@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from typing import AsyncIterator
-
-from .._compat import asynccontextmanager
+from typing import Any
 
 
 @dataclass
-class WebSocketBackend:
+class WebSocketBackend:  # pragma: no cover
     """
     Base class for implementing WebSocket backends to store API Gateway connections.
 
@@ -15,29 +13,31 @@ class WebSocketBackend:
 
     dsn: str
 
-    @asynccontextmanager  # type: ignore
-    async def connect(self) -> AsyncIterator:  # pragma: no cover
+    async def __aenter__(self) -> "WebSocketBackend":
         """
         Establish the connection to a data source.
         """
-        yield
         raise NotImplementedError()
 
-    async def save(
-        self, connection_id: str, *, json_scope: str
-    ) -> None:  # pragma: no cover
+    async def __aexit__(self, *exc_info: Any) -> None:
+        """
+        Closes the connection to a data source.
+        """
+        raise NotImplementedError()
+
+    async def save(self, connection_id: str, *, json_scope: str) -> None:
         """
         Save the JSON scope for a connection.
         """
         raise NotImplementedError()
 
-    async def retrieve(self, connection_id: str) -> str:  # pragma: no cover
+    async def retrieve(self, connection_id: str) -> str:
         """
         Retrieve the JSON scope for a connection.
         """
         raise NotImplementedError()
 
-    async def delete(self, connection_id: str) -> None:  # pragma: no cover
+    async def delete(self, connection_id: str) -> None:
         """
         Delete the JSON scope for a connection.
         """

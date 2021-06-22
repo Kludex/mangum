@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import AsyncIterator
+from typing import Any
 from urllib.parse import ParseResult, urlparse, parse_qs
 
 import aioboto3
@@ -8,7 +8,6 @@ from botocore.exceptions import ClientError
 
 from .base import WebSocketBackend
 from ..exceptions import WebSocketError
-from .._compat import asynccontextmanager
 
 logger = logging.getLogger("mangum.backends.s3")
 
@@ -23,8 +22,7 @@ def get_file_key(parsed_dsn: ParseResult) -> str:
 
 
 class S3Backend(WebSocketBackend):
-    @asynccontextmanager  # type: ignore
-    async def connect(self) -> AsyncIterator:
+    async def __aenter__(self) -> WebSocketBackend:
         parsed_dsn = urlparse(self.dsn)
         parsed_query = parse_qs(parsed_dsn.query)
         self.bucket = parsed_dsn.hostname
@@ -38,27 +36,31 @@ class S3Backend(WebSocketBackend):
             parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
         )
 
-        async with aioboto3.client(
+        self.client = await aioboto3.client(
             "s3",
             region_name=self.region_name,
             endpoint_url=self.endpoint_url,
-        ) as self.client:
-            create_bucket = False
+        ).__aenter__()
 
-            try:
-                await self.client.head_bucket(Bucket=self.bucket)
-            except ClientError as exc:
-                error_code = int(exc.response["Error"]["Code"])
-                if error_code == 403:  # pragma: no cover
-                    logger.error("S3 bucket access forbidden!")
-                elif error_code == 404:
-                    logger.info(f"Bucket {self.bucket} not found, creating.")
-                    create_bucket = True
+        create_bucket = False
 
-            if create_bucket:
-                await self.client.create_bucket(Bucket=self.bucket)
+        try:
+            await self.client.head_bucket(Bucket=self.bucket)
+        except ClientError as exc:
+            error_code = int(exc.response["Error"]["Code"])
+            if error_code == 403:  # pragma: no cover
+                logger.error("S3 bucket access forbidden!")
+            elif error_code == 404:
+                logger.info(f"Bucket {self.bucket} not found, creating.")
+                create_bucket = True
 
-            yield
+        if create_bucket:
+            await self.client.create_bucket(Bucket=self.bucket)
+
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        await self.client.__aexit__(*exc_info)
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.client.put_object(

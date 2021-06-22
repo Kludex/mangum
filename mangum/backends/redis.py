@@ -1,19 +1,18 @@
-from typing import AsyncIterator
+from typing import Any
 import aioredis
 
 from .base import WebSocketBackend
 from ..exceptions import WebSocketError
-from .._compat import asynccontextmanager
 
 
 class RedisBackend(WebSocketBackend):
-    @asynccontextmanager  # type: ignore
-    async def connect(self) -> AsyncIterator:
+    async def __aenter__(self) -> WebSocketBackend:
         self.connection = await aioredis.create_redis(self.dsn)
-        try:
-            yield
-        finally:
-            self.connection.close()
+
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        self.connection.close()
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.connection.set(connection_id, json_scope)

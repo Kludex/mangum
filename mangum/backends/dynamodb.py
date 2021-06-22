@@ -1,5 +1,5 @@
 import os
-from typing import AsyncIterator
+from typing import Any
 from urllib.parse import ParseResult, urlparse, parse_qs
 import logging
 
@@ -8,7 +8,6 @@ from botocore.exceptions import ClientError
 
 from .base import WebSocketBackend
 from ..exceptions import WebSocketError
-from .._compat import asynccontextmanager
 
 logger = logging.getLogger("mangum.backends.dynamodb")
 
@@ -21,8 +20,7 @@ def get_table_name(parsed_dsn: ParseResult) -> str:
 
 
 class DynamoDBBackend(WebSocketBackend):
-    @asynccontextmanager  # type: ignore
-    async def connect(self) -> AsyncIterator:
+    async def __aenter__(self) -> WebSocketBackend:
         parsed_dsn = urlparse(self.dsn)
         parsed_query = parse_qs(parsed_dsn.query)
         self.table_name = get_table_name(parsed_dsn)
@@ -35,40 +33,45 @@ class DynamoDBBackend(WebSocketBackend):
             parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
         )
 
-        async with aioboto3.resource(
+        self.resource = await aioboto3.resource(
             "dynamodb",
             region_name=self.region_name,
             endpoint_url=self.endpoint_url,
-        ) as resource:
-            create_table = False
+        ).__aenter__()
 
-            try:
-                await resource.meta.client.describe_table(TableName=self.table_name)
-            except ClientError as exc:
-                if exc.response["Error"]["Code"] == "ResourceNotFoundException":
-                    logger.info(f"Table {self.table_name} not found, creating.")
-                    create_table = True
-                else:
-                    raise WebSocketError(exc)  # pragma: no cover
+        create_table = False
 
-            self.table = await resource.Table(self.table_name)
+        try:
+            await self.resource.meta.client.describe_table(TableName=self.table_name)
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "ResourceNotFoundException":
+                logger.info(f"Table {self.table_name} not found, creating.")
+                create_table = True
+            else:  # pragma: no cover
+                await self.__aexit__(None, None, None)
+                raise WebSocketError(exc)
 
-            if create_table:
-                client = resource.meta.client
-                await client.create_table(
-                    TableName=self.table_name,
-                    KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
-                    AttributeDefinitions=[
-                        {"AttributeName": "connectionId", "AttributeType": "S"}
-                    ],
-                    ProvisionedThroughput={
-                        "ReadCapacityUnits": 5,
-                        "WriteCapacityUnits": 5,
-                    },
-                )
-                await self.table.wait_until_exists()
+        self.table = await self.resource.Table(self.table_name)
 
-            yield
+        if create_table:
+            client = self.resource.meta.client
+            await client.create_table(
+                TableName=self.table_name,
+                KeySchema=[{"AttributeName": "connectionId", "KeyType": "HASH"}],
+                AttributeDefinitions=[
+                    {"AttributeName": "connectionId", "AttributeType": "S"}
+                ],
+                ProvisionedThroughput={
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5,
+                },
+            )
+            await self.table.wait_until_exists()
+
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        await self.resource.__aexit__(*exc_info)
 
     async def save(self, connection_id: str, *, json_scope: str) -> None:
         await self.table.put_item(
