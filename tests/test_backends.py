@@ -9,7 +9,27 @@ from sqlalchemy import create_engine
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
-from .mock_server import s3_server, dynamodb2_server  # noqa: F401
+from .mock_server import start_service, stop_process
+
+
+@pytest.fixture(scope="session")
+def dynamodb2_server(aws_credentials):
+    host = "localhost"
+    port = 5001
+    url = f"http://{host}:{port}"
+    process = start_service("dynamodb2", host, port)
+    yield url
+    stop_process(process)
+
+
+@pytest.fixture(scope="session")
+def s3_server(aws_credentials):
+    host = "localhost"
+    port = 5002
+    url = f"http://{host}:{port}"
+    process = start_service("s3", host, port)
+    yield url
+    stop_process(process)
 
 
 async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
