@@ -102,6 +102,8 @@ class WebSocket:
             {
                 "query_string": scope["query_string"].encode(),
                 "headers": [[h[0].encode(), h[1].encode()] for h in scope["headers"]],
+                "client": tuple(scope["client"]),
+                "server": tuple(scope["server"]),
             }
         )
 
