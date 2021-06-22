@@ -48,9 +48,9 @@ class BaseRequest:
     trigger_context: Union["LambdaContext", Dict[str, Any]]
     event_type: str
 
-    http_version: str = field(default="1.1", init=False)
-    raw_path: Optional[str] = field(default=None, init=False)
-    root_path: str = field(default="", init=False)
+    http_version: str = "1.1"
+    raw_path: Optional[str] = None
+    root_path: str = ""
     asgi: Dict[str, str] = field(default_factory=lambda: {"version": "3.0"})
 
     def scope(self) -> Scope:
