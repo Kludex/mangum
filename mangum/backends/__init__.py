@@ -43,14 +43,18 @@ class WebSocket:
     selected `WebSocketBackend` subclass
     """
 
-    dsn: InitVar[str]
-    connection_id: str
+    dsn: InitVar[Optional[str]]
     api_gateway_endpoint_url: str
     api_gateway_region_name: Optional[str] = None
 
-    def __post_init__(self, dsn: str) -> None:
+    def __post_init__(self, dsn: Optional[str]) -> None:
         if httpx is None:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
+
+        if dsn is None:
+            raise ConfigurationError(
+                "The `dsn` parameter must be provided for WebSocket connections."
+            )
 
         self.logger: logging.Logger = logging.getLogger("mangum.backends")
         parsed_dsn = urlparse(dsn)
@@ -95,8 +99,8 @@ class WebSocket:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
         self.logger.info("WebSocket backend connection established.")
 
-    async def load_scope(self) -> Scope:
-        loaded_scope = await self._backend.retrieve(self.connection_id)
+    async def load_scope(self, connection_id: str) -> Scope:
+        loaded_scope = await self._backend.retrieve(connection_id)
         scope = json.loads(loaded_scope)
         scope.update(
             {
@@ -109,7 +113,7 @@ class WebSocket:
 
         return scope
 
-    async def save_scope(self, scope: Scope) -> None:
+    async def save_scope(self, connection_id: str, scope: Scope) -> None:
         scope.update(
             {
                 "query_string": scope["query_string"].decode(),
@@ -117,59 +121,64 @@ class WebSocket:
             }
         )
         json_scope = json.dumps(scope)
-        await self._backend.save(self.connection_id, json_scope=json_scope)
+        await self._backend.save(connection_id, json_scope=json_scope)
 
-    async def on_connect(self, initial_scope: Scope) -> None:
-        self.logger.debug("Creating scope entry for %s", self.connection_id)
+    async def on_connect(self, connection_id: str, initial_scope: Scope) -> None:
+        self.logger.debug("Creating scope entry for %s", connection_id)
         async with self._backend.connect():
-            await self.save_scope(initial_scope)
+            await self.save_scope(connection_id, initial_scope)
 
-    async def on_message(self) -> Scope:
-        self.logger.debug("Retrieving scope entry for %s", self.connection_id)
+    async def on_message(self, connection_id: str) -> Scope:
+        self.logger.debug("Retrieving scope entry for %s", connection_id)
         async with self._backend.connect():
-            scope = await self.load_scope()
+            scope = await self.load_scope(connection_id)
         return scope
 
-    async def on_disconnect(self) -> None:
-        self.logger.debug("Deleting scope entry for %s", self.connection_id)
+    async def on_disconnect(self, connection_id: str) -> None:
+        self.logger.debug("Deleting scope entry for %s", connection_id)
         async with self._backend.connect():
-            await self._backend.delete(self.connection_id)
+            await self._backend.delete(connection_id)
 
-    async def post_to_connection(self, body: bytes) -> None:
+    async def post_to_connection(self, connection_id: str, body: bytes) -> None:
         async with httpx.AsyncClient() as client:
-            await self._post_to_connection(client=client, body=body)
+            await self._post_to_connection(connection_id, client=client, body=body)
 
-    async def delete_connection(self) -> None:
+    async def delete_connection(self, connection_id: str) -> None:
         async with httpx.AsyncClient() as client:
-            await self._request_to_connection("DELETE", client=client)
+            await self._request_to_connection("DELETE", connection_id, client=client)
 
     async def _post_to_connection(
         self,
+        connection_id: str,
         *,
         client: "httpx.AsyncClient",
         body: bytes,
     ) -> None:  # pragma: no cover
-        response = await self._request_to_connection("POST", client=client, body=body)
+        response = await self._request_to_connection(
+            "POST", connection_id, client=client, body=body
+        )
 
         if response.status_code == 410:
-            await self.on_disconnect()
+            await self.on_disconnect(connection_id)
         elif response.status_code != 200:
             raise WebSocketError(f"Error: {response.status_code}")
 
     async def _request_to_connection(
         self,
         method: str,
+        connection_id: str,
         *,
         client: "httpx.AsyncClient",
         body: Optional[bytes] = None,
     ) -> "httpx.Response":
         loop = asyncio.get_event_loop()
+        url = f"{self.api_gateway_endpoint_url}/{connection_id}"
         headers = await loop.run_in_executor(
             None,
             partial(
                 get_sigv4_headers,
                 method,
-                self.api_gateway_endpoint_url,
+                url,
                 body,
                 self.api_gateway_region_name,
             ),

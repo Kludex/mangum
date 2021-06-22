@@ -4,12 +4,14 @@ from typing import (
     Any,
     ContextManager,
     Dict,
+    Optional,
     TYPE_CHECKING,
 )
 
 from .exceptions import ConfigurationError
 from .handlers import AbstractHandler
 from .protocols import HTTPCycle, WebSocketCycle, LifespanCycle
+from .backends import WebSocket
 from .types import ASGIApp, WsRequest
 
 
@@ -48,12 +50,24 @@ class Mangum:
 
     app: ASGIApp
     lifespan: str = "auto"
+    dsn: Optional[str] = None
+    api_gateway_endpoint_url: Optional[str] = None
+    api_gateway_region_name: Optional[str] = None
 
     def __init__(
-        self, app: ASGIApp, lifespan: str = "auto", **handler_kwargs: Dict[str, Any]
+        self,
+        app: ASGIApp,
+        lifespan: str = "auto",
+        dsn: Optional[str] = None,
+        api_gateway_endpoint_url: Optional[str] = None,
+        api_gateway_region_name: Optional[str] = None,
+        **handler_kwargs: Dict[str, Any]
     ) -> None:
         self.app = app
         self.lifespan = lifespan
+        self.dsn = dsn
+        self.api_gateway_endpoint_url = api_gateway_endpoint_url
+        self.api_gateway_region_name = api_gateway_region_name
         self.handler_kwargs = handler_kwargs
 
         if self.lifespan not in ("auto", "on", "off"):
@@ -75,8 +89,16 @@ class Mangum:
             request = handler.request
 
             if isinstance(request, WsRequest):
+                api_gateway_endpoint_url = (
+                    self.api_gateway_endpoint_url or handler.api_gateway_endpoint_url
+                )
+                websocket = WebSocket(
+                    dsn=self.dsn,
+                    api_gateway_endpoint_url=api_gateway_endpoint_url,
+                    api_gateway_region_name=self.api_gateway_region_name,
+                )
                 websocket_cycle = WebSocketCycle(
-                    request, handler.message_type, handler.websocket
+                    request, handler.message_type, handler.connection_id, websocket
                 )
                 response = websocket_cycle(self.app, handler.body)
             else:

@@ -30,7 +30,9 @@ def test_aws_ws_gateway_scope(
                     [b"sec-websocket-version", b"13"],
                     [
                         b"user-agent",
-                        b"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+                        b"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) "
+                        b"AppleWebKit/537.36 (KHTML, like Gecko) "
+                        b"Chrome/75.0.3770.100 Safari/537.36",
                     ],
                     [b"x-amzn-trace-id", b"Root=1-5d465cb6-78ddcac1e21f89203d004a89"],
                     [b"x-forwarded-for", b"192.168.100.1"],

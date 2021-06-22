@@ -54,6 +54,7 @@ class WebSocketCycle:
 
     request: WsRequest
     message_type: str
+    connection_id: str
     websocket: WebSocket
     state: WebSocketCycleState = WebSocketCycleState.CONNECTING
 
@@ -72,14 +73,18 @@ class WebSocketCycle:
             scope = self.request.scope
             del scope["aws.event"]
             del scope["aws.context"]
-            self.loop.run_until_complete(self.websocket.on_connect(scope))
+            self.loop.run_until_complete(
+                self.websocket.on_connect(self.connection_id, scope)
+            )
         elif self.message_type == "MESSAGE":
             self.app_queue.put_nowait({"type": "websocket.connect"})
             asgi_instance = self.run(app)
             asgi_task = self.loop.create_task(asgi_instance)
             self.loop.run_until_complete(asgi_task)
         elif self.message_type == "DISCONNECT":
-            self.loop.run_until_complete(self.websocket.on_disconnect())
+            self.loop.run_until_complete(
+                self.websocket.on_disconnect(self.connection_id)
+            )
 
         return self.response
 
@@ -87,7 +92,7 @@ class WebSocketCycle:
         """
         Calls the application with the `websocket` connection scope.
         """
-        self.scope = await self.websocket.on_message()
+        self.scope = await self.websocket.on_message(self.connection_id)
         scope = self.scope.copy()  # type: ignore
         scope.update(
             {
@@ -151,7 +156,7 @@ class WebSocketCycle:
                 )
             elif message_type == "websocket.close":
                 self.state = WebSocketCycleState.CLOSED
-                await self.websocket.delete_connection()
+                await self.websocket.delete_connection(self.connection_id)
                 raise WebSocketClosed
 
         elif (
@@ -161,7 +166,7 @@ class WebSocketCycle:
 
             # The application is explicitly closing the connection. It should be
             # disconnected and removed in API Gateway.
-            await self.websocket.delete_connection()
+            await self.websocket.delete_connection(self.connection_id)
 
         elif (
             self.state is WebSocketCycleState.RESPONSE
@@ -182,7 +187,7 @@ class WebSocketCycle:
             message_text = message.get("text", "")
             body = message_text.encode()
 
-            await self.websocket.post_to_connection(body=body)
+            await self.websocket.post_to_connection(self.connection_id, body=body)
             await self.app_queue.put({"type": "websocket.disconnect", "code": 1000})
 
         else:

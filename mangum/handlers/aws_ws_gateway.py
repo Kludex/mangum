@@ -1,13 +1,9 @@
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Tuple
 import base64
 
 
-from ..backends import WebSocket
 from ..types import Response, WsRequest
 from .abstract_handler import AbstractHandler
-
-if TYPE_CHECKING:  # pragma: no cover
-    from awslambdaric.lambda_context import LambdaContext
 
 
 def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
@@ -43,34 +39,6 @@ class AwsWsGateway(AbstractHandler):
     """
 
     TYPE = "AWS_WS_GATEWAY"
-
-    def __init__(
-        self,
-        trigger_event: Dict[str, Any],
-        trigger_context: "LambdaContext",
-        dsn: str,
-        api_gateway_endpoint_url: Optional[str] = None,
-        api_gateway_region_name: Optional[str] = None,
-        **kwargs: Dict[str, Any],
-    ):
-        super().__init__(trigger_event, trigger_context, **kwargs)
-        request_context = trigger_event["requestContext"]
-        connection_id = request_context["connectionId"]
-
-        if api_gateway_endpoint_url is None:
-            domain = request_context["domainName"]
-            stage = request_context["stage"]
-            api_gateway_endpoint_url = (
-                f"https://{domain}/{stage}/@connections/{connection_id}"
-            )
-
-        self.message_type = request_context["eventType"]
-        self.websocket = WebSocket(
-            dsn=dsn,
-            connection_id=connection_id,
-            api_gateway_endpoint_url=api_gateway_endpoint_url,
-            api_gateway_region_name=api_gateway_region_name,
-        )
 
     @property
     def request(self) -> WsRequest:

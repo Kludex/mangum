@@ -3,22 +3,17 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, TYPE_CHECKING, Tuple, List, Union
 
 from ..types import Response, Request, WsRequest
-from ..backends import WebSocket
 
 if TYPE_CHECKING:  # pragma: no cover
     from awslambdaric.lambda_context import LambdaContext
 
 
 class AbstractHandler(metaclass=ABCMeta):
-    # Attributes used by websockets only
-    websocket: WebSocket
-    message_type: str
-
     def __init__(
         self,
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ):
         self.trigger_event = trigger_event
         self.trigger_context = trigger_context
@@ -44,11 +39,30 @@ class AbstractHandler(metaclass=ABCMeta):
         this handler
         """
 
+    @property
+    def message_type(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        return request_context["eventType"]
+
+    @property
+    def connection_id(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        return request_context["connectionId"]
+
+    @property
+    def api_gateway_endpoint_url(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        domain = request_context["domainName"]
+        stage = request_context["stage"]
+        api_gateway_endpoint_url = f"https://{domain}/{stage}/@connections"
+
+        return api_gateway_endpoint_url
+
     @staticmethod
     def from_trigger(
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> "AbstractHandler":
         """
         A factory method that determines which handler to use. All this code should
