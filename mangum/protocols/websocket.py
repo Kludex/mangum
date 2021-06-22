@@ -69,14 +69,17 @@ class WebSocketCycle:
         self.initial_body = initial_body
 
         if self.message_type == "CONNECT":
-            self.loop.run_until_complete(self.websocket.on_connect(self.request.scope))
-        elif self.message_type == "DISCONNECT":
-            self.loop.run_until_complete(self.websocket.on_disconnect())
+            scope = self.request.scope
+            del scope["aws.event"]
+            del scope["aws.context"]
+            self.loop.run_until_complete(self.websocket.on_connect(scope))
         elif self.message_type == "MESSAGE":
             self.app_queue.put_nowait({"type": "websocket.connect"})
             asgi_instance = self.run(app)
             asgi_task = self.loop.create_task(asgi_instance)
             self.loop.run_until_complete(asgi_task)
+        elif self.message_type == "DISCONNECT":
+            self.loop.run_until_complete(self.websocket.on_disconnect())
 
         return self.response
 
@@ -86,6 +89,12 @@ class WebSocketCycle:
         """
         self.scope = await self.websocket.on_message()
         scope = self.scope.copy()  # type: ignore
+        scope.update(
+            {
+                "aws.event": self.request.trigger_event,
+                "aws.context": self.request.trigger_context,
+            }
+        )
         try:
             await app(scope, self.receive, self.send)
         except WebSocketClosed:
@@ -136,8 +145,8 @@ class WebSocketCycle:
                 await self.app_queue.put(
                     {
                         "type": "websocket.receive",
-                        "bytes": self.initial_body,
-                        "text": None,
+                        "bytes": None,
+                        "text": self.initial_body.decode(),
                     }
                 )
             elif message_type == "websocket.close":

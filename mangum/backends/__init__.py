@@ -101,9 +101,7 @@ class WebSocket:
         scope.update(
             {
                 "query_string": scope["query_string"].encode(),
-                "headers": [
-                    [k.encode(), v.encode()] for k, v in scope["headers"].items()
-                ],
+                "headers": [[h[0].encode(), h[1].encode()] for h in scope["headers"]],
             }
         )
 
@@ -113,7 +111,7 @@ class WebSocket:
         scope.update(
             {
                 "query_string": scope["query_string"].decode(),
-                "headers": {h[0].decode(): h[1].decode() for h in scope["headers"]},
+                "headers": [[h[0].decode(), h[1].decode()] for h in scope["headers"]],
             }
         )
         json_scope = json.dumps(scope)
