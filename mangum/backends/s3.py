@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import AsyncIterator
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import ParseResult, urlparse, parse_qs
 
 import aioboto3
 from botocore.exceptions import ClientError
@@ -13,26 +13,35 @@ from .._compat import asynccontextmanager
 logger = logging.getLogger("mangum.backends.s3")
 
 
+def get_file_key(parsed_dsn: ParseResult) -> str:
+    if parsed_dsn.path and parsed_dsn.path != "/":
+        if not parsed_dsn.path.endswith("/"):
+            return parsed_dsn.path + "/"
+        return parsed_dsn.path
+
+    return ""
+
+
 class S3Backend(WebSocketBackend):
     @asynccontextmanager  # type: ignore
     async def connect(self) -> AsyncIterator:
         parsed_dsn = urlparse(self.dsn)
         parsed_query = parse_qs(parsed_dsn.query)
         self.bucket = parsed_dsn.hostname
+        self.key = get_file_key(parsed_dsn)
+        self.region_name = (
+            parsed_query["region"][0]
+            if "region" in parsed_query
+            else os.environ["AWS_REGION"]
+        )
+        self.endpoint_url = (
+            parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
+        )
 
-        if parsed_dsn.path and parsed_dsn.path != "/":
-            if not parsed_dsn.path.endswith("/"):
-                self.key = parsed_dsn.path + "/"
-            else:
-                self.key = parsed_dsn.path
-        else:
-            self.key = ""
-
-        region_name = parsed_query.get("region", os.environ["AWS_REGION"])
         async with aioboto3.client(
             "s3",
-            region_name=region_name,
-            endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
+            region_name=self.region_name,
+            endpoint_url=self.endpoint_url,
         ) as self.client:
             create_bucket = False
 

@@ -118,29 +118,26 @@ def test_s3_backend(
     mock_websocket_app,
     dsn,
 ) -> None:
-    with mock.patch.dict(
-        "os.environ", {"AWS_REGION": "ap-southeast-1", "AWS_ENDPOINT_URL": s3_server}
-    ):
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        with pytest.raises(WebSocketError):
-            handler(mock_ws_send_event, {})
+    dsn = f"{dsn}?region=ap-southeast-1&endpoint_url={s3_server}"
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_connect_event, {})
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    with pytest.raises(WebSocketError):
+        handler(mock_ws_send_event, {})
+
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
+
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    with mock.patch(
+        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
+    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
+        response = handler(mock_ws_send_event, {})
         assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        with mock.patch(
-            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-        ), mock.patch(
-            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
-        ):
-            response = handler(mock_ws_send_event, {})
-            assert response == {"statusCode": 200}
-
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_disconnect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_disconnect_event, {})
+    assert response == {"statusCode": 200}
 
 
 def test_postgresql_backend(

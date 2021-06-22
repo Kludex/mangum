@@ -35,13 +35,13 @@ class DynamoDBBackend(WebSocketBackend):
             parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
         )
 
-        create_table = False
-
         async with aioboto3.resource(
             "dynamodb",
             region_name=self.region_name,
             endpoint_url=self.endpoint_url,
         ) as resource:
+            create_table = False
+
             try:
                 await resource.meta.client.describe_table(TableName=self.table_name)
             except ClientError as exc:
