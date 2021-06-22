@@ -1,13 +1,6 @@
-from unittest import mock
-from typing import Any
-
 import respx
 
 from mangum import Mangum
-
-
-async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
-    pass
 
 
 @respx.mock(assert_all_mocked=False)
@@ -82,6 +75,7 @@ def test_websocket_without_body(
     assert response == {"statusCode": 200}
 
 
+@respx.mock(assert_all_mocked=False)
 def test_base64_encoded_body_on_request(
     sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app
 ):
@@ -91,11 +85,8 @@ def test_base64_encoded_body_on_request(
 
     mock_ws_send_event["body"] = b"bWFuZ3Vt="
     mock_ws_send_event["isBase64Encoded"] = True
-    with mock.patch(
-        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
 
 def test_binary_response(

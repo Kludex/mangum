@@ -1,8 +1,6 @@
-from unittest import mock
-from typing import Any
-
-import boto3
 import pytest
+import boto3
+import respx
 import testing.redis
 import testing.postgresql
 from sqlalchemy import create_engine
@@ -32,10 +30,6 @@ def s3_server(aws_credentials):
     stop_process(process)
 
 
-async def dummy_coroutine(*args: Any, **kwargs: Any) -> None:
-    pass
-
-
 @pytest.mark.parametrize(
     "dsn", ["???://unknown/", "postgresql://", None, "http://localhost"]
 )
@@ -45,6 +39,7 @@ def test_invalid_dsn(mock_ws_connect_event, mock_websocket_app, dsn):
         handler(mock_ws_connect_event, {})
 
 
+@respx.mock(assert_all_mocked=False)
 def test_sqlite_3_backend(
     tmp_path,
     mock_ws_connect_event,
@@ -55,28 +50,23 @@ def test_sqlite_3_backend(
     dsn = f"sqlite://{tmp_path}/mangum.sqlite3"
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch(
-        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
-        with pytest.raises(WebSocketError):
-            response = handler(mock_ws_send_event, {})
+    with pytest.raises(WebSocketError):
+        response = handler(mock_ws_send_event, {})
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_connect_event, {})
     assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch(
-        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_disconnect_event, {})
     assert response == {"statusCode": 200}
 
 
+@respx.mock(assert_all_mocked=False)
 @pytest.mark.parametrize(
     "table_name",
     ["man", "mangum", "Mangum.Dev.001", "Mangum-Dev-001", "Mangum_Dev_002"],
@@ -100,11 +90,8 @@ def test_dynamodb_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch(
-        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_disconnect_event, {})
@@ -121,6 +108,7 @@ def test_dynamodb_backend(
         response = handler(mock_ws_send_event, {})
 
 
+@respx.mock(assert_all_mocked=False)
 @pytest.mark.parametrize(
     "dsn",
     [
@@ -149,17 +137,15 @@ def test_s3_backend(
     assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
-    with mock.patch(
-        "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-    ), mock.patch("mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine):
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
     handler = Mangum(mock_websocket_app, dsn=dsn)
     response = handler(mock_ws_disconnect_event, {})
     assert response == {"statusCode": 200}
 
 
+@respx.mock(assert_all_mocked=False)
 def test_postgresql_backend(
     mock_ws_connect_event,
     mock_ws_send_event,
@@ -179,13 +165,8 @@ def test_postgresql_backend(
         assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
-        with mock.patch(
-            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-        ), mock.patch(
-            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
-        ):
-            response = handler(mock_ws_send_event, {})
-            assert response == {"statusCode": 200}
+        response = handler(mock_ws_send_event, {})
+        assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_disconnect_event, {})
@@ -196,6 +177,7 @@ def test_postgresql_backend(
         assert response == {"statusCode": 200}
 
 
+@respx.mock(assert_all_mocked=False)
 def test_redis_backend(
     mock_ws_connect_event,
     mock_ws_send_event,
@@ -215,13 +197,8 @@ def test_redis_backend(
         assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
-        with mock.patch(
-            "mangum.backends.WebSocket.post_to_connection", wraps=dummy_coroutine
-        ), mock.patch(
-            "mangum.backends.WebSocket.delete_connection", wraps=dummy_coroutine
-        ):
-            response = handler(mock_ws_send_event, {})
-            assert response == {"statusCode": 200}
+        response = handler(mock_ws_send_event, {})
+        assert response == {"statusCode": 200}
 
         handler = Mangum(mock_websocket_app, dsn=dsn)
         response = handler(mock_ws_disconnect_event, {})
