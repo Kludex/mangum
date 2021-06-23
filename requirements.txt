@@ -12,7 +12,6 @@ brotli
 brotli-asgi
 awslambdaric-stubs
 requests
-shutil
 testing.postgresql
 testing.redis
 aioboto3
