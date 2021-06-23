@@ -190,6 +190,4 @@ class WebSocket:
             ),
         )
 
-        return await client.request(
-            method, self.api_gateway_endpoint_url, content=body, headers=headers
-        )
+        return await client.request(method, url, content=body, headers=headers)
