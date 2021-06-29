@@ -2,10 +2,12 @@ import signal
 import subprocess as sp
 import time
 import logging
+import shutil
 
 import pytest
 import requests
-import shutil
+import psycopg2
+import redis
 
 _proxy_bypass = {
     "http": None,
@@ -51,3 +53,29 @@ def stop_process(process):
         exit_code = process.returncode
         msg = f"Child process finished {exit_code} not in clean way: {outs} {errors}"
         raise RuntimeError(msg)
+
+
+def wait_postgres_server(dsn):
+    for i in range(0, 30):
+        try:
+            conn = psycopg2.connect(dsn)
+            conn.close()
+            return
+        except Exception as e:
+            logging.debug(f"PostgreSQL unavailable yet: {e}")
+            time.sleep(1)
+    else:
+        pytest.fail("Couldn't reach PostgreSQL server")
+
+
+def wait_redis_server(hostname, host_port):
+    for i in range(0, 30):
+        try:
+            conn = redis.Redis(hostname, host_port)
+            conn.close()
+            return
+        except Exception as e:
+            logging.debug(f"Redis unavailable yet: {e}")
+            time.sleep(1)
+    else:
+        pytest.fail("Couldn't reach Redis server")

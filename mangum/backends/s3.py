@@ -36,7 +36,8 @@ class S3Backend(WebSocketBackend):
             parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
         )
 
-        self.client = await aioboto3.client(
+        session = aioboto3.Session()
+        self.client = await session.client(
             "s3",
             region_name=self.region_name,
             endpoint_url=self.endpoint_url,

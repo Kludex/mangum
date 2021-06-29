@@ -33,7 +33,8 @@ class DynamoDBBackend(WebSocketBackend):
             parsed_query["endpoint_url"][0] if "endpoint_url" in parsed_query else None
         )
 
-        self.resource = await aioboto3.resource(
+        session = aioboto3.Session()
+        self.resource = await session.resource(
             "dynamodb",
             region_name=self.region_name,
             endpoint_url=self.endpoint_url,

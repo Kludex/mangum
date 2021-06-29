@@ -1,17 +1,21 @@
 import pytest
 import boto3
 import respx
-import testing.redis
-import testing.postgresql
-from sqlalchemy import create_engine
 
 from mangum import Mangum
 from mangum.exceptions import WebSocketError, ConfigurationError
-from .mock_server import start_service, stop_process
+from .mock_server import (
+    start_service,
+    stop_process,
+    wait_postgres_server,
+    wait_redis_server,
+)
+
+pytest_plugins = ["docker_compose"]
 
 
 @pytest.fixture(scope="session")
-def dynamodb2_server(aws_credentials):
+def dynamodb2_server():
     host = "localhost"
     port = 5001
     url = f"http://{host}:{port}"
@@ -21,13 +25,43 @@ def dynamodb2_server(aws_credentials):
 
 
 @pytest.fixture(scope="session")
-def s3_server(aws_credentials):
+def s3_server():
     host = "localhost"
     port = 5002
     url = f"http://{host}:{port}"
     process = start_service("s3", host, port)
     yield url
     stop_process(process)
+
+
+@pytest.fixture(scope="module")
+def postgres_server(module_scoped_container_getter):
+    container = module_scoped_container_getter.get("postgres")
+    network = container.network_info[0]
+    hostname = network.hostname
+    host_port = network.host_port
+    dsn = f"postgresql://postgres:mangum@{hostname}:{host_port}/postgres"
+    wait_postgres_server(dsn)
+
+    try:
+        yield dsn
+    finally:
+        container.stop()
+
+
+@pytest.fixture(scope="module")
+def redis_server(module_scoped_container_getter):
+    container = module_scoped_container_getter.get("redis")
+    network = container.network_info[0]
+    hostname = network.hostname
+    host_port = int(network.host_port)
+    dsn = f"redis://{hostname}:{host_port}"
+    wait_redis_server(hostname, host_port)
+
+    try:
+        yield dsn
+    finally:
+        container.stop()
 
 
 @pytest.mark.parametrize(
@@ -147,59 +181,57 @@ def test_s3_backend(
 
 @respx.mock(assert_all_mocked=False)
 def test_postgresql_backend(
+    postgres_server,
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
     mock_websocket_app,
 ):
-    with testing.postgresql.Postgresql() as postgresql:
-        create_engine(postgresql.url())
-        dsn = postgresql.url()
+    dsn = postgres_server
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        with pytest.raises(WebSocketError):
-            handler(mock_ws_send_event, {})
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    with pytest.raises(WebSocketError):
+        handler(mock_ws_send_event, {})
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_connect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_disconnect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_disconnect_event, {})
+    assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_connect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
 
 
 @respx.mock(assert_all_mocked=False)
 def test_redis_backend(
+    redis_server,
     mock_ws_connect_event,
     mock_ws_send_event,
     mock_ws_disconnect_event,
     mock_websocket_app,
 ):
-    with testing.redis.RedisServer() as redis_server:
-        _dsn = redis_server.dsn()
-        dsn = f"redis://{_dsn['host']}:{_dsn['port']}/{_dsn['db']}"
+    dsn = redis_server
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        with pytest.raises(WebSocketError):
-            handler(mock_ws_send_event, {})
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    with pytest.raises(WebSocketError):
+        handler(mock_ws_send_event, {})
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_connect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_send_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
 
-        handler = Mangum(mock_websocket_app, dsn=dsn)
-        response = handler(mock_ws_disconnect_event, {})
-        assert response == {"statusCode": 200}
+    handler = Mangum(mock_websocket_app, dsn=dsn)
+    response = handler(mock_ws_disconnect_event, {})
+    assert response == {"statusCode": 200}

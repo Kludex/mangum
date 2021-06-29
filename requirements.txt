@@ -12,13 +12,13 @@ brotli
 brotli-asgi
 awslambdaric-stubs
 requests
-testing.postgresql
-testing.redis
+pytest-docker-compose
 aioboto3
 aioredis
 aiosqlite
 aiopg
 sqlalchemy
+redis
 httpx
 respx
 types-dataclasses; python_version < '3.7' # For mypy
