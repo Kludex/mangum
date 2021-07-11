@@ -1,0 +1,14 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: mangum
+    ports:
+      - "5432"
+
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379"
