@@ -1,3 +1,12 @@
+## 0.12.0
+
+* Reintroduce WebSocket support [#190](https://github.com/jordaneremieff/mangum/pull/190). Thanks [eduardovra](https://github.com/eduardovra)!
+
+* Resolve several issues with ALB/ELB support [#184](https://github.com/jordaneremieff/mangum/pull/184), [#189](https://github.com/jordaneremieff/mangum/pull/189), [#186](https://github.com/jordaneremieff/mangum/pull/186), [#182](https://github.com/jordaneremieff/mangum/pull/182). Thanks [nathanglover](https://github.com/nathanglover) & [jurasofish](https://github.com/jurasofish)!
+
+* Refactor handlers to be separate from core logic [#170](https://github.com/jordaneremieff/mangum/pull/170). Thanks [four43](https://github.com/four43)!
+
+
 ## 0.11.0
 
 * Remove deprecated `enable_lifespan` parameter [#109](https://github.com/jordaneremieff/mangum/issues/109).
