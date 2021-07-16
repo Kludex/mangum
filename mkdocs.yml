@@ -16,6 +16,7 @@ nav:
     - Introduction: 'index.md'
     - Adapter: 'adapter.md'
     - HTTP: 'http.md'
+    - WebSockets: 'websockets.md'
     - Lifespan: 'lifespan.md'
     - ASGI Frameworks: 'asgi-frameworks.md'
     - External Links: 'external-links.md'

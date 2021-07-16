@@ -274,7 +274,7 @@ The `WebSocketCycle` is used by the adapter to communicate message events betwee
 
 ### WebSocketCycle
 
-::: mangum.protocols.websocket.WebSocketCycle
+::: mangum.protocols.websockets.WebSocketCycle
     :docstring:
     :members: run receive send 
 
