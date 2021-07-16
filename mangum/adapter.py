@@ -39,6 +39,8 @@ class Mangum:
     specification. This will usually be an ASGI framework application instance.
     * **lifespan** - A string to configure lifespan support. Choices are `auto`, `on`,
     and `off`. Default is `auto`.
+    * **api_gateway_base_path** - Base path to strip from URL when using a custom
+    domain name.
     * **text_mime_types** - A list of MIME types to include with the defaults that
     should not return a binary response in API Gateway.
     * **dsn** - A connection string required to configure a supported WebSocket backend.
