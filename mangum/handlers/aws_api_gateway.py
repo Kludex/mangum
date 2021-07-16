@@ -24,11 +24,11 @@ class AwsApiGateway(AbstractHandler):
         self,
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        base_path: str = "/",
+        api_gateway_base_path: str = "/",
         **kwargs: Dict[str, Any],  # type: ignore
     ):
         super().__init__(trigger_event, trigger_context, **kwargs)
-        self.base_path = base_path
+        self.api_gateway_base_path = api_gateway_base_path
 
     @property
     def request(self) -> Request:
@@ -74,11 +74,11 @@ class AwsApiGateway(AbstractHandler):
 
         if not path:
             path = "/"
-        elif self.base_path and self.base_path != "/":
-            if not self.base_path.startswith("/"):
-                self.base_path = f"/{self.base_path}"
-            if path.startswith(self.base_path):
-                path = path[len(self.base_path) :]
+        elif self.api_gateway_base_path and self.api_gateway_base_path != "/":
+            if not self.api_gateway_base_path.startswith("/"):
+                self.api_gateway_base_path = f"/{self.api_gateway_base_path}"
+            if path.startswith(self.api_gateway_base_path):
+                path = path[len(self.api_gateway_base_path) :]
 
         return Request(
             method=http_method,
