@@ -266,7 +266,7 @@ def test_aws_api_gateway_base_path(
         )
         await send({"type": "http.response.body", "body": b"Hello world!"})
 
-    handler = Mangum(app, lifespan="off", base_path=None)
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=None)
     response = handler(event, {})
 
     assert response == {
@@ -292,7 +292,7 @@ def test_aws_api_gateway_base_path(
         await send({"type": "http.response.body", "body": b"Hello world!"})
 
     api_gateway_base_path = "test"
-    handler = Mangum(app, lifespan="off", base_path=api_gateway_base_path)
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=api_gateway_base_path)
     response = handler(event, {})
     assert response == {
         "body": "Hello world!",
