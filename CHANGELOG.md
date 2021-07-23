@@ -1,3 +1,8 @@
+## 0.12.1
+
+* Make `boto3` optional [#197](https://github.com/jordaneremieff/mangum/pull/197).
+
+
 ## 0.12.0
 
 * Reintroduce WebSocket support [#190](https://github.com/jordaneremieff/mangum/pull/190). Thanks [eduardovra](https://github.com/eduardovra)!
