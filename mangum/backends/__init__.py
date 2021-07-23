@@ -11,9 +11,13 @@ try:
 except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
-import boto3
-from botocore.auth import SigV4Auth
-from botocore.awsrequest import AWSRequest
+try:
+    import boto3
+    from botocore.auth import SigV4Auth
+    from botocore.awsrequest import AWSRequest
+except ImportError:  # pragma: no cover
+    boto3 = None  # type: ignore
+
 
 from .base import WebSocketBackend
 from ..exceptions import WebSocketError, ConfigurationError
@@ -49,6 +53,9 @@ class WebSocket:
     api_gateway_region_name: Optional[str] = None
 
     def __post_init__(self, dsn: Optional[str]) -> None:
+        if boto3 is None:  # pragma: no cover
+            raise WebSocketError("boto3 must be installed to use WebSockets.")
+
         if httpx is None:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
 
