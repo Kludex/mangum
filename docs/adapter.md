@@ -6,7 +6,6 @@ The heart of Mangum is the adapter class. It is a configurable wrapper that allo
 handler = Mangum(
     app,
     lifespan="auto",
-    log_level="info",
     api_gateway_base_path=None,
     text_mime_types=None,
     dsn=None,

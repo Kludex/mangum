@@ -1,3 +1,7 @@
+## 0.12.2
+
+* Exclude `tests/` directory from package. [#200](https://github.com/jordaneremieff/mangum/pull/200). Thanks [bradsbrown](https://github.com/bradsbrown)!
+
 ## 0.12.1
 
 * Make `boto3` optional [#197](https://github.com/jordaneremieff/mangum/pull/197).

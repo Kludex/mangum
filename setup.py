@@ -7,7 +7,7 @@ def get_long_description():
 
 setup(
     name="mangum",
-    version="0.12.1",
+    version="0.12.2",
     packages=find_packages(exclude=["tests*"]),
     license="MIT",
     url="https://github.com/jordaneremieff/mangum",
