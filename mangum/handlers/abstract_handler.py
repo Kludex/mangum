@@ -101,7 +101,9 @@ class AbstractHandler(metaclass=ABCMeta):
         if "version" in trigger_event and "requestContext" in trigger_event:
             from . import AwsHttpGateway
 
-            return AwsHttpGateway(trigger_event, trigger_context, **kwargs)
+            return AwsHttpGateway(
+                trigger_event, trigger_context, **kwargs  # type: ignore
+            )
 
         if "resource" in trigger_event:
             from . import AwsApiGateway

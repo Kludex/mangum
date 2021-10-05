@@ -2,11 +2,11 @@ import base64
 import urllib.parse
 from typing import Dict, Any
 
-from .abstract_handler import AbstractHandler
+from . import AwsApiGateway
 from .. import Response, Request
 
 
-class AwsHttpGateway(AbstractHandler):
+class AwsHttpGateway(AwsApiGateway):
     """
     Handles AWS HTTP Gateway events (v1.0 and v2.0), transforming them into ASGI Scope
     and handling responses
@@ -86,6 +86,8 @@ class AwsHttpGateway(AbstractHandler):
 
         if not path:
             path = "/"
+        else:
+            path = self._strip_base_path(path)
 
         return Request(
             method=http_method,
