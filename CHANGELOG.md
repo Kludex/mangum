@@ -1,3 +1,8 @@
+## 0.12.3
+
+* Fix unhandled `api_gateway_base_path` in `AwsHttpGateway`. [#200](https://github.com/jordaneremieff/mangum/pull/204). Thanks [xpayn](https://github.com/xpayn)!
+
+
 ## 0.12.2
 
 * Exclude `tests/` directory from package. [#200](https://github.com/jordaneremieff/mangum/pull/200). Thanks [bradsbrown](https://github.com/bradsbrown)!
