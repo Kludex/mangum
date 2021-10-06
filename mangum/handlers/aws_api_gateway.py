@@ -74,11 +74,8 @@ class AwsApiGateway(AbstractHandler):
 
         if not path:
             path = "/"
-        elif self.api_gateway_base_path and self.api_gateway_base_path != "/":
-            if not self.api_gateway_base_path.startswith("/"):
-                self.api_gateway_base_path = f"/{self.api_gateway_base_path}"
-            if path.startswith(self.api_gateway_base_path):
-                path = path[len(self.api_gateway_base_path) :]
+        else:
+            path = self._strip_base_path(path)
 
         return Request(
             method=http_method,
@@ -92,6 +89,14 @@ class AwsApiGateway(AbstractHandler):
             trigger_context=self.trigger_context,
             event_type=self.TYPE,
         )
+
+    def _strip_base_path(self, path: str) -> str:
+        if self.api_gateway_base_path and self.api_gateway_base_path != "/":
+            if not self.api_gateway_base_path.startswith("/"):
+                self.api_gateway_base_path = f"/{self.api_gateway_base_path}"
+            if path.startswith(self.api_gateway_base_path):
+                path = path[len(self.api_gateway_base_path) :]
+        return path
 
     @property
     def body(self) -> bytes:
