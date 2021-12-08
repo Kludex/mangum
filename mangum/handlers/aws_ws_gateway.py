@@ -25,7 +25,7 @@ def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
         server_port = headers.get("x-forwarded-port", 80)
     else:
         server_name, server_port = server_name.split(":")
-    server = (server_name, int(server_port))
+    server = (server_name, int(server_port or 80))
 
     return server, headers
 

@@ -31,7 +31,7 @@ class AwsCfLambdaAtEdge(AbstractHandler):
             server_port = forwarded_port_header[0].get("value", 80)
         else:
             server_name, server_port = server_name.split(":")  # pragma: no cover
-        server = (server_name, int(server_port))
+        server = (server_name, int(server_port or 80))
 
         source_ip = cf_request["clientIp"]
         client = (source_ip, 0)

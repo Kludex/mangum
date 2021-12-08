@@ -69,7 +69,7 @@ class AwsApiGateway(AbstractHandler):
             server_port = headers.get("x-forwarded-port", 80)
         else:
             server_name, server_port = server_name.split(":")  # pragma: no cover
-        server = (server_name, int(server_port))
+        server = (server_name, int(server_port or 80))
         client = (source_ip, 0)
 
         if not path:
