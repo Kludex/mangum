@@ -80,6 +80,13 @@ class HTTPCycle:
         try:
             await app(self.request.scope, self.receive, self.send)
         except BaseException as exc:
+            if self.state is HTTPCycleState.COMPLETE:
+                # We want to log, but skip exceptions from background tasks
+                self.logger.exception(
+                    "An exception has occurred after successful completion of request"
+                )
+                return
+
             self.logger.error("Exception in 'http' protocol.", exc_info=exc)
             if self.state is HTTPCycleState.REQUEST:
                 await self.send(
