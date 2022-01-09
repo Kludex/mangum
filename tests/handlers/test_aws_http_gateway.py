@@ -605,6 +605,5 @@ def test_aws_http_gateway_response_v2(
         "statusCode": 200,
         "isBase64Encoded": res_base64_encoded,
         "headers": {"content-type": content_type.decode()},
-        "multiValueHeaders": {},
         "body": res_body,
     }
