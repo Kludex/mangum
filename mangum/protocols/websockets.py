@@ -1,5 +1,7 @@
 import enum
 import asyncio
+import copy
+import typing
 import logging
 from io import BytesIO
 from dataclasses import dataclass
@@ -61,7 +63,7 @@ class WebSocketCycle:
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.websocket")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.app_queue: asyncio.Queue[typing.Dict[str, typing.Any]] = asyncio.Queue()
         self.body: BytesIO = BytesIO()
         self.response: Response = Response(200, [], b"")
 
@@ -93,7 +95,7 @@ class WebSocketCycle:
         Calls the application with the `websocket` connection scope.
         """
         self.scope = await self.websocket.on_message(self.connection_id)
-        scope = self.scope.copy()  # type: ignore
+        scope = copy.copy(self.scope)
         scope.update(
             {
                 "aws.event": self.request.trigger_event,

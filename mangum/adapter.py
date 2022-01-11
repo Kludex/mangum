@@ -2,7 +2,6 @@ import logging
 from contextlib import ExitStack
 from typing import (
     Any,
-    ContextManager,
     Dict,
     Optional,
     TYPE_CHECKING,
@@ -63,7 +62,7 @@ class Mangum:
         dsn: Optional[str] = None,
         api_gateway_endpoint_url: Optional[str] = None,
         api_gateway_region_name: Optional[str] = None,
-        **handler_kwargs: Dict[str, Any]
+        **handler_kwargs: Any
     ) -> None:
         self.app = app
         self.lifespan = lifespan
@@ -77,12 +76,12 @@ class Mangum:
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
 
-    def __call__(self, event: dict, context: "LambdaContext") -> dict:
+    def __call__(self, event: Dict[str, Any], context: "LambdaContext") -> dict:
         logger.debug("Event received.")
 
         with ExitStack() as stack:
             if self.lifespan != "off":
-                lifespan_cycle: ContextManager = LifespanCycle(self.app, self.lifespan)
+                lifespan_cycle = LifespanCycle(self.app, self.lifespan)
                 stack.enter_context(lifespan_cycle)
 
             handler = AbstractHandler.from_trigger(

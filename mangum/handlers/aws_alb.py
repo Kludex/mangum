@@ -1,13 +1,13 @@
 import base64
 import urllib.parse
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Tuple, Optional, Union
 from itertools import islice
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
 
 
-def all_casings(input_string: str) -> Generator:
+def all_casings(input_string: str) -> Generator[str, None, None]:
     """
     Permute all casings of a given string.
     A pretty algoritm, via @Amber
@@ -28,7 +28,7 @@ def all_casings(input_string: str) -> Generator:
 
 def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str, str]:
     """Create str/str key/value headers, with duplicate keys case mutated."""
-    headers = {}
+    headers: Dict[str, str] = {}
     for key, values in multi_value_headers.items():
         if len(values) > 0:
             casings = list(islice(all_casings(key), len(values)))
@@ -62,7 +62,9 @@ class AwsAlb(AbstractHandler):
         Issue: https://github.com/jordaneremieff/mangum/issues/178
         """
 
-        params = self.trigger_event.get("multiValueQueryStringParameters")
+        params: Optional[
+            Dict[str, Union[str, Tuple[str, ...], List[str]]]
+        ] = self.trigger_event.get("multiValueQueryStringParameters")
         if not params:
             params = self.trigger_event.get("queryStringParameters")
         if not params:
@@ -71,7 +73,7 @@ class AwsAlb(AbstractHandler):
         # Loop through the query parameters, unquote each key and value and append the
         # pair as a tuple to the query list. If value is a list or a tuple, loop
         # through the nested struture and unqote.
-        query = []
+        query: List[Tuple[str, str]] = []
         for key, value in params.items():
             if isinstance(value, (tuple, list)):
                 for v in value:
@@ -92,7 +94,7 @@ class AwsAlb(AbstractHandler):
         trigger event. However, we act as though they both might exist and pull
         headers out of both.
         """
-        headers = []
+        headers: List[Tuple[bytes, bytes]] = []
         if "multiValueHeaders" in self.trigger_event:
             for k, v in self.trigger_event["multiValueHeaders"].items():
                 for inner_v in v:

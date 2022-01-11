@@ -13,7 +13,7 @@ class AbstractHandler(metaclass=ABCMeta):
         self,
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ):
         self.trigger_event = trigger_event
         self.trigger_context = trigger_context
@@ -62,7 +62,7 @@ class AbstractHandler(metaclass=ABCMeta):
     def from_trigger(
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> "AbstractHandler":
         """
         A factory method that determines which handler to use. All this code should

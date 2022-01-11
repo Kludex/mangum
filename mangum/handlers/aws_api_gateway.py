@@ -25,9 +25,9 @@ class AwsApiGateway(AbstractHandler):
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
         api_gateway_base_path: str = "/",
-        **kwargs: Dict[str, Any],  # type: ignore
+        **kwargs: Any,
     ):
-        super().__init__(trigger_event, trigger_context, **kwargs)
+        super().__init__(trigger_event, trigger_context)
         self.api_gateway_base_path = api_gateway_base_path
 
     @property

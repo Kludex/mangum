@@ -63,7 +63,7 @@ class LifespanCycle:
     def __post_init__(self) -> None:
         self.logger = logging.getLogger("mangum.lifespan")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.app_queue: asyncio.Queue[typing.Dict[str, str]] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
 

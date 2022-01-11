@@ -53,6 +53,7 @@ class BaseRequest:
     root_path: str = ""
     asgi: Dict[str, str] = field(default_factory=lambda: {"version": "3.0"})
 
+    @property
     def scope(self) -> Scope:
         return {
             "http_version": self.http_version,
@@ -85,7 +86,7 @@ class Request(BaseRequest):
 
     @property
     def scope(self) -> Scope:
-        scope = super().scope()
+        scope = super().scope
         scope.update({"type": self.type, "method": self.method})
         return scope
 
@@ -103,7 +104,7 @@ class WsRequest(BaseRequest):
 
     @property
     def scope(self) -> Scope:
-        scope = super().scope()
+        scope = super().scope
         scope.update({"type": self.type, "subprotocols": self.subprotocols})
         return scope
 

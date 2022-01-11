@@ -6,7 +6,7 @@ from ..types import Response, WsRequest
 from .abstract_handler import AbstractHandler
 
 
-def get_server_and_headers(event: dict) -> Tuple:  # pragma: no cover
+def get_server_and_headers(event: Dict[str, Any]) -> Tuple:  # pragma: no cover
     if event.get("multiValueHeaders"):
         headers = {
             k.lower(): ", ".join(v) if isinstance(v, list) else ""
