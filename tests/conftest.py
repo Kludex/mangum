@@ -65,7 +65,7 @@ def mock_aws_api_gateway_event(request):
 
 
 @pytest.fixture
-def mock_http_api_event(request):
+def mock_http_api_event_v2(request):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
@@ -101,6 +101,67 @@ def mock_http_api_event(request):
             "http": {
                 "method": method,
                 "path": "/my/path",
+                "protocol": "HTTP/1.1",
+                "sourceIp": "192.168.100.1",
+                "userAgent": "agent",
+            },
+            "requestId": "id",
+            "routeKey": "$default",
+            "stage": "$default",
+            "time": "12/Mar/2020:19:03:58 +0000",
+            "timeEpoch": 1583348638390,
+        },
+        "body": body,
+        "pathParameters": {"parameter1": "value1"},
+        "isBase64Encoded": False,
+        "stageVariables": {"stageVariable1": "value1", "stageVariable2": "value2"},
+    }
+
+    return event
+
+
+@pytest.fixture
+def mock_http_api_event_v1(request):
+    method = request.param[0]
+    body = request.param[1]
+    multi_value_query_parameters = request.param[2]
+    query_string = request.param[3]
+    event = {
+        "version": "1.0",
+        "routeKey": "$default",
+        "rawPath": "/my/path",
+        "path": "/my/path",
+        "httpMethod": method,
+        "rawQueryString": query_string,
+        "cookies": ["cookie1", "cookie2"],
+        "headers": {
+            "accept-encoding": "gzip,deflate",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "host": "test.execute-api.us-west-2.amazonaws.com",
+        },
+        "queryStringParameters": {
+            k: v[-1] for k, v in multi_value_query_parameters.items()
+        }
+        if multi_value_query_parameters
+        else None,
+        "multiValueQueryStringParameters": {
+            k: v for k, v in multi_value_query_parameters.items()
+        }
+        if multi_value_query_parameters
+        else None,
+        "requestContext": {
+            "accountId": "123456789012",
+            "apiId": "api-id",
+            "authorizer": {
+                "jwt": {
+                    "claims": {"claim1": "value1", "claim2": "value2"},
+                    "scopes": ["scope1", "scope2"],
+                }
+            },
+            "domainName": "id.execute-api.us-east-1.amazonaws.com",
+            "domainPrefix": "id",
+            "http": {
                 "protocol": "HTTP/1.1",
                 "sourceIp": "192.168.100.1",
                 "userAgent": "agent",

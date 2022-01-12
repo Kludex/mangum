@@ -253,7 +253,7 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize(
-    "mock_http_api_event",
+    "mock_http_api_event_v2",
     [
         (["GET", None, None, ""]),
         (["GET", None, {"name": ["me"]}, "name=me"]),
@@ -267,9 +267,9 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
             ]
         ),
     ],
-    indirect=["mock_http_api_event"],
+    indirect=["mock_http_api_event_v2"],
 )
-def test_set_cookies(mock_http_api_event) -> None:
+def test_set_cookies_v2(mock_http_api_event_v2) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
@@ -279,7 +279,7 @@ def test_set_cookies(mock_http_api_event) -> None:
                 "version": "2.0",
                 "routeKey": "$default",
                 "rawPath": "/my/path",
-                "rawQueryString": mock_http_api_event["rawQueryString"],
+                "rawQueryString": mock_http_api_event_v2["rawQueryString"],
                 "cookies": ["cookie1", "cookie2"],
                 "headers": {
                     "accept-encoding": "gzip,deflate",
@@ -287,7 +287,9 @@ def test_set_cookies(mock_http_api_event) -> None:
                     "x-forwarded-proto": "https",
                     "host": "test.execute-api.us-west-2.amazonaws.com",
                 },
-                "queryStringParameters": mock_http_api_event["queryStringParameters"],
+                "queryStringParameters": mock_http_api_event_v2[
+                    "queryStringParameters"
+                ],
                 "requestContext": {
                     "accountId": "123456789012",
                     "apiId": "api-id",
@@ -331,7 +333,127 @@ def test_set_cookies(mock_http_api_event) -> None:
             "http_version": "1.1",
             "method": "GET",
             "path": "/my/path",
-            "query_string": mock_http_api_event["rawQueryString"].encode(),
+            "query_string": mock_http_api_event_v2["rawQueryString"].encode(),
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "server": ("test.execute-api.us-west-2.amazonaws.com", 443),
+            "type": "http",
+        }
+
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"set-cookie", b"cookie1=cookie1; Secure"],
+                    [b"set-cookie", b"cookie2=cookie2; Secure"],
+                    [b"multivalue", b"foo"],
+                    [b"multivalue", b"bar"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_http_api_event_v2, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "multivalue": "foo,bar",
+        },
+        "cookies": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"],
+        "body": "Hello, world!",
+    }
+
+
+@pytest.mark.parametrize(
+    "mock_http_api_event_v1",
+    [
+        (["GET", None, None, ""]),
+        (["GET", None, {"name": ["me"]}, "name=me"]),
+        (["GET", None, {"name": ["me", "you"]}, "name=me&name=you"]),
+        (
+            [
+                "GET",
+                None,
+                {"name": ["me", "you"], "pet": ["dog"]},
+                "name=me&name=you&pet=dog",
+            ]
+        ),
+    ],
+    indirect=["mock_http_api_event_v1"],
+)
+def test_set_cookies_v1(mock_http_api_event_v1) -> None:
+    async def app(scope, receive, send):
+        assert scope == {
+            "asgi": {"version": "3.0"},
+            "aws.eventType": "AWS_HTTP_GATEWAY",
+            "aws.context": {},
+            "aws.event": {
+                "version": "1.0",
+                "routeKey": "$default",
+                "rawPath": "/my/path",
+                "path": "/my/path",
+                "httpMethod": "GET",
+                "rawQueryString": mock_http_api_event_v1["rawQueryString"],
+                "cookies": ["cookie1", "cookie2"],
+                "headers": {
+                    "accept-encoding": "gzip,deflate",
+                    "x-forwarded-port": "443",
+                    "x-forwarded-proto": "https",
+                    "host": "test.execute-api.us-west-2.amazonaws.com",
+                },
+                "queryStringParameters": mock_http_api_event_v1[
+                    "queryStringParameters"
+                ],
+                "multiValueQueryStringParameters": mock_http_api_event_v1[
+                    "multiValueQueryStringParameters"
+                ],
+                "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "api-id",
+                    "authorizer": {
+                        "jwt": {
+                            "claims": {"claim1": "value1", "claim2": "value2"},
+                            "scopes": ["scope1", "scope2"],
+                        }
+                    },
+                    "domainName": "id.execute-api.us-east-1.amazonaws.com",
+                    "domainPrefix": "id",
+                    "http": {
+                        "protocol": "HTTP/1.1",
+                        "sourceIp": "192.168.100.1",
+                        "userAgent": "agent",
+                    },
+                    "requestId": "id",
+                    "routeKey": "$default",
+                    "stage": "$default",
+                    "time": "12/Mar/2020:19:03:58 +0000",
+                    "timeEpoch": 1_583_348_638_390,
+                },
+                "body": None,
+                "pathParameters": {"parameter1": "value1"},
+                "isBase64Encoded": False,
+                "stageVariables": {
+                    "stageVariable1": "value1",
+                    "stageVariable2": "value2",
+                },
+            },
+            "client": (None, 0),
+            "headers": [
+                [b"accept-encoding", b"gzip,deflate"],
+                [b"x-forwarded-port", b"443"],
+                [b"x-forwarded-proto", b"https"],
+                [b"host", b"test.execute-api.us-west-2.amazonaws.com"],
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/my/path",
+            "query_string": mock_http_api_event_v1["rawQueryString"].encode(),
             "raw_path": None,
             "root_path": "",
             "scheme": "https",
@@ -353,7 +475,7 @@ def test_set_cookies(mock_http_api_event) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_api_event, {})
+    response = handler(mock_http_api_event_v1, {})
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,

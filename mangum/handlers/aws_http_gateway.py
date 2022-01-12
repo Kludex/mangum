@@ -1,6 +1,6 @@
 import base64
 import urllib.parse
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 from . import AwsApiGateway
 from .. import Response, Request
@@ -122,37 +122,65 @@ class AwsHttpGateway(AwsApiGateway):
 
         https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.response
         """
+        if self.event_version == "1.0":
+            return self.transform_response_v1(response)
+        elif self.event_version == "2.0":
+            return self.transform_response_v2(response)
+        raise RuntimeError(  # pragma: no cover
+            "Misconfigured event unable to return value, unsupported version."
+        )
+
+    def transform_response_v1(self, response: Response) -> Dict[str, Any]:
         headers, multi_value_headers = self._handle_multi_value_headers(
             response.headers
         )
 
-        if self.event_version == "1.0":
-            body, is_base64_encoded = self._handle_base64_response_body(
-                response.body, headers
-            )
-            return {
-                "statusCode": response.status,
-                "headers": headers,
-                "multiValueHeaders": multi_value_headers,
-                "body": body,
-                "isBase64Encoded": is_base64_encoded,
-            }
-        elif self.event_version == "2.0":
-            # The API Gateway will infer stuff for us, but we'll just do that inference
-            # here and keep the output consistent
-            if "content-type" not in headers and response.body is not None:
-                headers["content-type"] = "application/json"
-
-            body, is_base64_encoded = self._handle_base64_response_body(
-                response.body, headers
-            )
-            return {
-                "statusCode": response.status,
-                "headers": headers,
-                "multiValueHeaders": multi_value_headers,
-                "body": body,
-                "isBase64Encoded": is_base64_encoded,
-            }
-        raise RuntimeError(  # pragma: no cover
-            "Misconfigured event unable to return value, unsupported version."
+        body, is_base64_encoded = self._handle_base64_response_body(
+            response.body, headers
         )
+        return {
+            "statusCode": response.status,
+            "headers": headers,
+            "multiValueHeaders": multi_value_headers,
+            "body": body,
+            "isBase64Encoded": is_base64_encoded,
+        }
+
+    def _combine_headers_v2(
+        self, input_headers: List[List[bytes]]
+    ) -> Tuple[Dict[str, str], List[str]]:
+        output_headers: Dict[str, str] = {}
+        cookies: List[str] = []
+        for key, value in input_headers:
+            normalized_key: str = key.decode().lower()
+            normalized_value: str = value.decode()
+            if normalized_key == "set-cookie":
+                cookies.append(normalized_value)
+            else:
+                if normalized_key in output_headers:
+                    normalized_value = (
+                        f"{output_headers[normalized_key]},{normalized_value}"
+                    )
+                output_headers[normalized_key] = normalized_value
+        return output_headers, cookies
+
+    def transform_response_v2(self, response_in: Response) -> Dict[str, Any]:
+        # The API Gateway will infer stuff for us, but we'll just do that inference
+        # here and keep the output consistent
+
+        headers, cookies = self._combine_headers_v2(response_in.headers)
+
+        if "content-type" not in headers and response_in.body is not None:
+            headers["content-type"] = "application/json"
+
+        body, is_base64_encoded = self._handle_base64_response_body(
+            response_in.body, headers
+        )
+        response_out = {
+            "statusCode": response_in.status,
+            "body": body,
+            "headers": headers or None,
+            "cookies": cookies or None,
+            "isBase64Encoded": is_base64_encoded,
+        }
+        return {key: value for key, value in response_out.items() if value is not None}
