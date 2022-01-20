@@ -11,6 +11,7 @@ async def app(scope, receive, send):
 def test_default_settings():
     handler = Mangum(app)
     assert handler.lifespan == "auto"
+    assert handler.api_gateway_base_path == "/"
 
 
 @pytest.mark.parametrize(

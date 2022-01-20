@@ -44,15 +44,14 @@ class LifespanCycle:
     and `off`. Default is `auto`.
     * **state** - An enumerated `LifespanCycleState` type that indicates the state of
     the ASGI connection.
-    * **exception** - An exception raised while handling the ASGI event.
+    * **exception** - An exception raised while handling the ASGI event. This may or
+    may not be raised depending on the state.
     * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
     application.
     * **startup_event** - An asyncio event object used to control the application
     startup flow.
     * **shutdown_event** - An asyncio event object used to control the application
     shutdown flow.
-    * **exception** - An exception raised while handling the ASGI event. This may or
-    may not be raised depending on the state.
     """
 
     app: ASGIApp

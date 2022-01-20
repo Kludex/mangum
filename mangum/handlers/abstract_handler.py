@@ -1,6 +1,6 @@
 import base64
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TYPE_CHECKING, Tuple, List, Union
+from typing import Dict, Any, TYPE_CHECKING, Optional, Tuple, List, Union
 
 from ..types import Response, Request, WsRequest
 
@@ -13,7 +13,6 @@ class AbstractHandler(metaclass=ABCMeta):
         self,
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Any,
     ):
         self.trigger_event = trigger_event
         self.trigger_context = trigger_context
@@ -62,7 +61,7 @@ class AbstractHandler(metaclass=ABCMeta):
     def from_trigger(
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        **kwargs: Any,
+        api_gateway_base_path: str,
     ) -> "AbstractHandler":
         """
         A factory method that determines which handler to use. All this code should
@@ -77,7 +76,7 @@ class AbstractHandler(metaclass=ABCMeta):
         ):
             from . import AwsAlb
 
-            return AwsAlb(trigger_event, trigger_context, **kwargs)
+            return AwsAlb(trigger_event, trigger_context)
 
         if (
             "requestContext" in trigger_event
@@ -85,9 +84,7 @@ class AbstractHandler(metaclass=ABCMeta):
         ):
             from . import AwsWsGateway
 
-            return AwsWsGateway(
-                trigger_event, trigger_context, **kwargs  # type: ignore
-            )
+            return AwsWsGateway(trigger_event, trigger_context)
 
         if (
             "Records" in trigger_event
@@ -96,20 +93,24 @@ class AbstractHandler(metaclass=ABCMeta):
         ):
             from . import AwsCfLambdaAtEdge
 
-            return AwsCfLambdaAtEdge(trigger_event, trigger_context, **kwargs)
+            return AwsCfLambdaAtEdge(trigger_event, trigger_context)
 
         if "version" in trigger_event and "requestContext" in trigger_event:
             from . import AwsHttpGateway
 
             return AwsHttpGateway(
-                trigger_event, trigger_context, **kwargs  # type: ignore
+                trigger_event,
+                trigger_context,
+                api_gateway_base_path=api_gateway_base_path,
             )
 
         if "resource" in trigger_event:
             from . import AwsApiGateway
 
             return AwsApiGateway(
-                trigger_event, trigger_context, **kwargs  # type: ignore
+                trigger_event,
+                trigger_context,
+                api_gateway_base_path=api_gateway_base_path,
             )
 
         raise TypeError("Unable to determine handler from trigger event")
