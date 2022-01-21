@@ -61,7 +61,7 @@ class AbstractHandler(metaclass=ABCMeta):
     def from_trigger(
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        api_gateway_base_path: str,
+        api_gateway_base_path: str = "/",
     ) -> "AbstractHandler":
         """
         A factory method that determines which handler to use. All this code should
