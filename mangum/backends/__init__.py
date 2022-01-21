@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Type
+from typing_extensions import TypeAlias
 import json
 from functools import partial
 from dataclasses import dataclass
@@ -10,14 +11,14 @@ try:
     import httpx
     from httpx import AsyncClient, Response
 except ImportError:  # pragma: no cover
-    httpx = None
+    httpx = None  # type: ignore
 
 try:
     import boto3
     from botocore.auth import SigV4Auth
     from botocore.awsrequest import AWSRequest
 except ImportError:  # pragma: no cover
-    boto3 = None
+    boto3 = None  # type: ignore
 
 
 from .base import WebSocketBackend
@@ -31,7 +32,7 @@ def get_sigv4_headers(
     data: Optional[bytes] = None,
     region_name: Optional[str] = None,
 ) -> Dict:
-    if boto3 is None:  # pragma: no cover
+    if boto3 is None:
         raise WebSocketError("boto3 must be installed to use WebSockets.")
     session = boto3.Session()
     credentials = session.get_credentials()
@@ -56,10 +57,7 @@ class WebSocket:
     api_gateway_region_name: Optional[str] = None
 
     def __post_init__(self) -> None:
-        if boto3 is None:  # pragma: no cover
-            raise WebSocketError("boto3 must be installed to use WebSockets.")
-
-        if httpx is None:  # pragma: no cover
+        if not httpx:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
 
         if self.dsn is None:
@@ -77,6 +75,7 @@ class WebSocket:
             f"Attempting WebSocket backend connection using scheme: {scheme}"
         )
 
+        self._Backend: Type[WebSocketBackend]
         if scheme == "sqlite":
             self.logger.info(
                 "The `SQLiteBackend` should be only be used for local "
