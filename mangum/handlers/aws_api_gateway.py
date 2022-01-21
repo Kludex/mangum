@@ -1,6 +1,8 @@
 import base64
-import urllib.parse
+from urllib.parse import urlencode, unquote
 from typing import Dict, Any, TYPE_CHECKING
+
+from mangum.types import QueryParams
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
@@ -24,7 +26,7 @@ class AwsApiGateway(AbstractHandler):
         self,
         trigger_event: Dict[str, Any],
         trigger_context: "LambdaContext",
-        api_gateway_base_path: str = "/",
+        api_gateway_base_path: str,
     ):
         super().__init__(trigger_event, trigger_context)
         self.api_gateway_base_path = api_gateway_base_path
@@ -48,20 +50,9 @@ class AwsApiGateway(AbstractHandler):
         request_context = event["requestContext"]
 
         source_ip = request_context.get("identity", {}).get("sourceIp")
-
-        path = event["path"]
+        path = unquote(self._strip_base_path(event["path"])) if event["path"] else "/"
         http_method = event["httpMethod"]
-
-        if event.get("multiValueQueryStringParameters"):
-            query_string = urllib.parse.urlencode(
-                event.get("multiValueQueryStringParameters", {}), doseq=True
-            ).encode()
-        elif event.get("queryStringParameters"):
-            query_string = urllib.parse.urlencode(
-                event.get("queryStringParameters", {})
-            ).encode()
-        else:
-            query_string = b""
+        query_string = self._encode_query_string()
 
         server_name = headers.get("host", "mangum")
         if ":" not in server_name:
@@ -71,15 +62,10 @@ class AwsApiGateway(AbstractHandler):
         server = (server_name, int(server_port))
         client = (source_ip, 0)
 
-        if not path:
-            path = "/"
-        else:
-            path = self._strip_base_path(path)
-
         return Request(
             method=http_method,
             headers=[[k.encode(), v.encode()] for k, v in headers.items()],
-            path=urllib.parse.unquote(path),
+            path=path,
             scheme=headers.get("x-forwarded-proto", "https"),
             query_string=query_string,
             server=server,
@@ -88,6 +74,20 @@ class AwsApiGateway(AbstractHandler):
             trigger_context=self.trigger_context,
             event_type=self.TYPE,
         )
+
+    def _encode_query_string(self) -> bytes:
+        """
+        Encodes the queryStringParameters.
+        """
+
+        params: QueryParams = self.trigger_event.get(
+            "multiValueQueryStringParameters", {}
+        )
+        if not params:
+            params = self.trigger_event.get("queryStringParameters", {})
+        if not params:
+            return b""
+        return urlencode(params, doseq=True).encode()
 
     def _strip_base_path(self, path: str) -> str:
         if self.api_gateway_base_path and self.api_gateway_base_path != "/":

@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import types
-import typing
+from types import TracebackType
+from typing import Optional, Type
 import enum
 from dataclasses import dataclass
 
@@ -57,12 +57,12 @@ class LifespanCycle:
     app: ASGIApp
     lifespan: str
     state: LifespanCycleState = LifespanCycleState.CONNECTING
-    exception: typing.Optional[BaseException] = None
+    exception: Optional[BaseException] = None
 
     def __post_init__(self) -> None:
         self.logger = logging.getLogger("mangum.lifespan")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue[typing.Dict[str, str]] = asyncio.Queue()
+        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
 
@@ -75,9 +75,9 @@ class LifespanCycle:
 
     def __exit__(
         self,
-        exc_type: typing.Optional[typing.Type[BaseException]],
-        exc_value: typing.Optional[BaseException],
-        traceback: typing.Optional[types.TracebackType],
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
         """
         Runs the event loop for application shutdown.

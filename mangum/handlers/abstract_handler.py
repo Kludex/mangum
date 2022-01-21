@@ -1,6 +1,6 @@
 import base64
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TYPE_CHECKING, Optional, Tuple, List, Union
+from typing import Dict, Any, TYPE_CHECKING, Tuple, List, Union
 
 from ..types import Response, Request, WsRequest
 
@@ -101,7 +101,7 @@ class AbstractHandler(metaclass=ABCMeta):
             return AwsHttpGateway(
                 trigger_event,
                 trigger_context,
-                api_gateway_base_path=api_gateway_base_path,
+                api_gateway_base_path,
             )
 
         if "resource" in trigger_event:
@@ -110,7 +110,7 @@ class AbstractHandler(metaclass=ABCMeta):
             return AwsApiGateway(
                 trigger_event,
                 trigger_context,
-                api_gateway_base_path=api_gateway_base_path,
+                api_gateway_base_path,
             )
 
         raise TypeError("Unable to determine handler from trigger event")

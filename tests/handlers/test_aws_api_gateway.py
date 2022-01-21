@@ -95,7 +95,7 @@ def test_aws_api_gateway_scope_basic():
         "isBase64Encoded": False,
     }
     example_context = {}
-    handler = AwsApiGateway(example_event, example_context)
+    handler = AwsApiGateway(example_event, example_context, "/")
 
     assert type(handler.body) == bytes
     assert handler.request.scope == {
@@ -184,7 +184,7 @@ def test_aws_api_gateway_scope_real(
         method, path, multi_value_query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsApiGateway(event, example_context)
+    handler = AwsApiGateway(event, example_context, "/")
 
     scope_path = path
     if scope_path == "":

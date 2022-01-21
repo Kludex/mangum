@@ -1,6 +1,6 @@
 import enum
 import asyncio
-import typing
+from typing import Optional
 import logging
 from io import BytesIO
 from dataclasses import dataclass
@@ -46,12 +46,12 @@ class HTTPCycle:
 
     request: Request
     state: HTTPCycleState = HTTPCycleState.REQUEST
-    response: typing.Optional[Response] = None
+    response: Optional[Response] = None
 
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.http")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue[typing.Dict[str, typing.Any]] = asyncio.Queue()
+        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.body: BytesIO = BytesIO()
 
     def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:

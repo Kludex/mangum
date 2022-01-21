@@ -51,13 +51,6 @@ class Mangum:
     sending data to WebSocket connections. Default is `AWS_REGION` environment variable.
     """
 
-    app: ASGIApp
-    lifespan: str
-    dsn: Optional[str] = None
-    api_gateway_base_path: str
-    api_gateway_endpoint_url: Optional[str] = None
-    api_gateway_region_name: Optional[str] = None
-
     def __init__(
         self,
         app: ASGIApp,

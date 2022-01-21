@@ -6,18 +6,19 @@ from typing import (
     Any,
     Union,
     Optional,
+    Sequence,
     MutableMapping,
     Awaitable,
     Callable,
     TYPE_CHECKING,
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, TypeAlias
 
-
-Message = MutableMapping[str, Any]
-Scope = MutableMapping[str, Any]
-Receive = Callable[[], Awaitable[Message]]
-Send = Callable[[Message], Awaitable[None]]
+QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]
+Message: TypeAlias = MutableMapping[str, Any]
+Scope: TypeAlias = MutableMapping[str, Any]
+Receive: TypeAlias = Callable[[], Awaitable[Message]]
+Send: TypeAlias = Callable[[Message], Awaitable[None]]
 
 
 if TYPE_CHECKING:  # pragma: no cover
