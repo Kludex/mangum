@@ -32,7 +32,7 @@ def get_sigv4_headers(
     data: Optional[bytes] = None,
     region_name: Optional[str] = None,
 ) -> Dict:
-    if boto3 is None:
+    if boto3 is None:  # pragma: no cover
         raise WebSocketError("boto3 must be installed to use WebSockets.")
     session = boto3.Session()
     credentials = session.get_credentials()
