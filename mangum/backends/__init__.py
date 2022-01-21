@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from typing import Dict, Optional, Type
-from typing_extensions import TypeAlias
 import json
 from functools import partial
 from dataclasses import dataclass
