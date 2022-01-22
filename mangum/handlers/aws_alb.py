@@ -1,13 +1,15 @@
 import base64
-import urllib.parse
+from urllib.parse import urlencode, unquote, unquote_plus
 from typing import Any, Dict, Generator, List, Tuple
 from itertools import islice
+
+from mangum.types import QueryParams
 
 from .abstract_handler import AbstractHandler
 from .. import Response, Request
 
 
-def all_casings(input_string: str) -> Generator:
+def all_casings(input_string: str) -> Generator[str, None, None]:
     """
     Permute all casings of a given string.
     A pretty algoritm, via @Amber
@@ -28,7 +30,7 @@ def all_casings(input_string: str) -> Generator:
 
 def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str, str]:
     """Create str/str key/value headers, with duplicate keys case mutated."""
-    headers = {}
+    headers: Dict[str, str] = {}
     for key, values in multi_value_headers.items():
         if len(values) > 0:
             casings = list(islice(all_casings(key), len(values)))
@@ -49,7 +51,7 @@ class AwsAlb(AbstractHandler):
 
     TYPE = "AWS_ALB"
 
-    def encode_query_string(self) -> bytes:
+    def _encode_query_string(self) -> bytes:
         """
         Encodes the queryStringParameters.
         The parameters must be decoded, and then encoded again to prevent double
@@ -62,28 +64,20 @@ class AwsAlb(AbstractHandler):
         Issue: https://github.com/jordaneremieff/mangum/issues/178
         """
 
-        params = self.trigger_event.get("multiValueQueryStringParameters")
+        params: QueryParams = self.trigger_event.get(
+            "multiValueQueryStringParameters", {}
+        )
         if not params:
-            params = self.trigger_event.get("queryStringParameters")
+            params = self.trigger_event.get("queryStringParameters", {})
         if not params:
-            return b""  # No query parameters, exit early with an empty byte string.
-
-        # Loop through the query parameters, unquote each key and value and append the
-        # pair as a tuple to the query list. If value is a list or a tuple, loop
-        # through the nested struture and unqote.
-        query = []
-        for key, value in params.items():
-            if isinstance(value, (tuple, list)):
-                for v in value:
-                    query.append(
-                        (urllib.parse.unquote_plus(key), urllib.parse.unquote_plus(v))
-                    )
-            else:
-                query.append(
-                    (urllib.parse.unquote_plus(key), urllib.parse.unquote_plus(value))
-                )
-
-        return urllib.parse.urlencode(query).encode()
+            return b""
+        params = {
+            unquote_plus(key): unquote_plus(value)
+            if isinstance(value, str)
+            else tuple(unquote_plus(element) for element in value)
+            for key, value in params.items()
+        }
+        return urlencode(params, doseq=True).encode()
 
     def transform_headers(self) -> List[Tuple[bytes, bytes]]:
         """Convert headers to a list of two-tuples per ASGI spec.
@@ -92,7 +86,7 @@ class AwsAlb(AbstractHandler):
         trigger event. However, we act as though they both might exist and pull
         headers out of both.
         """
-        headers = []
+        headers: List[Tuple[bytes, bytes]] = []
         if "multiValueHeaders" in self.trigger_event:
             for k, v in self.trigger_event["multiValueHeaders"].items():
                 for inner_v in v:
@@ -112,9 +106,9 @@ class AwsAlb(AbstractHandler):
         uq_headers = {k.decode(): v.decode() for k, v in headers}
 
         source_ip = uq_headers.get("x-forwarded-for", "")
-        path = event["path"]
+        path = unquote(event["path"]) if event["path"] else "/"
         http_method = event["httpMethod"]
-        query_string = self.encode_query_string()
+        query_string = self._encode_query_string()
 
         server_name = uq_headers.get("host", "mangum")
         if ":" not in server_name:
@@ -124,13 +118,10 @@ class AwsAlb(AbstractHandler):
         server = (server_name, int(server_port))
         client = (source_ip, 0)
 
-        if not path:
-            path = "/"
-
         return Request(
             method=http_method,
             headers=list_headers,
-            path=urllib.parse.unquote(path),
+            path=path,
             scheme=uq_headers.get("x-forwarded-proto", "https"),
             query_string=query_string,
             server=server,

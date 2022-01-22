@@ -52,24 +52,9 @@ class AwsHttpGateway(AwsApiGateway):
                 )
 
             source_ip = request_context.get("identity", {}).get("sourceIp")
-
             path = event["path"]
             http_method = event["httpMethod"]
-
-            # AWS Blog Post on this:
-            # https://aws.amazon.com/blogs/compute/support-for-multi-value-parameters-in-amazon-api-gateway/  # noqa: E501
-            # A multi value param will be in multi value _and_ regular
-            # queryStringParameters. Multi value takes precedence.
-            if event.get("multiValueQueryStringParameters", False):
-                query_string = urllib.parse.urlencode(
-                    event.get("multiValueQueryStringParameters", {}), doseq=True
-                ).encode()
-            elif event.get("queryStringParameters", False):
-                query_string = urllib.parse.urlencode(
-                    event.get("queryStringParameters", {})
-                ).encode()
-            else:
-                query_string = b""
+            query_string = self._encode_query_string()
         else:
             raise RuntimeError(
                 "Unsupported version of HTTP Gateway Spec, only v1.0 and v2.0 are "

@@ -51,7 +51,7 @@ class HTTPCycle:
     def __post_init__(self) -> None:
         self.logger: logging.Logger = logging.getLogger("mangum.http")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.body: BytesIO = BytesIO()
 
     def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:

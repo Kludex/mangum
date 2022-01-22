@@ -1,13 +1,14 @@
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Type
 import json
 from functools import partial
-from dataclasses import dataclass, InitVar
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
 try:
     import httpx
+    from httpx import AsyncClient, Response
 except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
@@ -30,6 +31,8 @@ def get_sigv4_headers(
     data: Optional[bytes] = None,
     region_name: Optional[str] = None,
 ) -> Dict:
+    if boto3 is None:  # pragma: no cover
+        raise WebSocketError("boto3 must be installed to use WebSockets.")
     session = boto3.Session()
     credentials = session.get_credentials()
     creds = credentials.get_frozen_credentials()
@@ -48,24 +51,21 @@ class WebSocket:
     selected `WebSocketBackend` subclass
     """
 
-    dsn: InitVar[Optional[str]]
+    dsn: Optional[str]
     api_gateway_endpoint_url: str
     api_gateway_region_name: Optional[str] = None
 
-    def __post_init__(self, dsn: Optional[str]) -> None:
-        if boto3 is None:  # pragma: no cover
-            raise WebSocketError("boto3 must be installed to use WebSockets.")
-
-        if httpx is None:  # pragma: no cover
+    def __post_init__(self) -> None:
+        if not httpx:  # pragma: no cover
             raise WebSocketError("httpx must be installed to use WebSockets.")
 
-        if dsn is None:
+        if self.dsn is None:
             raise ConfigurationError(
                 "The `dsn` parameter must be provided for WebSocket connections."
             )
 
         self.logger: logging.Logger = logging.getLogger("mangum.backends")
-        parsed_dsn = urlparse(dsn)
+        parsed_dsn = urlparse(self.dsn)
         if not any((parsed_dsn.hostname, parsed_dsn.path)):
             raise ConfigurationError("Invalid value for `dsn` provided.")
 
@@ -74,6 +74,7 @@ class WebSocket:
             f"Attempting WebSocket backend connection using scheme: {scheme}"
         )
 
+        self._Backend: Type[WebSocketBackend]
         if scheme == "sqlite":
             self.logger.info(
                 "The `SQLiteBackend` should be only be used for local "
@@ -81,32 +82,30 @@ class WebSocket:
             )
             from mangum.backends.sqlite import SQLiteBackend
 
-            self._Backend = SQLiteBackend  # type: ignore
+            self._Backend = SQLiteBackend
 
         elif scheme == "dynamodb":
             from mangum.backends.dynamodb import DynamoDBBackend
 
-            self._Backend = DynamoDBBackend  # type: ignore
+            self._Backend = DynamoDBBackend
 
         elif scheme == "s3":
             from mangum.backends.s3 import S3Backend
 
-            self._Backend = S3Backend  # type: ignore
+            self._Backend = S3Backend
 
         elif scheme in ("postgresql", "postgres"):
             from mangum.backends.postgresql import PostgreSQLBackend
 
-            self._Backend = PostgreSQLBackend  # type: ignore
+            self._Backend = PostgreSQLBackend
 
         elif scheme == "redis":
             from mangum.backends.redis import RedisBackend
 
-            self._Backend = RedisBackend  # type: ignore
+            self._Backend = RedisBackend
 
         else:
             raise ConfigurationError(f"{scheme} does not match a supported backend.")
-
-        self.dsn = dsn
 
         self.logger.info("WebSocket backend connection established.")
 
@@ -153,18 +152,18 @@ class WebSocket:
             await backend.delete(connection_id)
 
     async def post_to_connection(self, connection_id: str, body: bytes) -> None:
-        async with httpx.AsyncClient() as client:
+        async with AsyncClient() as client:
             await self._post_to_connection(connection_id, client=client, body=body)
 
     async def delete_connection(self, connection_id: str) -> None:
-        async with httpx.AsyncClient() as client:
+        async with AsyncClient() as client:
             await self._request_to_connection("DELETE", connection_id, client=client)
 
     async def _post_to_connection(
         self,
         connection_id: str,
         *,
-        client: "httpx.AsyncClient",
+        client: "AsyncClient",
         body: bytes,
     ) -> None:  # pragma: no cover
         response = await self._request_to_connection(
@@ -181,9 +180,9 @@ class WebSocket:
         method: str,
         connection_id: str,
         *,
-        client: "httpx.AsyncClient",
+        client: "AsyncClient",
         body: Optional[bytes] = None,
-    ) -> "httpx.Response":
+    ) -> "Response":
         loop = asyncio.get_event_loop()
         url = f"{self.api_gateway_endpoint_url}/{connection_id}"
         headers = await loop.run_in_executor(

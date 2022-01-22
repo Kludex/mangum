@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import types
-import typing
+from types import TracebackType
+from typing import Optional, Type
 import enum
 from dataclasses import dataclass
 
@@ -44,26 +44,25 @@ class LifespanCycle:
     and `off`. Default is `auto`.
     * **state** - An enumerated `LifespanCycleState` type that indicates the state of
     the ASGI connection.
-    * **exception** - An exception raised while handling the ASGI event.
+    * **exception** - An exception raised while handling the ASGI event. This may or
+    may not be raised depending on the state.
     * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
     application.
     * **startup_event** - An asyncio event object used to control the application
     startup flow.
     * **shutdown_event** - An asyncio event object used to control the application
     shutdown flow.
-    * **exception** - An exception raised while handling the ASGI event. This may or
-    may not be raised depending on the state.
     """
 
     app: ASGIApp
     lifespan: str
     state: LifespanCycleState = LifespanCycleState.CONNECTING
-    exception: typing.Optional[BaseException] = None
+    exception: Optional[BaseException] = None
 
     def __post_init__(self) -> None:
         self.logger = logging.getLogger("mangum.lifespan")
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue = asyncio.Queue()
+        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
 
@@ -76,9 +75,9 @@ class LifespanCycle:
 
     def __exit__(
         self,
-        exc_type: typing.Optional[typing.Type[BaseException]],
-        exc_value: typing.Optional[BaseException],
-        traceback: typing.Optional[types.TracebackType],
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
         """
         Runs the event loop for application shutdown.

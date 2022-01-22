@@ -194,7 +194,7 @@ def test_aws_http_gateway_scope_basic_v1():
         "isBase64Encoded": False,
     }
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context)
+    handler = AwsHttpGateway(example_event, example_context, "/")
 
     assert type(handler.body) == bytes
     assert handler.request.scope == {
@@ -226,7 +226,7 @@ def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     )
     del example_event["multiValueQueryStringParameters"]
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context)
+    handler = AwsHttpGateway(example_event, example_context, "/")
     assert handler.request.scope["query_string"] == b"hello=world"
 
 
@@ -240,7 +240,7 @@ def test_aws_http_gateway_scope_v1_no_headers():
     del example_event["multiValueQueryStringParameters"]
     del example_event["queryStringParameters"]
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context)
+    handler = AwsHttpGateway(example_event, example_context, "/")
     assert handler.request.scope["query_string"] == b""
 
 
@@ -298,7 +298,7 @@ def test_aws_http_gateway_scope_basic_v2():
         "stageVariables": {"stageVariable1": "value1", "stageVariable2": "value2"},
     }
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context)
+    handler = AwsHttpGateway(example_event, example_context, "/")
 
     assert type(handler.body) == bytes
     assert handler.request.scope == {
@@ -334,7 +334,7 @@ def test_aws_http_gateway_scope_bad_version():
     example_event = get_mock_aws_http_gateway_event_v2("GET", "/test", {}, None, False)
     example_event["version"] = "9001.1"
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context)
+    handler = AwsHttpGateway(example_event, example_context, "/")
     with pytest.raises(RuntimeError):
         handler.request.scope
 
@@ -371,7 +371,7 @@ def test_aws_http_gateway_scope_real_v1(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsHttpGateway(event, example_context)
+    handler = AwsHttpGateway(event, example_context, "/")
 
     scope_path = path
     if scope_path == "":
@@ -438,7 +438,7 @@ def test_aws_http_gateway_scope_real_v2(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsHttpGateway(event, example_context)
+    handler = AwsHttpGateway(event, example_context, "/")
 
     scope_path = path
     if scope_path == "":
