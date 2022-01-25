@@ -5,7 +5,7 @@ pytest-cov
 black
 flake8
 starlette
-quart
+quart; python_version >= '3.7'
 moto[server]
 mypy
 brotli
