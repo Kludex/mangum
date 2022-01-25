@@ -12,9 +12,9 @@ from mangum.exceptions import LifespanFailure
 IS_PY36 = sys.version_info[:2] == (3, 6)
 
 if not IS_PY36:
-    Quart = None
-else:
     from quart import Quart
+else:
+    Quart = None
 
 
 @pytest.mark.parametrize(
