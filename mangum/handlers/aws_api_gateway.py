@@ -35,17 +35,20 @@ class AwsApiGateway(AbstractHandler):
     def request(self) -> Request:
         event = self.trigger_event
 
-        # multiValue versions of headers take precedence over their plain versions
-        # https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+        # See this for more info on headers:
+        # https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#apigateway-multivalue-headers-and-parameters
+        headers = {}
+        # Read headers
+        if event.get("headers"):
+            headers.update({k.lower(): v for k, v in event.get("headers", {}).items()})
+        # Read multiValueHeaders
+        # This overrides headers that have the same name
+        # That means that multiValue versions of headers take precedence over their plain versions
         if event.get("multiValueHeaders"):
-            headers = {
+            headers.update({
                 k.lower(): ", ".join(v) if isinstance(v, list) else ""
                 for k, v in event.get("multiValueHeaders", {}).items()
-            }
-        elif event.get("headers"):
-            headers = {k.lower(): v for k, v in event.get("headers", {}).items()}
-        else:
-            headers = {}
+            })
 
         request_context = event["requestContext"]
 
