@@ -105,13 +105,11 @@ def test_aws_api_gateway_scope_basic():
         "aws.eventType": "AWS_API_GATEWAY",
         "client": (None, 0),
         "headers": [
-            [
-                b"accept",
-                b"text/html,application/xhtml+xml,application/xml;q=0.9,"
-                b"image/webp,image/apng,*/*;q=0.8,"
-                b"application/signed-exchange;v=b3;q=0.9",
-            ],
+            [b"accept", b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"],  # noqa: E501
             [b"accept-encoding", b"gzip, deflate, br"],
+            [b"host", b"70ixmpl4fl.execute-api.us-east-2.amazonaws.com"],
+            [b"user-agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"],  # noqa: E501
+            [b"x-amzn-trace-id", b"Root=1-5e66d96f-7491f09xmpl79d18acf3d050"]
         ],
         "http_version": "1.1",
         "method": "GET",
@@ -120,7 +118,7 @@ def test_aws_api_gateway_scope_basic():
         "raw_path": None,
         "root_path": "",
         "scheme": "https",
-        "server": ("mangum", 80),
+        "server": ("70ixmpl4fl.execute-api.us-east-2.amazonaws.com", 80),
         "type": "http",
     }
 
