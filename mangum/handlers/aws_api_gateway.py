@@ -43,7 +43,8 @@ class AwsApiGateway(AbstractHandler):
             headers.update({k.lower(): v for k, v in event.get("headers", {}).items()})
         # Read multiValueHeaders
         # This overrides headers that have the same name
-        # That means that multiValue versions of headers take precedence over their plain versions
+        # That means that multiValue versions of headers take precedence
+        # over their plain versions
         if event.get("multiValueHeaders"):
             headers.update(
                 {
