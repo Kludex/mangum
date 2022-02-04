@@ -45,10 +45,12 @@ class AwsApiGateway(AbstractHandler):
         # This overrides headers that have the same name
         # That means that multiValue versions of headers take precedence over their plain versions
         if event.get("multiValueHeaders"):
-            headers.update({
-                k.lower(): ", ".join(v) if isinstance(v, list) else ""
-                for k, v in event.get("multiValueHeaders", {}).items()
-            })
+            headers.update(
+                {
+                    k.lower(): ", ".join(v) if isinstance(v, list) else ""
+                    for k, v in event.get("multiValueHeaders", {}).items()
+                }
+            )
 
         request_context = event["requestContext"]
 

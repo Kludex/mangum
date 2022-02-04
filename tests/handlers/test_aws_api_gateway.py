@@ -47,7 +47,8 @@ def get_mock_aws_api_gateway_event(
                 "cognitoAuthenticationType": "",
                 "cognitoAuthenticationProvider": "",
                 "userArn": "",
-                "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36 OPR/39.0.2256.48",  # noqa: E501
+                "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36 OPR/39.0.2256.48",
+                # noqa: E501
                 "user": "",
             },
             "resourcePath": "/{proxy+}",
@@ -75,15 +76,18 @@ def test_aws_api_gateway_scope_basic():
         "httpMethod": "GET",
         "requestContext": {"resourcePath": "/", "httpMethod": "GET", "path": "/Prod/"},
         "headers": {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",  # noqa: E501
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,"
+            "application/signed-exchange;v=b3;q=0.9",
             "accept-encoding": "gzip, deflate, br",
             "Host": "70ixmpl4fl.execute-api.us-east-2.amazonaws.com",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",  # noqa: E501
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/80.0.3987.132 Safari/537.36",
             "X-Amzn-Trace-Id": "Root=1-5e66d96f-7491f09xmpl79d18acf3d050",
         },
         "multiValueHeaders": {
             "accept": [
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"  # noqa: E501
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,"
+                "application/signed-exchange;v=b3;q=0.9 "
             ],
             "accept-encoding": ["gzip, deflate, br"],
         },
@@ -105,11 +109,19 @@ def test_aws_api_gateway_scope_basic():
         "aws.eventType": "AWS_API_GATEWAY",
         "client": (None, 0),
         "headers": [
-            [b"accept", b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"],  # noqa: E501
+            [
+                b"accept",
+                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,"
+                b"application/signed-exchange;v=b3;q=0.9",
+            ],
             [b"accept-encoding", b"gzip, deflate, br"],
             [b"host", b"70ixmpl4fl.execute-api.us-east-2.amazonaws.com"],
-            [b"user-agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"],  # noqa: E501
-            [b"x-amzn-trace-id", b"Root=1-5e66d96f-7491f09xmpl79d18acf3d050"]
+            [
+                b"user-agent",
+                b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 "
+                b"Safari/537.36",
+            ],
+            [b"x-amzn-trace-id", b"Root=1-5e66d96f-7491f09xmpl79d18acf3d050"],
         ],
         "http_version": "1.1",
         "method": "GET",
