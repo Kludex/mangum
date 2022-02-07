@@ -603,3 +603,33 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
         "vary": "Accept-Encoding",
     }
     assert response["body"] == base64.b64encode(brotli.compress(body.encode())).decode()
+
+
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True
+)
+def test_http_logging(mock_aws_api_gateway_event, caplog) -> None:
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    response = handler(mock_aws_api_gateway_event, {})
+
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
+        "body": "Hello, world!",
+    }
+
+    assert '"GET /test/hello HTTP 1.1" 200 13' in caplog.text

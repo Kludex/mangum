@@ -135,9 +135,6 @@ class WebSocketCycle:
         Awaited by the application to send ASGI `websocket` events.
         """
         message_type = message["type"]
-        self.logger.info(
-            "%s:  '%s' event received from application.", self.state, message_type
-        )
 
         if self.state is WebSocketCycleState.HANDSHAKE and message_type in (
             "websocket.accept",
@@ -191,6 +188,12 @@ class WebSocketCycle:
 
             await self.websocket.post_to_connection(self.connection_id, body=body)
             await self.app_queue.put({"type": "websocket.disconnect", "code": 1000})
+
+            self.logger.info(
+                f'"WS {self.request.path} '
+                f'HTTP {self.request.http_version}" '
+                f"{self.response.status} {len(self.response.body)}"
+            )
 
         else:
             raise UnexpectedMessage(

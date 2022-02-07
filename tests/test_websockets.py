@@ -107,3 +107,18 @@ def test_binary_response(
 
     response = handler(mock_ws_send_event, {})
     assert response == {"statusCode": 500}
+
+
+@respx.mock(assert_all_mocked=False)
+def test_websocket_logging(
+    sqlite3_dsn, mock_ws_connect_event, mock_ws_send_event, mock_websocket_app, caplog
+) -> None:
+    handler = Mangum(mock_websocket_app, lifespan="off", dsn=sqlite3_dsn)
+    response = handler(mock_ws_connect_event, {})
+    assert response == {"statusCode": 200}
+
+    del mock_ws_send_event["body"]
+    response = handler(mock_ws_send_event, {})
+    assert response == {"statusCode": 200}
+
+    assert '"WS / HTTP 1.1" 200 0' in caplog.text
