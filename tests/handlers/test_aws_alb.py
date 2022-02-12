@@ -3,11 +3,12 @@ References:
 1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
 2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
 """
+from typing import Dict, List, Optional
+
 import pytest
 
 from mangum import Mangum
-from mangum.handlers import AwsAlb
-from typing import Dict, List, Optional
+from mangum.handlers.aws_alb import AwsAlb
 
 
 def get_mock_aws_alb_event(
@@ -209,7 +210,6 @@ def test_aws_alb_scope_real(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
-        "aws.eventType": "AWS_ALB",
         "client": ("72.12.164.125", 0),
         "headers": [
             [
@@ -311,7 +311,6 @@ def test_aws_alb_response(
     method, content_type, raw_res_body, res_body, res_base64_encoded
 ):
     async def app(scope, receive, send):
-        assert scope["aws.eventType"] == "AWS_ALB"
         await send(
             {
                 "type": "http.response.start",

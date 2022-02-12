@@ -2,8 +2,8 @@ import base64
 import urllib.parse
 from typing import Dict, Any, List, Tuple
 
-from . import AwsApiGateway
-from .. import Response, Request
+from mangum.handlers.aws_api_gateway import AwsApiGateway
+from mangum.types import Response, Request
 
 
 class AwsHttpGateway(AwsApiGateway):
@@ -84,7 +84,6 @@ class AwsHttpGateway(AwsApiGateway):
             client=client,
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
-            event_type=self.TYPE,
         )
 
     @property

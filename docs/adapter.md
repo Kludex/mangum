@@ -8,13 +8,10 @@ handler = Mangum(
     lifespan="auto",
     api_gateway_base_path=None,
     text_mime_types=None,
-    dsn=None,
-    api_gateway_endpoint_url=None,
-    api_gateway_region_name=None
 )
 ```
 
-All arguments are optional, but some may be necessary for specific use-cases (e.g. dsn is only required for WebSocket support).
+All arguments are optional.
 
 ## Configuring an adapter instance
 

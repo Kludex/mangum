@@ -6,21 +6,9 @@ black
 flake8
 starlette
 quart; python_version >= '3.7'
-moto[server]
 mypy
 brotli
 brotli-asgi
-awslambdaric-stubs
-requests
-pytest-docker-compose
-aioboto3
-aioredis==1.3.1
-aiosqlite
-aiopg
-sqlalchemy
-redis
-httpx
-respx
 types-dataclasses; python_version < '3.7' # For mypy
 # Docs
 mkdocs

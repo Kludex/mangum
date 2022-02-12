@@ -16,8 +16,6 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 - API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html), and [WebSocket](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html) APIs.
 
-- Multiple storage backend interfaces for managing WebSocket connections.
-
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
 - Support for binary media types and payload compression in API Gateway using GZip or Brotli.

@@ -1,20 +1,11 @@
 import base64
 from typing import Dict, Any, List
 
-from .abstract_handler import AbstractHandler
-from .. import Response, Request
+from mangum.handlers.abstract_handler import AbstractHandler
+from mangum.types import Response, Request
 
 
 class AwsCfLambdaAtEdge(AbstractHandler):
-    """
-    Handles AWS Elastic Load Balancer, really Application Load Balancer events
-    transforming them into ASGI Scope and handling responses
-
-    See: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html  # noqa: E501
-    """
-
-    TYPE = "AWS_CF_LAMBDA_AT_EDGE"
-
     @property
     def request(self) -> Request:
         event = self.trigger_event
@@ -49,7 +40,6 @@ class AwsCfLambdaAtEdge(AbstractHandler):
             client=client,
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
-            event_type=self.TYPE,
         )
 
     @property

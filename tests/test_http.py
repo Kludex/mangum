@@ -3,11 +3,14 @@ import gzip
 import json
 
 import pytest
+
 import brotli
 from brotli_asgi import BrotliMiddleware
+
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
+
 from mangum import Mangum
 
 
@@ -20,7 +23,6 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws.eventType": "AWS_API_GATEWAY",
             "aws.context": {},
             "aws.event": {
                 "body": None,
@@ -273,7 +275,6 @@ def test_set_cookies_v2(mock_http_api_event_v2) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws.eventType": "AWS_HTTP_GATEWAY",
             "aws.context": {},
             "aws.event": {
                 "version": "2.0",
@@ -391,7 +392,6 @@ def test_set_cookies_v1(mock_http_api_event_v1) -> None:
     async def app(scope, receive, send):
         assert scope == {
             "asgi": {"version": "3.0"},
-            "aws.eventType": "AWS_HTTP_GATEWAY",
             "aws.context": {},
             "aws.event": {
                 "version": "1.0",

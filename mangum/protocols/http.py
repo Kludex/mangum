@@ -63,9 +63,7 @@ class HTTPCycle:
         asgi_task = self.loop.create_task(asgi_instance)
         self.loop.run_until_complete(asgi_task)
 
-        if self.response is None:
-            # Something really bad happened and we puked before we could get a
-            # response out
+        if self.response is None:  # pragma: nocover
             self.response = Response(
                 status=500,
                 body=b"Internal Server Error",
