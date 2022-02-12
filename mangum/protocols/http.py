@@ -142,7 +142,7 @@ class HTTPCycle:
                     "%s %s %s",
                     self.request.method,
                     self.request.path,
-                    self.response.status
+                    self.response.status,
                 )
         else:
             raise UnexpectedMessage(

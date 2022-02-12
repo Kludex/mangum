@@ -632,4 +632,4 @@ def test_http_logging(mock_aws_api_gateway_event, caplog) -> None:
         "body": "Hello, world!",
     }
 
-    assert '"GET /test/hello HTTP 1.1" 200 13' in caplog.text
+    assert "GET /test/hello 200" in caplog.text
