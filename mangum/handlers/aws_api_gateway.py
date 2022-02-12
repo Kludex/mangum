@@ -13,15 +13,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class AwsApiGateway(AbstractHandler):
-    """
-    Handles AWS API Gateway events, transforming them into ASGI Scope and handling
-    responses
-
-    See: https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html
-    """
-
-    TYPE = "AWS_API_GATEWAY"
-
     def __init__(
         self,
         trigger_event: Dict[str, Any],
@@ -78,7 +69,6 @@ class AwsApiGateway(AbstractHandler):
             client=client,
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
-            event_type=self.TYPE,
         )
 
     def _encode_query_string(self) -> bytes:

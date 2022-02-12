@@ -3,25 +3,24 @@ site_description: AWS Lambda & API Gateway support for ASGI
 site_url: http://mangum.io/
 
 theme:
-    name: 'material'
-    palette:
-      primary: 'brown'
-      accent: 'orange'
+  name: "material"
+  palette:
+    primary: "brown"
+    accent: "orange"
 
 repo_name: jordaneremieff/mangum
 repo_url: https://github.com/jordaneremieff/mangum
 edit_uri: ""
 
 nav:
-    - Introduction: 'index.md'
-    - Adapter: 'adapter.md'
-    - HTTP: 'http.md'
-    - WebSockets: 'websockets.md'
-    - Lifespan: 'lifespan.md'
-    - ASGI Frameworks: 'asgi-frameworks.md'
-    - External Links: 'external-links.md'
-    - Contributing: 'contributing.md'
-    - Release Notes: 'release-notes.md'
+  - Introduction: "index.md"
+  - Adapter: "adapter.md"
+  - HTTP: "http.md"
+  - Lifespan: "lifespan.md"
+  - ASGI Frameworks: "asgi-frameworks.md"
+  - External Links: "external-links.md"
+  - Contributing: "contributing.md"
+  - Release Notes: "release-notes.md"
 
 markdown_extensions:
   - mkautodoc

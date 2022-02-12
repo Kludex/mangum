@@ -40,17 +40,6 @@ def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str,
 
 
 class AwsAlb(AbstractHandler):
-    """
-    Handles AWS Elastic Load Balancer, really Application Load Balancer events
-    transforming them into ASGI Scope and handling responses
-
-    See:
-        1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
-        2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
-    """
-
-    TYPE = "AWS_ALB"
-
     def _encode_query_string(self) -> bytes:
         """
         Encodes the queryStringParameters.
@@ -128,7 +117,6 @@ class AwsAlb(AbstractHandler):
             client=client,
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
-            event_type=self.TYPE,
         )
 
     @property
