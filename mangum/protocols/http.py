@@ -139,11 +139,11 @@ class HTTPCycle:
                 await self.app_queue.put({"type": "http.disconnect"})
 
                 self.logger.info(
-                    f'"{self.request.method} {self.request.path} '
-                    f'HTTP {self.request.http_version}" '
-                    f"{self.response.status} {len(self.response.body)}"
+                    "%s %s %s",
+                    self.request.method,
+                    self.request.path,
+                    self.response.status
                 )
-
         else:
             raise UnexpectedMessage(
                 f"{self.state}: Unexpected '{message_type}' event received."
