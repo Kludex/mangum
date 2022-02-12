@@ -1,15 +1,11 @@
 import logging
 from contextlib import ExitStack
-from typing import Any, Dict, TYPE_CHECKING
-
-from .exceptions import ConfigurationError
-from .handlers import AbstractHandler
-from .protocols import HTTPCycle, LifespanCycle
-from .types import ASGIApp
 
 
-if TYPE_CHECKING:  # pragma: no cover
-    from awslambdaric.lambda_context import LambdaContext
+from mangum.exceptions import ConfigurationError
+from mangum.handlers.abstract_handler import AbstractHandler
+from mangum.protocols import HTTPCycle, LifespanCycle
+from mangum.types import ASGIApp, LambdaEvent, LambdaContext
 
 
 DEFAULT_TEXT_MIME_TYPES = [
@@ -53,7 +49,7 @@ class Mangum:
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
 
-    def __call__(self, event: Dict[str, Any], context: "LambdaContext") -> dict:
+    def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict:
         logger.debug("Event received.")
 
         with ExitStack() as stack:
@@ -61,12 +57,10 @@ class Mangum:
                 lifespan_cycle = LifespanCycle(self.app, self.lifespan)
                 stack.enter_context(lifespan_cycle)
 
-            handler = AbstractHandler.from_trigger(
-                event, context, self.api_gateway_base_path
-            )
-            request = handler.request
-
-            http_cycle = HTTPCycle(request)
-            response = http_cycle(self.app, handler.body)
+        handler = AbstractHandler.from_trigger(
+            event, context, self.api_gateway_base_path
+        )
+        http_cycle = HTTPCycle(handler.request)
+        response = http_cycle(self.app, handler.body)
 
         return handler.transform_response(response)

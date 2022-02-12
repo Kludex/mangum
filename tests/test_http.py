@@ -3,11 +3,14 @@ import gzip
 import json
 
 import pytest
+
 import brotli
 from brotli_asgi import BrotliMiddleware
+
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
+
 from mangum import Mangum
 
 

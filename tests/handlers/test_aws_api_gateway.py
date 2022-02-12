@@ -1,9 +1,9 @@
-import pytest
-
 import urllib.parse
 
+import pytest
+
 from mangum import Mangum
-from mangum.handlers import AwsApiGateway
+from mangum.handlers.aws_api_gateway import AwsApiGateway
 
 
 def get_mock_aws_api_gateway_event(

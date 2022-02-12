@@ -2,6 +2,7 @@ import sys
 import logging
 
 import pytest
+
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 

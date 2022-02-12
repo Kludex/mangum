@@ -1,22 +1,16 @@
 import base64
 from urllib.parse import urlencode, unquote
-from typing import Dict, Any, TYPE_CHECKING
+from typing import Dict, Any
 
-from mangum.types import QueryParams
-
-from .abstract_handler import AbstractHandler
-from .. import Response, Request
-
-
-if TYPE_CHECKING:  # pragma: no cover
-    from awslambdaric.lambda_context import LambdaContext
+from mangum.handlers.abstract_handler import AbstractHandler
+from mangum.types import Response, Request, LambdaEvent, LambdaContext, QueryParams
 
 
 class AwsApiGateway(AbstractHandler):
     def __init__(
         self,
-        trigger_event: Dict[str, Any],
-        trigger_context: "LambdaContext",
+        trigger_event: LambdaEvent,
+        trigger_context: LambdaContext,
         api_gateway_base_path: str,
     ):
         super().__init__(trigger_event, trigger_context)

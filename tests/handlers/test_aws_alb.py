@@ -3,11 +3,12 @@ References:
 1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
 2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
 """
+from typing import Dict, List, Optional
+
 import pytest
 
 from mangum import Mangum
-from mangum.handlers import AwsAlb
-from typing import Dict, List, Optional
+from mangum.handlers.aws_alb import AwsAlb
 
 
 def get_mock_aws_alb_event(

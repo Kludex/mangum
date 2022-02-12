@@ -9,7 +9,6 @@ quart; python_version >= '3.7'
 mypy
 brotli
 brotli-asgi
-awslambdaric-stubs
 types-dataclasses; python_version < '3.7' # For mypy
 # Docs
 mkdocs

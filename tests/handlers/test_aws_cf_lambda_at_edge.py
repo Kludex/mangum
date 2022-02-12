@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers import AwsCfLambdaAtEdge
+from mangum.handlers.aws_cf_lambda_at_edge import AwsCfLambdaAtEdge
 
 
 def mock_lambda_at_edge_event(

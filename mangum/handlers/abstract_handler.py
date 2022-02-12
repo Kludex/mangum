@@ -1,18 +1,15 @@
 import base64
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TYPE_CHECKING, Tuple, List
+from typing import Dict, Any, Tuple, List
 
-from ..types import Response, Request
-
-if TYPE_CHECKING:  # pragma: no cover
-    from awslambdaric.lambda_context import LambdaContext
+from mangum.types import Response, Request, LambdaEvent, LambdaContext
 
 
 class AbstractHandler(metaclass=ABCMeta):
     def __init__(
         self,
-        trigger_event: Dict[str, Any],
-        trigger_context: "LambdaContext",
+        trigger_event: LambdaEvent,
+        trigger_context: LambdaContext,
     ):
         self.trigger_event = trigger_event
         self.trigger_context = trigger_context
@@ -40,8 +37,8 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @staticmethod
     def from_trigger(
-        trigger_event: Dict[str, Any],
-        trigger_context: "LambdaContext",
+        trigger_event: LambdaEvent,
+        trigger_context: LambdaContext,
         api_gateway_base_path: str = "/",
     ) -> "AbstractHandler":
         """
@@ -55,7 +52,7 @@ class AbstractHandler(metaclass=ABCMeta):
             "requestContext" in trigger_event
             and "elb" in trigger_event["requestContext"]
         ):
-            from . import AwsAlb
+            from mangum.handlers.aws_alb import AwsAlb
 
             return AwsAlb(trigger_event, trigger_context)
         if (
@@ -63,12 +60,12 @@ class AbstractHandler(metaclass=ABCMeta):
             and len(trigger_event["Records"]) > 0
             and "cf" in trigger_event["Records"][0]
         ):
-            from . import AwsCfLambdaAtEdge
+            from mangum.handlers.aws_cf_lambda_at_edge import AwsCfLambdaAtEdge
 
             return AwsCfLambdaAtEdge(trigger_event, trigger_context)
 
         if "version" in trigger_event and "requestContext" in trigger_event:
-            from . import AwsHttpGateway
+            from mangum.handlers.aws_http_gateway import AwsHttpGateway
 
             return AwsHttpGateway(
                 trigger_event,
@@ -77,7 +74,7 @@ class AbstractHandler(metaclass=ABCMeta):
             )
 
         if "resource" in trigger_event:
-            from . import AwsApiGateway
+            from mangum.handlers.aws_api_gateway import AwsApiGateway
 
             return AwsApiGateway(
                 trigger_event,
