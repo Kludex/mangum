@@ -19,10 +19,16 @@ Scope: TypeAlias = MutableMapping[str, Any]
 Receive: TypeAlias = Callable[[], Awaitable[Message]]
 Send: TypeAlias = Callable[[Message], Awaitable[None]]
 
+
+class ASGIApp(Protocol):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        ...  # pragma: no cover
+
+
 LambdaEvent = Dict[str, Any]
 
 
-class LambdaCognitoIdentity:
+class LambdaCognitoIdentity(Protocol):
     """Information about the Amazon Cognito identity that authorized the request.
 
     **cognito_identity_id** - The authenticated Amazon Cognito identity.
@@ -34,7 +40,7 @@ class LambdaCognitoIdentity:
     cognito_identity_pool_id: str
 
 
-class LambdaMobileClient:
+class LambdaMobileClient(Protocol):
     """Mobile client information for the application and the device.
 
     **installation_id** - A unique identifier for an installation instance of an
@@ -52,7 +58,7 @@ class LambdaMobileClient:
     app_package_name: str
 
 
-class LambdaMobileClientContext:
+class LambdaMobileClientContext(Protocol):
     """Information about client application and device when invoked via AWS Mobile SDK.
 
     **client** - A dict of name-value pairs that describe the mobile client application.
@@ -65,7 +71,7 @@ class LambdaMobileClientContext:
     env: Dict[str, Any]
 
 
-class LambdaContext:
+class LambdaContext(Protocol):
     """The context object passed to the handler function.
 
     **function_name** - The name of the Lambda function.
@@ -94,11 +100,6 @@ class LambdaContext:
 
     def get_remaining_time_in_millis(self) -> int:
         """Returns the number of milliseconds left before the execution times out."""
-        ...  # pragma: no cover
-
-
-class ASGIApp(Protocol):
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         ...  # pragma: no cover
 
 
