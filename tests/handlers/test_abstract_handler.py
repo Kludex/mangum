@@ -1,6 +1,6 @@
 import pytest
 
-from mangum.handlers import AbstractHandler
+from mangum.handlers.abstract_handler import AbstractHandler
 
 
 def test_abstract_handler_unkown_event():

@@ -1,8 +1,8 @@
 import base64
 from typing import Dict, Any, List
 
-from .abstract_handler import AbstractHandler
-from .. import Response, Request
+from mangum.handlers.abstract_handler import AbstractHandler
+from mangum.types import Response, Request
 
 
 class AwsCfLambdaAtEdge(AbstractHandler):

@@ -3,10 +3,8 @@ from urllib.parse import urlencode, unquote, unquote_plus
 from typing import Any, Dict, Generator, List, Tuple
 from itertools import islice
 
-from mangum.types import QueryParams
-
-from .abstract_handler import AbstractHandler
-from .. import Response, Request
+from mangum.types import Response, Request, QueryParams
+from mangum.handlers.abstract_handler import AbstractHandler
 
 
 def all_casings(input_string: str) -> Generator[str, None, None]:

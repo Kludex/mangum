@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers import AwsHttpGateway
+from mangum.handlers.aws_http_gateway import AwsHttpGateway
 
 
 def get_mock_aws_http_gateway_event_v1(
