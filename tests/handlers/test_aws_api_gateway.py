@@ -110,7 +110,6 @@ def test_aws_api_gateway_scope_basic():
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
-        "aws.eventType": "AWS_API_GATEWAY",
         "client": (None, 0),
         "headers": [
             [
@@ -211,7 +210,6 @@ def test_aws_api_gateway_scope_real(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
-        "aws.eventType": "AWS_API_GATEWAY",
         "client": ("192.168.100.1", 0),
         "headers": [
             [
@@ -339,7 +337,6 @@ def test_aws_api_gateway_response(
     method, content_type, raw_res_body, res_body, res_base64_encoded
 ):
     async def app(scope, receive, send):
-        assert scope["aws.eventType"] == "AWS_API_GATEWAY"
         await send(
             {
                 "type": "http.response.start",

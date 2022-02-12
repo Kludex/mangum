@@ -84,7 +84,6 @@ class AwsHttpGateway(AwsApiGateway):
             client=client,
             trigger_event=self.trigger_event,
             trigger_context=self.trigger_context,
-            event_type=self.TYPE,
         )
 
     @property

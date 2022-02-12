@@ -209,7 +209,6 @@ def test_aws_alb_scope_real(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
-        "aws.eventType": "AWS_ALB",
         "client": ("72.12.164.125", 0),
         "headers": [
             [
@@ -311,7 +310,6 @@ def test_aws_alb_response(
     method, content_type, raw_res_body, res_body, res_base64_encoded
 ):
     async def app(scope, receive, send):
-        assert scope["aws.eventType"] == "AWS_ALB"
         await send(
             {
                 "type": "http.response.start",
