@@ -108,9 +108,6 @@ class HTTPCycle:
         Awaited by the application to send ASGI `http` events.
         """
         message_type = message["type"]
-        self.logger.info(
-            "%s:  '%s' event received from application.", self.state, message_type
-        )
 
         if (
             self.state is HTTPCycleState.REQUEST
@@ -141,6 +138,12 @@ class HTTPCycle:
                 self.state = HTTPCycleState.COMPLETE
                 await self.app_queue.put({"type": "http.disconnect"})
 
+                self.logger.info(
+                    "%s %s %s",
+                    self.request.method,
+                    self.request.path,
+                    self.response.status,
+                )
         else:
             raise UnexpectedMessage(
                 f"{self.state}: Unexpected '{message_type}' event received."
