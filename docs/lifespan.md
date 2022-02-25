@@ -48,7 +48,7 @@ Defaults to `auto`.
 
 ## State machine
 
-The `LifespanCycle` is a state machine that handles ASGI `lifespan` events intended to run before and after HTTP and WebSocket requests are handled. 
+The `LifespanCycle` is a state machine that handles ASGI `lifespan` events intended to run before and after HTTP requests are handled. 
 
 ### LifespanCycle
 
@@ -58,7 +58,7 @@ The `LifespanCycle` is a state machine that handles ASGI `lifespan` events inten
 
 #### Context manager
 
-Unlike the `HTTPCycle` and `WebSocketCycle` classes, the `LifespanCycle` is also used as a context manager in the adapter class. If lifespan support is turned off, then the application never enters the lifespan cycle context.
+Unlike the `HTTPCycle` class, the `LifespanCycle` is also used as a context manager in the adapter class. If lifespan support is turned off, then the application never enters the lifespan cycle context.
 
 ```python
  with ExitStack() as stack:
