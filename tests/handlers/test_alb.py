@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 import pytest
 
 from mangum import Mangum
-from mangum.handlers.aws_alb import AwsAlb
+from mangum.handlers.alb import ALB
 
 
 def get_mock_aws_alb_event(
@@ -199,15 +199,15 @@ def test_aws_alb_scope_real(
         multi_value_headers,
     )
     example_context = {}
-    handler = AwsAlb(event, example_context)
+    handler = ALB(event, example_context, {"api_gateway_base_path": "/"})
 
     scope_path = path
     if scope_path == "":
         scope_path = "/"
 
     assert type(handler.body) == bytes
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": event,
         "client": ("72.12.164.125", 0),

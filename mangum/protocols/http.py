@@ -1,19 +1,23 @@
-import enum
 import asyncio
-from typing import Optional
+import enum
 import logging
 from io import BytesIO
-from dataclasses import dataclass
 
-from .. import Response, Request
-from ..types import ASGIApp, Message
-from ..exceptions import UnexpectedMessage
+
+from mangum.types import (
+    ASGIApp,
+    ASGIReceiveEvent,
+    ASGISendEvent,
+    HTTPDisconnectEvent,
+    HTTPScope,
+    HTTPResponse,
+)
+from mangum.exceptions import UnexpectedMessage
 
 
 class HTTPCycleState(enum.Enum):
     """
     The state of the ASGI `http` connection.
-
     * **REQUEST** - Initial state. The ASGI application instance will be run with the
     connection scope containing the `http` type.
     * **RESPONSE** - The `http.response.start` event has been sent by the application.
@@ -30,55 +34,38 @@ class HTTPCycleState(enum.Enum):
     COMPLETE = enum.auto()
 
 
-@dataclass
 class HTTPCycle:
-    """
-    Manages the application cycle for an ASGI `http` connection.
-
-    * **request** - A request object containing the event and context for the connection
-    scope used to run the ASGI application instance.
-    * **state** - An enumerated `HTTPCycleState` type that indicates the state of the
-    ASGI connection.
-    * **app_queue** - An asyncio queue (FIFO) containing messages to be received by the
-    application.
-    * **response** - A dictionary containing the response data to return in AWS Lambda.
-    """
-
-    request: Request
-    state: HTTPCycleState = HTTPCycleState.REQUEST
-    response: Optional[Response] = None
-
-    def __post_init__(self) -> None:
-        self.logger: logging.Logger = logging.getLogger("mangum.http")
-        self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
-        self.body: BytesIO = BytesIO()
-
-    def __call__(self, app: ASGIApp, initial_body: bytes) -> Response:
-        self.logger.debug("HTTP cycle starting.")
+    def __init__(self, scope: HTTPScope, body: bytes) -> None:
+        self.scope = scope
+        self.buffer = BytesIO()
+        self.state = HTTPCycleState.REQUEST
+        self.logger = logging.getLogger("mangum.http")
+        self.app_queue: asyncio.Queue[ASGIReceiveEvent] = asyncio.Queue()
         self.app_queue.put_nowait(
-            {"type": "http.request", "body": initial_body, "more_body": False}
+            {
+                "type": "http.request",
+                "body": body,
+                "more_body": False,
+            }
         )
-        asgi_instance = self.run(app)
-        asgi_task = self.loop.create_task(asgi_instance)
-        self.loop.run_until_complete(asgi_task)
 
-        if self.response is None:  # pragma: nocover
-            self.response = Response(
-                status=500,
-                body=b"Internal Server Error",
-                headers=[[b"content-type", b"text/plain; charset=utf-8"]],
-            )
-        return self.response
+    def __call__(self, app: ASGIApp) -> HTTPResponse:
+        asgi_instance = self.run(app)
+        loop = asyncio.get_event_loop()
+        asgi_task = loop.create_task(asgi_instance)
+        loop.run_until_complete(asgi_task)
+
+        return {
+            "status": self.status,
+            "headers": self.headers,
+            "body": self.body,
+        }
 
     async def run(self, app: ASGIApp) -> None:
-        """
-        Calls the application with the `http` connection scope.
-        """
         try:
-            await app(self.request.scope, self.receive, self.send)
-        except BaseException as exc:
-            self.logger.error("Exception in 'http' protocol.", exc_info=exc)
+            await app(self.scope, self.receive, self.send)
+        except BaseException:
+            self.logger.exception("An error occurred running the application.")
             if self.state is HTTPCycleState.REQUEST:
                 await self.send(
                     {
@@ -88,63 +75,48 @@ class HTTPCycle:
                     }
                 )
                 await self.send(
-                    {"type": "http.response.body", "body": b"Internal Server Error"}
+                    {
+                        "type": "http.response.body",
+                        "body": b"Internal Server Error",
+                        "more_body": False,
+                    }
                 )
             elif self.state is not HTTPCycleState.COMPLETE:
-                self.response = Response(
-                    status=500,
-                    body=b"Internal Server Error",
-                    headers=[[b"content-type", b"text/plain; charset=utf-8"]],
-                )
+                self.status = 500
+                self.body = b"Internal Server Error"
+                self.headers = [[b"content-type", b"text/plain; charset=utf-8"]]
 
-    async def receive(self) -> Message:
-        """
-        Awaited by the application to receive ASGI `http` events.
-        """
+    async def receive(self) -> ASGIReceiveEvent:
         return await self.app_queue.get()  # pragma: no cover
 
-    async def send(self, message: Message) -> None:
-        """
-        Awaited by the application to send ASGI `http` events.
-        """
-        message_type = message["type"]
-
+    async def send(self, message: ASGISendEvent) -> None:
         if (
             self.state is HTTPCycleState.REQUEST
-            and message_type == "http.response.start"
+            and message["type"] == "http.response.start"
         ):
-            if self.response is None:
-                self.response = Response(
-                    status=message["status"],
-                    headers=message.get("headers", []),
-                    body=b"",
-                )
+            self.status = message["status"]
+            self.headers = message.get("headers", [])
             self.state = HTTPCycleState.RESPONSE
         elif (
             self.state is HTTPCycleState.RESPONSE
-            and message_type == "http.response.body"
+            and message["type"] == "http.response.body"
         ):
+
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
-
-            # The body must be completely read before returning the response.
-            self.body.write(body)
-
-            if not more_body and self.response is not None:
-                body = self.body.getvalue()
-                self.body.close()
-                self.response.body = body
+            self.buffer.write(body)
+            if not more_body:
+                self.body = self.buffer.getvalue()
+                self.buffer.close()
 
                 self.state = HTTPCycleState.COMPLETE
-                await self.app_queue.put({"type": "http.disconnect"})
+                await self.app_queue.put(HTTPDisconnectEvent(type="http.disconnect"))
 
                 self.logger.info(
                     "%s %s %s",
-                    self.request.method,
-                    self.request.path,
-                    self.response.status,
+                    self.scope["method"],
+                    self.scope["path"],
+                    self.status,
                 )
         else:
-            raise UnexpectedMessage(
-                f"{self.state}: Unexpected '{message_type}' event received."
-            )
+            raise UnexpectedMessage(f"Unexpected {message['type']}")

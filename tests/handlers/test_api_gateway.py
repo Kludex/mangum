@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers.aws_api_gateway import AwsApiGateway
+from mangum.handlers.api_gateway import APIGateway
 
 
 def get_mock_aws_api_gateway_event(
@@ -103,11 +103,11 @@ def test_aws_api_gateway_scope_basic():
         "isBase64Encoded": False,
     }
     example_context = {}
-    handler = AwsApiGateway(example_event, example_context, "/")
+    handler = APIGateway(example_event, example_context, {"api_gateway_base_path": "/"})
 
     assert type(handler.body) == bytes
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": example_event,
         "client": (None, 0),
@@ -200,14 +200,14 @@ def test_aws_api_gateway_scope_real(
         method, path, multi_value_query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsApiGateway(event, example_context, "/")
+    handler = APIGateway(event, example_context, {"api_gateway_base_path": "/"})
 
     scope_path = path
     if scope_path == "":
         scope_path = "/"
 
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": event,
         "client": ("192.168.100.1", 0),

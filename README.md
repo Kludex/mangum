@@ -8,13 +8,13 @@
 </a>
 <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
 
-Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) applications with AWS Lambda & API Gateway. It is intended to provide an easy-to-use, configurable wrapper for any ASGI application deployed in an AWS Lambda function to handle API Gateway requests and responses.
+Mangum is an adapter for running [ASGI](https://asgi.readthedocs.io/en/latest/) applications in AWS Lambda to handle API Gateway, ALB, and Lambda@Edge events.
 
 ***Documentation***: https://mangum.io/
 
 ## Features
 
-- API Gateway support for [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs.
+- Event handlers for API Gateway [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs, [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html), and [CloudFront Lambda@Edge](https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html).
 
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
@@ -26,7 +26,7 @@ Mangum is an adapter for using [ASGI](https://asgi.readthedocs.io/en/latest/) ap
 
 ## Requirements
 
-Python 3.6+
+Python 3.7+
 
 ## Installation
 
@@ -53,7 +53,7 @@ async def app(scope, receive, send):
 handler = Mangum(app)
 ```
 
-Or using a framework.
+Or using a framework:
 
 ```python
 from fastapi import FastAPI

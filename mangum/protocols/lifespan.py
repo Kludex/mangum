@@ -1,12 +1,19 @@
 import asyncio
+import enum
 import logging
 from types import TracebackType
 from typing import Optional, Type
-import enum
-from dataclasses import dataclass
 
-from ..types import ASGIApp, Message
-from ..exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
+
+from mangum.types import (
+    ASGIApp,
+    LifespanMode,
+    ASGIReceiveEvent,
+    ASGISendEvent,
+    LifespanShutdownEvent,
+    LifespanStartupEvent,
+)
+from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
 
 
 class LifespanCycleState(enum.Enum):
@@ -33,7 +40,6 @@ class LifespanCycleState(enum.Enum):
     UNSUPPORTED = enum.auto()
 
 
-@dataclass
 class LifespanCycle:
     """
     Manages the application cycle for an ASGI `lifespan` connection.
@@ -54,22 +60,19 @@ class LifespanCycle:
     shutdown flow.
     """
 
-    app: ASGIApp
-    lifespan: str
-    state: LifespanCycleState = LifespanCycleState.CONNECTING
-    exception: Optional[BaseException] = None
-
-    def __post_init__(self) -> None:
-        self.logger = logging.getLogger("mangum.lifespan")
+    def __init__(self, app: ASGIApp, lifespan: LifespanMode) -> None:
+        self.app = app
+        self.lifespan = lifespan
+        self.state: LifespanCycleState = LifespanCycleState.CONNECTING
+        self.exception: Optional[BaseException] = None
         self.loop = asyncio.get_event_loop()
-        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
+        self.app_queue: asyncio.Queue[ASGIReceiveEvent] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
+        self.logger = logging.getLogger("mangum.lifespan")
 
     def __enter__(self) -> None:
-        """
-        Runs the event loop for application startup.
-        """
+        """Runs the event loop for application startup."""
         self.loop.create_task(self.run())
         self.loop.run_until_complete(self.startup())
 
@@ -79,17 +82,17 @@ class LifespanCycle:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        """
-        Runs the event loop for application shutdown.
-        """
+        """Runs the event loop for application shutdown."""
         self.loop.run_until_complete(self.shutdown())
 
     async def run(self) -> None:
-        """
-        Calls the application with the `lifespan` connection scope.
-        """
+        """Calls the application with the `lifespan` connection scope."""
         try:
-            await self.app({"type": "lifespan"}, self.receive, self.send)
+            await self.app(
+                {"type": "lifespan", "asgi": {"spec_version": "2.0", "version": "3.0"}},
+                self.receive,
+                self.send,
+            )
         except LifespanUnsupported:
             self.logger.info("ASGI 'lifespan' protocol appears unsupported.")
         except (LifespanFailure, UnexpectedMessage) as exc:
@@ -100,10 +103,8 @@ class LifespanCycle:
             self.startup_event.set()
             self.shutdown_event.set()
 
-    async def receive(self) -> Message:
-        """
-        Awaited by the application to receive ASGI `lifespan` events.
-        """
+    async def receive(self) -> ASGIReceiveEvent:
+        """Awaited by the application to receive ASGI `lifespan` events."""
         if self.state is LifespanCycleState.CONNECTING:
 
             # Connection established. The next event returned by the queue will be
@@ -120,17 +121,14 @@ class LifespanCycle:
 
         return await self.app_queue.get()
 
-    async def send(self, message: Message) -> None:
-        """
-        Awaited by the application to send ASGI `lifespan` events.
-        """
+    async def send(self, message: ASGISendEvent) -> None:
+        """Awaited by the application to send ASGI `lifespan` events."""
         message_type = message["type"]
         self.logger.info(
             "%s:  '%s' event received from application.", self.state, message_type
         )
 
         if self.state is LifespanCycleState.CONNECTING:
-
             if self.lifespan == "on":
                 raise LifespanFailure(
                     "Lifespan connection failed during startup and lifespan is 'on'."
@@ -156,8 +154,8 @@ class LifespanCycle:
             elif message_type == "lifespan.startup.failed":
                 self.state = LifespanCycleState.FAILED
                 self.startup_event.set()
-                message = message.get("message", "")
-                raise LifespanFailure(f"Lifespan startup failure. {message}")
+                message_value = message.get("message", "")
+                raise LifespanFailure(f"Lifespan startup failure. {message_value}")
 
         elif self.state is LifespanCycleState.SHUTDOWN:
             if message_type == "lifespan.shutdown.complete":
@@ -165,15 +163,13 @@ class LifespanCycle:
             elif message_type == "lifespan.shutdown.failed":
                 self.state = LifespanCycleState.FAILED
                 self.shutdown_event.set()
-                message = message.get("message", "")
-                raise LifespanFailure(f"Lifespan shutdown failure. {message}")
+                message_value = message.get("message", "")
+                raise LifespanFailure(f"Lifespan shutdown failure. {message_value}")
 
     async def startup(self) -> None:
-        """
-        Pushes the `lifespan` startup event to application queue and handles errors.
-        """
+        """Pushes the `lifespan` startup event to the queue and handles errors."""
         self.logger.info("Waiting for application startup.")
-        await self.app_queue.put({"type": "lifespan.startup"})
+        await self.app_queue.put(LifespanStartupEvent(type="lifespan.startup"))
         await self.startup_event.wait()
         if self.state is LifespanCycleState.FAILED:
             raise LifespanFailure(self.exception)
@@ -184,11 +180,9 @@ class LifespanCycle:
             self.logger.info("Application startup failed.")
 
     async def shutdown(self) -> None:
-        """
-        Pushes the `lifespan` shutdown event to application queue and handles errors.
-        """
+        """Pushes the `lifespan` shutdown event to the queue and handles errors."""
         self.logger.info("Waiting for application shutdown.")
-        await self.app_queue.put({"type": "lifespan.shutdown"})
+        await self.app_queue.put(LifespanShutdownEvent(type="lifespan.shutdown"))
         await self.shutdown_event.wait()
         if self.state is LifespanCycleState.FAILED:
             raise LifespanFailure(self.exception)
