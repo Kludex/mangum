@@ -1,4 +1,3 @@
-from .types import Request, Response
-from .adapter import Mangum  # noqa: F401
+from mangum.adapter import Mangum
 
-__all__ = ["Mangum", "Request", "Response"]
+__all__ = ["Mangum"]

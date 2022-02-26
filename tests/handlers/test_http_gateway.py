@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers.aws_http_gateway import AwsHttpGateway
+from mangum.handlers.api_gateway import HTTPGateway
 
 
 def get_mock_aws_http_gateway_event_v1(
@@ -193,12 +193,15 @@ def test_aws_http_gateway_scope_basic_v1():
         "body": "Hello from Lambda!",
         "isBase64Encoded": False,
     }
+
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context, "/")
+    handler = HTTPGateway(
+        example_event, example_context, {"api_gateway_base_path": "/"}
+    )
 
     assert type(handler.body) == bytes
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": example_event,
         "client": ("IP", 0),
@@ -225,8 +228,10 @@ def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     )
     del example_event["multiValueQueryStringParameters"]
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context, "/")
-    assert handler.request.scope["query_string"] == b"hello=world"
+    handler = HTTPGateway(
+        example_event, example_context, {"api_gateway_base_path": "/"}
+    )
+    assert handler.scope["query_string"] == b"hello=world"
 
 
 def test_aws_http_gateway_scope_v1_no_headers():
@@ -239,8 +244,10 @@ def test_aws_http_gateway_scope_v1_no_headers():
     del example_event["multiValueQueryStringParameters"]
     del example_event["queryStringParameters"]
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context, "/")
-    assert handler.request.scope["query_string"] == b""
+    handler = HTTPGateway(
+        example_event, example_context, {"api_gateway_base_path": "/"}
+    )
+    assert handler.scope["query_string"] == b""
 
 
 def test_aws_http_gateway_scope_basic_v2():
@@ -297,11 +304,13 @@ def test_aws_http_gateway_scope_basic_v2():
         "stageVariables": {"stageVariable1": "value1", "stageVariable2": "value2"},
     }
     example_context = {}
-    handler = AwsHttpGateway(example_event, example_context, "/")
+    handler = HTTPGateway(
+        example_event, example_context, {"api_gateway_base_path": "/"}
+    )
 
     assert type(handler.body) == bytes
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": example_event,
         "client": ("IP", 0),
@@ -320,21 +329,6 @@ def test_aws_http_gateway_scope_basic_v2():
         "server": ("mangum", 80),
         "type": "http",
     }
-
-
-def test_aws_http_gateway_scope_bad_version():
-    """
-    Set a version we don't support
-
-    Version is the only thing that is different here, we should be checking that
-    specifically
-    """
-    example_event = get_mock_aws_http_gateway_event_v2("GET", "/test", {}, None, False)
-    example_event["version"] = "9001.1"
-    example_context = {}
-    handler = AwsHttpGateway(example_event, example_context, "/")
-    with pytest.raises(RuntimeError):
-        handler.request.scope
 
 
 @pytest.mark.parametrize(
@@ -369,14 +363,14 @@ def test_aws_http_gateway_scope_real_v1(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsHttpGateway(event, example_context, "/")
+    handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
 
     scope_path = path
     if scope_path == "":
         scope_path = "/"
 
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": event,
         "client": ("192.168.100.1", 0),
@@ -435,14 +429,14 @@ def test_aws_http_gateway_scope_real_v2(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsHttpGateway(event, example_context, "/")
+    handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
 
     scope_path = path
     if scope_path == "":
         scope_path = "/"
 
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": event,
         "client": ("192.168.100.1", 0),

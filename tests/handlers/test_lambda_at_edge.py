@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers.aws_cf_lambda_at_edge import AwsCfLambdaAtEdge
+from mangum.handlers.lambda_at_edge import LambdaAtEdge
 
 
 def mock_lambda_at_edge_event(
@@ -134,11 +134,13 @@ def test_aws_cf_lambda_at_edge_scope_basic():
         ]
     }
     example_context = {}
-    handler = AwsCfLambdaAtEdge(example_event, example_context)
+    handler = LambdaAtEdge(
+        example_event, example_context, {"api_gateway_base_path": "/"}
+    )
 
     assert type(handler.body) == bytes
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": example_event,
         "client": ("203.0.113.178", 0),
@@ -223,10 +225,10 @@ def test_aws_api_gateway_scope_real(
         method, path, multi_value_query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = AwsCfLambdaAtEdge(event, example_context)
+    handler = LambdaAtEdge(event, example_context, {"api_gateway_base_path": "/"})
 
-    assert handler.request.scope == {
-        "asgi": {"version": "3.0"},
+    assert handler.scope == {
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
         "aws.event": event,
         "client": ("192.168.100.1", 0),

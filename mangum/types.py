@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
 from typing import (
     List,
     Tuple,
@@ -11,21 +12,11 @@ from typing import (
     Awaitable,
     Callable,
 )
-from typing_extensions import Protocol, TypeAlias
-
-QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]
-Message: TypeAlias = MutableMapping[str, Any]
-Scope: TypeAlias = MutableMapping[str, Any]
-Receive: TypeAlias = Callable[[], Awaitable[Message]]
-Send: TypeAlias = Callable[[Message], Awaitable[None]]
-
-
-class ASGIApp(Protocol):
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        ...  # pragma: no cover
+from typing_extensions import Literal, Protocol, TypedDict, TypeAlias
 
 
 LambdaEvent = Dict[str, Any]
+QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]
 
 
 class LambdaCognitoIdentity(Protocol):
@@ -103,65 +94,150 @@ class LambdaContext(Protocol):
         ...  # pragma: no cover
 
 
-@dataclass
-class BaseRequest:
-    """
-    A holder for an ASGI scope. Contains additional meta from the event that triggered
-    the Lambda function.
-    """
-
-    headers: List[List[bytes]]
-    path: str
-    scheme: str
-    query_string: bytes
-    server: Tuple[str, int]
-    client: Tuple[str, int]
-
-    # Invocation event
-    trigger_event: Dict[str, Any]
-    trigger_context: Union["LambdaContext", Dict[str, Any]]
-
-    raw_path: Optional[str] = None
-    root_path: str = ""
-
-    @property
-    def scope(self) -> Scope:
-        return {
-            "http_version": "1.1",
-            "headers": self.headers,
-            "path": self.path,
-            "raw_path": self.raw_path,
-            "root_path": self.root_path,
-            "scheme": self.scheme,
-            "query_string": self.query_string,
-            "server": self.server,
-            "client": self.client,
-            "asgi": {"version": "3.0"},
-            "aws.event": self.trigger_event,
-            "aws.context": self.trigger_context,
-        }
+Headers: TypeAlias = List[List[bytes]]
 
 
-@dataclass
-class Request(BaseRequest):
-    """
-    A holder for an ASGI scope. Specific for usage with HTTP connections.
-
-    https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope
-    """
-
-    type: str = "http"
-    method: str = "GET"
-
-    @property
-    def scope(self) -> Scope:
-        scope = super().scope
-        scope.update({"type": self.type, "method": self.method})
-        return scope
-
-
-@dataclass
-class Response:
-    status: int
-    headers: List[List[bytes]]  # ex: [[b'content-type', b'text/plain; charset=utf-8']]
+class HTTPRequestEvent(TypedDict):
+    type: Literal["http.request"]
     body: bytes
+    more_body: bool
+
+
+class HTTPDisconnectEvent(TypedDict):
+    type: Literal["http.disconnect"]
+
+
+class HTTPResponseStartEvent(TypedDict):
+    type: Literal["http.response.start"]
+    status: int
+    headers: Headers
+
+
+class HTTPResponseBodyEvent(TypedDict):
+    type: Literal["http.response.body"]
+    body: bytes
+    more_body: bool
+
+
+class LifespanStartupEvent(TypedDict):
+    type: Literal["lifespan.startup"]
+
+
+class LifespanStartupCompleteEvent(TypedDict):
+    type: Literal["lifespan.startup.complete"]
+
+
+class LifespanStartupFailedEvent(TypedDict):
+    type: Literal["lifespan.startup.failed"]
+    message: str
+
+
+class LifespanShutdownEvent(TypedDict):
+    type: Literal["lifespan.shutdown"]
+
+
+class LifespanShutdownCompleteEvent(TypedDict):
+    type: Literal["lifespan.shutdown.complete"]
+
+
+class LifespanShutdownFailedEvent(TypedDict):
+    type: Literal["lifespan.shutdown.failed"]
+    message: str
+
+
+ASGIReceiveEvent: TypeAlias = Union[
+    HTTPRequestEvent,
+    HTTPDisconnectEvent,
+    LifespanStartupEvent,
+    LifespanShutdownEvent,
+]
+
+ASGISendEvent: TypeAlias = Union[
+    HTTPResponseStartEvent,
+    HTTPResponseBodyEvent,
+    HTTPDisconnectEvent,
+    LifespanStartupCompleteEvent,
+    LifespanStartupFailedEvent,
+    LifespanShutdownCompleteEvent,
+    LifespanShutdownFailedEvent,
+]
+
+
+ASGIReceive: TypeAlias = Callable[[], Awaitable[ASGIReceiveEvent]]
+ASGISend: TypeAlias = Callable[[ASGISendEvent], Awaitable[None]]
+
+
+class ASGISpec(TypedDict):
+    spec_version: Literal["2.0"]
+    version: Literal["3.0"]
+
+
+HTTPScope = TypedDict(
+    "HTTPScope",
+    {
+        "type": Literal["http"],
+        "asgi": ASGISpec,
+        "http_version": Literal["1.1"],
+        "scheme": str,
+        "method": str,
+        "path": str,
+        "raw_path": None,
+        "root_path": Literal[""],
+        "query_string": bytes,
+        "headers": Headers,
+        "client": Tuple[str, int],
+        "server": Tuple[str, int],
+        "aws.event": LambdaEvent,
+        "aws.context": LambdaContext,
+    },
+)
+
+
+class LifespanScope(TypedDict):
+    type: Literal["lifespan"]
+    asgi: ASGISpec
+
+
+LifespanMode: TypeAlias = Literal["auto", "on", "off"]
+Scope: TypeAlias = Union[HTTPScope, LifespanScope]
+
+
+class ASGIApp(Protocol):
+    async def __call__(
+        self, scope: Scope, receive: ASGIReceive, send: ASGISend
+    ) -> None:
+        ...  # pragma: no cover
+
+
+class HTTPResponse(TypedDict):
+    status: int
+    headers: Headers
+    body: bytes
+
+
+class LambdaConfig(TypedDict):
+    api_gateway_base_path: str
+
+
+class LambdaHandler(Protocol):
+    @classmethod
+    def infer(
+        cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
+    ) -> Optional[LambdaHandler]:
+        ...  # pragma: no cover
+
+    def __init__(
+        self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
+    ) -> None:
+        ...  # pragma: no cover
+
+    @property
+    def body(self) -> bytes:
+        ...  # pragma: no cover
+
+    @property
+    def scope(self) -> HTTPScope:
+        ...  # pragma: no cover
+
+    def __call__(self, response: HTTPResponse) -> dict:
+        ...  # pragma: no cover
