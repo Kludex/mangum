@@ -65,7 +65,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-This environment is used to run the tests. Python versions 3.6, 3.7, and 3.8 are supported.
+This environment is used to run the tests for Python versions 3.7, 3.8, 3.9, and 3.10.
 
 ### Test
 

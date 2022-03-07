@@ -13,7 +13,7 @@ setup(
     url="https://github.com/jordaneremieff/mangum",
     description="AWS Lambda support for ASGI applications",
     long_description=get_long_description(),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=["typing_extensions"],
     package_data={"mangum": ["py.typed"]},
     long_description_content_type="text/markdown",
