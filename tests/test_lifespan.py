@@ -1,4 +1,3 @@
-import sys
 import logging
 
 import pytest
@@ -9,13 +8,7 @@ from starlette.responses import PlainTextResponse
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
 
-# Quart no longer support python3.6.
-IS_PY36 = sys.version_info[:2] == (3, 6)
-
-if not IS_PY36:
-    from quart import Quart
-else:
-    Quart = None
+from quart import Quart
 
 
 @pytest.mark.parametrize(
@@ -269,7 +262,6 @@ def test_starlette_lifespan(mock_aws_api_gateway_event) -> None:
     }
 
 
-@pytest.mark.skipif(IS_PY36, reason="Quart does not support Python 3.6.")
 @pytest.mark.parametrize(
     "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
 )
