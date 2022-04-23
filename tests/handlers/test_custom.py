@@ -1,12 +1,9 @@
-from typing import Optional
-
 from mangum.types import (
-    HTTPScope,
+    Scope,
     Headers,
     LambdaConfig,
     LambdaContext,
     LambdaEvent,
-    LambdaHandler,
 )
 
 
@@ -14,11 +11,8 @@ class CustomHandler:
     @classmethod
     def infer(
         cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> Optional[LambdaHandler]:
-        if "my-custom-key" in event:
-            return cls(event, context, config)
-
-        return None
+    ) -> bool:
+        return "my-custom-key" in event
 
     def __init__(
         self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
@@ -32,7 +26,7 @@ class CustomHandler:
         return b"My request body"
 
     @property
-    def scope(self) -> HTTPScope:
+    def scope(self) -> Scope:
         headers = {}
         return {
             "type": "http",
