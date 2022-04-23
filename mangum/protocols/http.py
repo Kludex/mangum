@@ -3,15 +3,7 @@ import enum
 import logging
 from io import BytesIO
 
-
-from mangum.types import (
-    ASGIApp,
-    ASGIReceiveEvent,
-    ASGISendEvent,
-    HTTPDisconnectEvent,
-    HTTPScope,
-    HTTPResponse,
-)
+from mangum.types import ASGI, Message, Scope, Response
 from mangum.exceptions import UnexpectedMessage
 
 
@@ -35,12 +27,12 @@ class HTTPCycleState(enum.Enum):
 
 
 class HTTPCycle:
-    def __init__(self, scope: HTTPScope, body: bytes) -> None:
+    def __init__(self, scope: Scope, body: bytes) -> None:
         self.scope = scope
         self.buffer = BytesIO()
         self.state = HTTPCycleState.REQUEST
         self.logger = logging.getLogger("mangum.http")
-        self.app_queue: asyncio.Queue[ASGIReceiveEvent] = asyncio.Queue()
+        self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.app_queue.put_nowait(
             {
                 "type": "http.request",
@@ -49,7 +41,7 @@ class HTTPCycle:
             }
         )
 
-    def __call__(self, app: ASGIApp) -> HTTPResponse:
+    def __call__(self, app: ASGI) -> Response:
         asgi_instance = self.run(app)
         loop = asyncio.get_event_loop()
         asgi_task = loop.create_task(asgi_instance)
@@ -61,7 +53,7 @@ class HTTPCycle:
             "body": self.body,
         }
 
-    async def run(self, app: ASGIApp) -> None:
+    async def run(self, app: ASGI) -> None:
         try:
             await app(self.scope, self.receive, self.send)
         except BaseException:
@@ -86,10 +78,10 @@ class HTTPCycle:
                 self.body = b"Internal Server Error"
                 self.headers = [[b"content-type", b"text/plain; charset=utf-8"]]
 
-    async def receive(self) -> ASGIReceiveEvent:
+    async def receive(self) -> Message:
         return await self.app_queue.get()  # pragma: no cover
 
-    async def send(self, message: ASGISendEvent) -> None:
+    async def send(self, message: Message) -> None:
         if (
             self.state is HTTPCycleState.REQUEST
             and message["type"] == "http.response.start"
@@ -110,7 +102,7 @@ class HTTPCycle:
                 self.buffer.close()
 
                 self.state = HTTPCycleState.COMPLETE
-                await self.app_queue.put(HTTPDisconnectEvent(type="http.disconnect"))
+                await self.app_queue.put({"type": "http.disconnect"})
 
                 self.logger.info(
                     "%s %s %s",

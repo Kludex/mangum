@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from urllib.parse import urlencode
 
 from mangum.handlers.utils import (
@@ -9,14 +9,13 @@ from mangum.handlers.utils import (
     strip_api_gateway_path,
 )
 from mangum.types import (
-    HTTPResponse,
+    Response,
     LambdaConfig,
     Headers,
     LambdaEvent,
     LambdaContext,
-    LambdaHandler,
     QueryParams,
-    HTTPScope,
+    Scope,
 )
 
 
@@ -68,11 +67,8 @@ class APIGateway:
     @classmethod
     def infer(
         cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> Optional[LambdaHandler]:
-        if "resource" in event and "requestContext" in event:
-            return cls(event, context, config)
-
-        return None
+    ) -> bool:
+        return "resource" in event and "requestContext" in event
 
     def __init__(
         self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
@@ -89,7 +85,7 @@ class APIGateway:
         )
 
     @property
-    def scope(self) -> HTTPScope:
+    def scope(self) -> Scope:
         headers = _handle_multi_value_headers_for_request(self.event)
         return {
             "type": "http",
@@ -114,7 +110,7 @@ class APIGateway:
             "aws.context": self.context,
         }
 
-    def __call__(self, response: HTTPResponse) -> dict:
+    def __call__(self, response: Response) -> dict:
         finalized_headers, multi_value_headers = handle_multi_value_headers(
             response["headers"]
         )
@@ -135,11 +131,8 @@ class HTTPGateway:
     @classmethod
     def infer(
         cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> Optional[LambdaHandler]:
-        if "version" in event and "requestContext" in event:
-            return cls(event, context, config)
-
-        return None
+    ) -> bool:
+        return "version" in event and "requestContext" in event
 
     def __init__(
         self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
@@ -156,7 +149,7 @@ class HTTPGateway:
         )
 
     @property
-    def scope(self) -> HTTPScope:
+    def scope(self) -> Scope:
         request_context = self.event["requestContext"]
         event_version = self.event["version"]
 
@@ -203,7 +196,7 @@ class HTTPGateway:
             "aws.context": self.context,
         }
 
-    def __call__(self, response: HTTPResponse) -> dict:
+    def __call__(self, response: Response) -> dict:
         if self.scope["aws.event"]["version"] == "2.0":
             finalized_headers, cookies = _combine_headers_v2(response["headers"])
 

@@ -1,14 +1,13 @@
-from itertools import chain
 import logging
+from itertools import chain
 from contextlib import ExitStack
 from typing import List, Optional, Type
-import warnings
 
 from mangum.protocols import HTTPCycle, LifespanCycle
 from mangum.handlers import ALB, HTTPGateway, APIGateway, LambdaAtEdge
 from mangum.exceptions import ConfigurationError
 from mangum.types import (
-    ASGIApp,
+    ASGI,
     LifespanMode,
     LambdaConfig,
     LambdaEvent,
@@ -31,7 +30,7 @@ HANDLERS: List[Type[LambdaHandler]] = [
 class Mangum:
     def __init__(
         self,
-        app: ASGIApp,
+        app: ASGI,
         lifespan: LifespanMode = "auto",
         api_gateway_base_path: str = "/",
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
@@ -45,27 +44,12 @@ class Mangum:
         self.lifespan = lifespan
         self.api_gateway_base_path = api_gateway_base_path or "/"
         self.config = LambdaConfig(api_gateway_base_path=self.api_gateway_base_path)
-
-        if custom_handlers is not None:
-            warnings.warn(  # pragma: no cover
-                "Support for custom event handlers is currently provisional and may "
-                "drastically change (or be removed entirely) in the future.",
-                FutureWarning,
-            )
-
         self.custom_handlers = custom_handlers or []
 
     def infer(self, event: LambdaEvent, context: LambdaContext) -> LambdaHandler:
-        for handler_cls in chain(
-            self.custom_handlers,
-            HANDLERS,
-        ):
-            handler = handler_cls.infer(
-                event,
-                context,
-                self.config,
-            )
-            if handler:
+        for handler_cls in chain(self.custom_handlers, HANDLERS):
+            if handler_cls.infer(event, context, self.config):
+                handler = handler_cls(event, context, self.config)
                 break
         else:
             raise RuntimeError(  # pragma: no cover

@@ -1,7 +1,6 @@
 from itertools import islice
-from typing import Dict, Generator, List, Optional, Tuple
+from typing import Dict, Generator, List, Tuple
 from urllib.parse import urlencode, unquote, unquote_plus
-
 
 from mangum.handlers.utils import (
     get_server_and_port,
@@ -9,12 +8,11 @@ from mangum.handlers.utils import (
     maybe_encode_body,
 )
 from mangum.types import (
-    HTTPResponse,
-    HTTPScope,
+    Response,
+    Scope,
     LambdaConfig,
     LambdaEvent,
     LambdaContext,
-    LambdaHandler,
     QueryParams,
 )
 
@@ -86,11 +84,8 @@ class ALB:
     @classmethod
     def infer(
         cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> Optional[LambdaHandler]:
-        if "requestContext" in event and "elb" in event["requestContext"]:
-            return cls(event, context, config)
-
-        return None
+    ) -> bool:
+        return "requestContext" in event and "elb" in event["requestContext"]
 
     def __init__(
         self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
@@ -107,7 +102,7 @@ class ALB:
         )
 
     @property
-    def scope(self) -> HTTPScope:
+    def scope(self) -> Scope:
 
         headers = transform_headers(self.event)
         list_headers = [list(x) for x in headers]
@@ -129,7 +124,7 @@ class ALB:
         server = get_server_and_port(uq_headers)
         client = (source_ip, 0)
 
-        scope: HTTPScope = {
+        scope: Scope = {
             "type": "http",
             "method": http_method,
             "http_version": "1.1",
@@ -148,7 +143,7 @@ class ALB:
 
         return scope
 
-    def __call__(self, response: HTTPResponse) -> dict:
+    def __call__(self, response: Response) -> dict:
         multi_value_headers: Dict[str, List[str]] = {}
         for key, value in response["headers"]:
             lower_key = key.decode().lower()
