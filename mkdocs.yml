@@ -20,7 +20,6 @@ nav:
   - ASGI Frameworks: "asgi-frameworks.md"
   - External Links: "external-links.md"
   - Contributing: "contributing.md"
-  - Release Notes: "release-notes.md"
 
 markdown_extensions:
   - mkautodoc

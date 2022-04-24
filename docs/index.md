@@ -8,13 +8,13 @@
 </a>
 <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mangum.svg?style=flat-square">
 
-Mangum is an adapter for running [ASGI](https://asgi.readthedocs.io/en/latest/) applications in AWS Lambda to handle API Gateway, ALB, and Lambda@Edge events.
+Mangum is an adapter for running [ASGI](https://asgi.readthedocs.io/en/latest/) applications in AWS Lambda to handle Function URL, API Gateway, ALB, and Lambda@Edge events.
 
 ***Documentation***: https://mangum.io/
 
 ## Features
 
-- Event handlers for API Gateway [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs, [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html), and [CloudFront Lambda@Edge](https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html).
+- Event handlers for API Gateway [HTTP](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) and [REST](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) APIs, [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html), [Function URLs](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html), and [CloudFront Lambda@Edge](https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html).
 
 - Compatibility with ASGI application frameworks, such as [Starlette](https://www.starlette.io/), [FastAPI](https://fastapi.tiangolo.com/), and [Quart](https://pgjones.gitlab.io/quart/). 
 
@@ -50,7 +50,7 @@ async def app(scope, receive, send):
     await send({"type": "http.response.body", "body": b"Hello, world!"})
 
 
-handler = Mangum(app)
+handler = Mangum(app, lifespan="off")
 ```
 
 Or using a framework:
@@ -71,5 +71,5 @@ def read_root():
 def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
-handler = Mangum(app)
+handler = Mangum(app, lifespan="off")
 ```
