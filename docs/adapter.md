@@ -7,7 +7,6 @@ handler = Mangum(
     app,
     lifespan="auto",
     api_gateway_base_path=None,
-    text_mime_types=None,
 )
 ```
 

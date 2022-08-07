@@ -11,6 +11,7 @@ DEFAULT_TEXT_MIME_TYPES = [
     "application/javascript",
     "application/xml",
     "application/vnd.api+json",
+    "application/vnd.oai.openapi",
 ]
 
 

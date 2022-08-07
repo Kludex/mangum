@@ -33,14 +33,13 @@ Binary responses are determined using the `Content-Type` and `Content-Encoding` 
 
 ### Text MIME types
 
-By default, all response data will be [base64 encoded](https://docs.python.org/3/library/base64.html#base64.b64encode) and include `isBase64Encoded=True` in the response ***except*** the default text MIME types and any MIME types included in the `TEXT_MIME_TYPES` list setting.
-
-The following types are excluded from binary responses by default:
+By default, all response data will be [base64 encoded](https://docs.python.org/3/library/base64.html#base64.b64encode) and include `isBase64Encoded=True` in the response ***except*** the following MIME types:
 
 - `application/json`
 - `application/javascript`
 - `application/xml`
 - `application/vnd.api+json`
+- `application/vnd.oai.openapi`
 
 Additionally, any `Content-Type` header prefixed with `text/` is automatically excluded.
 
