@@ -105,5 +105,7 @@ venv.bak/
 
 # IDE Settings
 .idea/
+.vscode
+.devcontainer
 
 .DS_Store
