@@ -5,6 +5,7 @@ from typing import List, Optional, Type
 
 from mangum.protocols import HTTPCycle, LifespanCycle
 from mangum.handlers import ALB, HTTPGateway, APIGateway, LambdaAtEdge
+from mangum.handlers.utils import DEFAULT_TEXT_MIME_TYPES
 from mangum.exceptions import ConfigurationError
 from mangum.types import (
     ASGI,
@@ -34,6 +35,7 @@ class Mangum:
         lifespan: LifespanMode = "auto",
         api_gateway_base_path: str = "/",
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
+        text_mime_types: Optional[List[str]] = None,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
@@ -45,6 +47,7 @@ class Mangum:
         self.api_gateway_base_path = api_gateway_base_path or "/"
         self.config = LambdaConfig(api_gateway_base_path=self.api_gateway_base_path)
         self.custom_handlers = custom_handlers or []
+        self.text_mime_types = text_mime_types or DEFAULT_TEXT_MIME_TYPES
 
     def infer(self, event: LambdaEvent, context: LambdaContext) -> LambdaHandler:
         for handler_cls in chain(self.custom_handlers, HANDLERS):
@@ -71,6 +74,6 @@ class Mangum:
             http_cycle = HTTPCycle(handler.scope, handler.body)
             http_response = http_cycle(self.app)
 
-            return handler(http_response)
+            return handler(http_response, self.text_mime_types)
 
         assert False, "unreachable"  # pragma: no cover

@@ -1,5 +1,5 @@
 import base64
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import unquote
 
 from mangum.types import Headers
@@ -71,12 +71,14 @@ def handle_multi_value_headers(
 
 
 def handle_base64_response_body(
-    body: bytes, headers: Dict[str, str]
+    body: bytes,
+    headers: Dict[str, str],
+    text_mime_types: Optional[List[str]] = None,
 ) -> Tuple[str, bool]:
     is_base64_encoded = False
     output_body = ""
     if body != b"":
-        for text_mime_type in DEFAULT_TEXT_MIME_TYPES:
+        for text_mime_type in text_mime_types or DEFAULT_TEXT_MIME_TYPES:
             if text_mime_type in headers.get("content-type", ""):
                 try:
                     output_body = body.decode()

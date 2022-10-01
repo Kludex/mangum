@@ -136,5 +136,9 @@ class LambdaHandler(Protocol):
     def scope(self) -> Scope:
         ...  # pragma: no cover
 
-    def __call__(self, response: Response) -> dict:
+    def __call__(
+        self,
+        response: Response,
+        text_mime_types: Optional[List[str]] = None,
+    ) -> dict:
         ...  # pragma: no cover

@@ -1,5 +1,5 @@
 from itertools import islice
-from typing import Dict, Generator, List, Tuple
+from typing import Dict, Generator, List, Optional, Tuple
 from urllib.parse import urlencode, unquote, unquote_plus
 
 from mangum.handlers.utils import (
@@ -143,7 +143,11 @@ class ALB:
 
         return scope
 
-    def __call__(self, response: Response) -> dict:
+    def __call__(
+        self,
+        response: Response,
+        text_mime_types: Optional[List[str]] = None,
+    ) -> dict:
         multi_value_headers: Dict[str, List[str]] = {}
         for key, value in response["headers"]:
             lower_key = key.decode().lower()
@@ -153,7 +157,7 @@ class ALB:
 
         finalized_headers = case_mutated_headers(multi_value_headers)
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers
+            response["body"], finalized_headers, text_mime_types
         )
 
         out = {
