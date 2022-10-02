@@ -55,7 +55,7 @@ class Mangum:
         self.custom_handlers = custom_handlers or []
         self.config = LambdaConfig(
             api_gateway_base_path=api_gateway_base_path or "/",
-            text_mime_types=text_mime_types or DEFAULT_TEXT_MIME_TYPES,
+            text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
         )
 
     @property
