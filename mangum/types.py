@@ -116,6 +116,7 @@ class Response(TypedDict):
 
 class LambdaConfig(TypedDict):
     api_gateway_base_path: str
+    text_mime_types: List[str]
 
 
 class LambdaHandler(Protocol):
@@ -136,9 +137,5 @@ class LambdaHandler(Protocol):
     def scope(self) -> Scope:
         ...  # pragma: no cover
 
-    def __call__(
-        self,
-        response: Response,
-        text_mime_types: Optional[List[str]] = None,
-    ) -> dict:
+    def __call__(self, response: Response) -> dict:
         ...  # pragma: no cover

@@ -1,18 +1,8 @@
 import base64
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 from urllib.parse import unquote
 
 from mangum.types import Headers
-
-
-DEFAULT_TEXT_MIME_TYPES = [
-    "text/",
-    "application/json",
-    "application/javascript",
-    "application/xml",
-    "application/vnd.api+json",
-    "application/vnd.oai.openapi",
-]
 
 
 def maybe_encode_body(body: Union[str, bytes], *, is_base64: bool) -> bytes:
@@ -73,12 +63,12 @@ def handle_multi_value_headers(
 def handle_base64_response_body(
     body: bytes,
     headers: Dict[str, str],
-    text_mime_types: Optional[List[str]] = None,
+    text_mime_types: List[str],
 ) -> Tuple[str, bool]:
     is_base64_encoded = False
     output_body = ""
     if body != b"":
-        for text_mime_type in text_mime_types or DEFAULT_TEXT_MIME_TYPES:
+        for text_mime_type in text_mime_types:
             if text_mime_type in headers.get("content-type", ""):
                 try:
                     output_body = body.decode()

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from urllib.parse import urlencode
 
 from mangum.handlers.utils import (
@@ -110,16 +110,12 @@ class APIGateway:
             "aws.context": self.context,
         }
 
-    def __call__(
-        self,
-        response: Response,
-        text_mime_types: Optional[List[str]] = None,
-    ) -> dict:
+    def __call__(self, response: Response) -> dict:
         finalized_headers, multi_value_headers = handle_multi_value_headers(
             response["headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers, text_mime_types
+            response["body"], finalized_headers, self.config["text_mime_types"]
         )
 
         return {
@@ -200,11 +196,7 @@ class HTTPGateway:
             "aws.context": self.context,
         }
 
-    def __call__(
-        self,
-        response: Response,
-        text_mime_types: Optional[List[str]] = None,
-    ) -> dict:
+    def __call__(self, response: Response) -> dict:
         if self.scope["aws.event"]["version"] == "2.0":
             finalized_headers, cookies = _combine_headers_v2(response["headers"])
 
@@ -212,7 +204,7 @@ class HTTPGateway:
                 finalized_headers["content-type"] = "application/json"
 
             finalized_body, is_base64_encoded = handle_base64_response_body(
-                response["body"], finalized_headers, text_mime_types
+                response["body"], finalized_headers, self.config["text_mime_types"]
             )
             response_out = {
                 "statusCode": response["status"],
@@ -229,7 +221,7 @@ class HTTPGateway:
             response["headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers, text_mime_types
+            response["body"], finalized_headers, self.config["text_mime_types"]
         )
         return {
             "statusCode": response["status"],
