@@ -55,20 +55,8 @@ class Mangum:
         self.custom_handlers = custom_handlers or []
         self.config = LambdaConfig(
             api_gateway_base_path=api_gateway_base_path or "/",
-            text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
+            text_mime_types=text_mime_types or DEFAULT_TEXT_MIME_TYPES,
         )
-
-    @property
-    def api_gateway_base_path(self) -> str:
-        return self.config["api_gateway_base_path"]
-
-    @api_gateway_base_path.setter
-    def api_gateway_base_path(self, value: str) -> None:
-        self.config["api_gateway_base_path"] = value
-
-    @property
-    def text_mime_types(self) -> List[str]:
-        return self.config["text_mime_types"]
 
     def infer(self, event: LambdaEvent, context: LambdaContext) -> LambdaHandler:
         for handler_cls in chain(self.custom_handlers, HANDLERS):

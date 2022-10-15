@@ -391,7 +391,7 @@ def test_aws_api_gateway_response_extra_mime_types():
 
     # Test with modified text mime types
     handler = Mangum(app, lifespan="off")
-    handler.text_mime_types.append(content_type.decode())
+    handler.config["text_mime_types"].append(content_type.decode())
     response = handler(event, {})
     assert response == {
         "statusCode": 200,
