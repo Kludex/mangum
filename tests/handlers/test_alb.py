@@ -331,3 +331,44 @@ def test_aws_alb_response(
         "headers": {"content-type": content_type.decode()},
         "body": res_body,
     }
+
+
+def test_aws_alb_response_extra_mime_types():
+    content_type = b"application/x-yaml"
+    utf_res_body = "name: 'John Doe'"
+    raw_res_body = utf_res_body.encode()
+    b64_res_body = "bmFtZTogJ0pvaG4gRG9lJw=="
+
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", content_type]],
+            }
+        )
+        await send({"type": "http.response.body", "body": raw_res_body})
+
+    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, False)
+
+    # Test default behavior
+    handler = Mangum(app, lifespan="off")
+    response = handler(event, {})
+    assert content_type.decode() not in handler.config["text_mime_types"]
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": True,
+        "headers": {"content-type": content_type.decode()},
+        "body": b64_res_body,
+    }
+
+    # Test with modified text mime types
+    handler = Mangum(app, lifespan="off")
+    handler.config["text_mime_types"].append(content_type.decode())
+    response = handler(event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": content_type.decode()},
+        "body": utf_res_body,
+    }

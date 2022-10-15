@@ -381,6 +381,7 @@ def test_aws_api_gateway_response_extra_mime_types():
     # Test default behavior
     handler = Mangum(app, lifespan="off")
     response = handler(event, {})
+    assert content_type.decode() not in handler.config["text_mime_types"]
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": True,
