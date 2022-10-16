@@ -26,6 +26,15 @@ HANDLERS: List[Type[LambdaHandler]] = [
     LambdaAtEdge,
 ]
 
+DEFAULT_TEXT_MIME_TYPES: List[str] = [
+    "text/",
+    "application/json",
+    "application/javascript",
+    "application/xml",
+    "application/vnd.api+json",
+    "application/vnd.oai.openapi",
+]
+
 
 class Mangum:
     def __init__(
@@ -34,6 +43,7 @@ class Mangum:
         lifespan: LifespanMode = "auto",
         api_gateway_base_path: str = "/",
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
+        text_mime_types: Optional[List[str]] = None,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
@@ -42,24 +52,22 @@ class Mangum:
 
         self.app = app
         self.lifespan = lifespan
-        self.api_gateway_base_path = api_gateway_base_path or "/"
-        self.config = LambdaConfig(api_gateway_base_path=self.api_gateway_base_path)
         self.custom_handlers = custom_handlers or []
+        self.config = LambdaConfig(
+            api_gateway_base_path=api_gateway_base_path or "/",
+            text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
+        )
 
     def infer(self, event: LambdaEvent, context: LambdaContext) -> LambdaHandler:
         for handler_cls in chain(self.custom_handlers, HANDLERS):
             if handler_cls.infer(event, context, self.config):
-                handler = handler_cls(event, context, self.config)
-                break
-        else:
-            raise RuntimeError(  # pragma: no cover
-                "The adapter was unable to infer a handler to use for the event. This "
-                "is likely related to how the Lambda function was invoked. (Are you "
-                "testing locally? Make sure the request payload is valid for a "
-                "supported handler.)"
-            )
-
-        return handler
+                return handler_cls(event, context, self.config)
+        raise RuntimeError(  # pragma: no cover
+            "The adapter was unable to infer a handler to use for the event. This "
+            "is likely related to how the Lambda function was invoked. (Are you "
+            "testing locally? Make sure the request payload is valid for a "
+            "supported handler.)"
+        )
 
     def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict:
         handler = self.infer(event, context)

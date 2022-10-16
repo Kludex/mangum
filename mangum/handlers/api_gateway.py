@@ -115,7 +115,7 @@ class APIGateway:
             response["headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers
+            response["body"], finalized_headers, self.config["text_mime_types"]
         )
 
         return {
@@ -204,7 +204,7 @@ class HTTPGateway:
                 finalized_headers["content-type"] = "application/json"
 
             finalized_body, is_base64_encoded = handle_base64_response_body(
-                response["body"], finalized_headers
+                response["body"], finalized_headers, self.config["text_mime_types"]
             )
             response_out = {
                 "statusCode": response["status"],
@@ -221,7 +221,7 @@ class HTTPGateway:
             response["headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers
+            response["body"], finalized_headers, self.config["text_mime_types"]
         )
         return {
             "statusCode": response["status"],

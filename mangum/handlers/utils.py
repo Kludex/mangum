@@ -5,16 +5,6 @@ from urllib.parse import unquote
 from mangum.types import Headers
 
 
-DEFAULT_TEXT_MIME_TYPES = [
-    "text/",
-    "application/json",
-    "application/javascript",
-    "application/xml",
-    "application/vnd.api+json",
-    "application/vnd.oai.openapi",
-]
-
-
 def maybe_encode_body(body: Union[str, bytes], *, is_base64: bool) -> bytes:
     body = body or b""
     if is_base64:
@@ -71,12 +61,14 @@ def handle_multi_value_headers(
 
 
 def handle_base64_response_body(
-    body: bytes, headers: Dict[str, str]
+    body: bytes,
+    headers: Dict[str, str],
+    text_mime_types: List[str],
 ) -> Tuple[str, bool]:
     is_base64_encoded = False
     output_body = ""
     if body != b"":
-        for text_mime_type in DEFAULT_TEXT_MIME_TYPES:
+        for text_mime_type in text_mime_types:
             if text_mime_type in headers.get("content-type", ""):
                 try:
                     output_body = body.decode()

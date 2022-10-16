@@ -153,7 +153,7 @@ class ALB:
 
         finalized_headers = case_mutated_headers(multi_value_headers)
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers
+            response["body"], finalized_headers, self.config["text_mime_types"]
         )
 
         out = {

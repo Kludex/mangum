@@ -79,7 +79,7 @@ class LambdaAtEdge:
     def __call__(self, response: Response) -> dict:
         multi_value_headers, _ = handle_multi_value_headers(response["headers"])
         response_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], multi_value_headers
+            response["body"], multi_value_headers, self.config["text_mime_types"]
         )
         finalized_headers: Dict[str, List[Dict[str, str]]] = {
             key.decode().lower(): [{"key": key.decode().lower(), "value": val.decode()}]
