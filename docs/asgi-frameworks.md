@@ -75,7 +75,7 @@ handler = Mangum(app)
 
 ### FastAPI
 
-[FastAPI](https://fastapi.tiangolo.com/) is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints. 
+[FastAPI](https://fastapi.tiangolo.com/) is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. 
 
 ```python
 from fastapi import FastAPI
@@ -137,7 +137,7 @@ handler = Mangum(app)
 
 ### Sanic
 
-[Sanic](https://github.com/huge-success/sanic) is a Python 3.6+ web server and web framework that's written to go fast. It allows the usage of the async/await syntax added in Python 3.5, which makes your code non-blocking and speedy.
+[Sanic](https://github.com/huge-success/sanic) is a Python web server and web framework that's written to go fast. It allows the usage of the async/await syntax added in Python 3.5, which makes your code non-blocking and speedy.
 
 ```python
 from sanic import Sanic
