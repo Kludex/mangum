@@ -5,6 +5,7 @@ from urllib.parse import urlencode, unquote, unquote_plus
 from mangum.handlers.utils import (
     get_server_and_port,
     handle_base64_response_body,
+    handle_exclude_headers,
     maybe_encode_body,
 )
 from mangum.types import (
@@ -166,8 +167,10 @@ class ALB:
         # headers otherwise.
         multi_value_headers_enabled = "multiValueHeaders" in self.scope["aws.event"]
         if multi_value_headers_enabled:
-            out["multiValueHeaders"] = multi_value_headers
+            out["multiValueHeaders"] = handle_exclude_headers(
+                multi_value_headers, self.config
+            )
         else:
-            out["headers"] = finalized_headers
+            out["headers"] = handle_exclude_headers(finalized_headers, self.config)
 
         return out

@@ -372,3 +372,40 @@ def test_aws_alb_response_extra_mime_types():
         "headers": {"content-type": content_type.decode()},
         "body": utf_res_body,
     }
+
+
+@pytest.mark.parametrize("multi_value_headers_enabled", (True, False))
+def test_aws_alb_exclude_headers(multi_value_headers_enabled) -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"x-custom-header", b"test"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off", exclude_headers=["x-custom-header"])
+    event = get_mock_aws_alb_event(
+        "GET", "/test", {}, None, None, False, multi_value_headers_enabled
+    )
+    response = handler(event, {})
+
+    expected_response = {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "body": "Hello, world!",
+    }
+    if multi_value_headers_enabled:
+        expected_response["multiValueHeaders"] = {
+            "content-type": ["text/plain; charset=utf-8"],
+        }
+    else:
+        expected_response["headers"] = {
+            "content-type": "text/plain; charset=utf-8",
+        }
+    assert response == expected_response

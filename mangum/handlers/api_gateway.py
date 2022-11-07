@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from mangum.handlers.utils import (
     get_server_and_port,
     handle_base64_response_body,
+    handle_exclude_headers,
     handle_multi_value_headers,
     maybe_encode_body,
     strip_api_gateway_path,
@@ -112,7 +113,7 @@ class APIGateway:
 
     def __call__(self, response: Response) -> dict:
         finalized_headers, multi_value_headers = handle_multi_value_headers(
-            response["headers"], self.config["exclude_headers"]
+            response["headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
             response["body"], finalized_headers, self.config["text_mime_types"]
@@ -120,8 +121,10 @@ class APIGateway:
 
         return {
             "statusCode": response["status"],
-            "headers": finalized_headers,
-            "multiValueHeaders": multi_value_headers,
+            "headers": handle_exclude_headers(finalized_headers, self.config),
+            "multiValueHeaders": handle_exclude_headers(
+                multi_value_headers, self.config
+            ),
             "body": finalized_body,
             "isBase64Encoded": is_base64_encoded,
         }

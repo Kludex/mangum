@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from mangum.handlers.utils import (
     handle_base64_response_body,
+    handle_exclude_headers,
     handle_multi_value_headers,
     maybe_encode_body,
 )
@@ -88,7 +89,7 @@ class LambdaAtEdge:
 
         return {
             "status": response["status"],
-            "headers": finalized_headers,
+            "headers": handle_exclude_headers(finalized_headers, self.config),
             "body": response_body,
             "isBase64Encoded": is_base64_encoded,
         }

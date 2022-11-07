@@ -1,8 +1,8 @@
 import base64
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from urllib.parse import unquote
 
-from mangum.types import Headers
+from mangum.types import Headers, LambdaConfig
 
 
 def maybe_encode_body(body: Union[str, bytes], *, is_base64: bool) -> bytes:
@@ -40,14 +40,12 @@ def strip_api_gateway_path(path: str, *, api_gateway_base_path: str) -> str:
 
 
 def handle_multi_value_headers(
-    response_headers: Headers, exclude_headers: List[str]
+    response_headers: Headers,
 ) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
     headers: Dict[str, str] = {}
     multi_value_headers: Dict[str, List[str]] = {}
     for key, value in response_headers:
         lower_key = key.decode().lower()
-        if lower_key in exclude_headers:
-            continue
         if lower_key in multi_value_headers:
             multi_value_headers[lower_key].append(value.decode())
         elif lower_key in headers:
@@ -83,3 +81,15 @@ def handle_base64_response_body(
             is_base64_encoded = True
 
     return output_body, is_base64_encoded
+
+
+def handle_exclude_headers(
+    headers: Dict[str, Any], config: LambdaConfig
+) -> Dict[str, Any]:
+    finalized_headers = {}
+    for header_key, header_value in headers.items():
+        if header_key in config["exclude_headers"]:
+            continue
+        finalized_headers[header_key] = header_value
+
+    return finalized_headers
