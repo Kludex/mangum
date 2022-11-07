@@ -40,12 +40,14 @@ def strip_api_gateway_path(path: str, *, api_gateway_base_path: str) -> str:
 
 
 def handle_multi_value_headers(
-    response_headers: Headers,
+    response_headers: Headers, exclude_headers: List[str]
 ) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
     headers: Dict[str, str] = {}
     multi_value_headers: Dict[str, List[str]] = {}
     for key, value in response_headers:
         lower_key = key.decode().lower()
+        if lower_key in exclude_headers:
+            continue
         if lower_key in multi_value_headers:
             multi_value_headers[lower_key].append(value.decode())
         elif lower_key in headers:

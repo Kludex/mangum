@@ -112,7 +112,7 @@ class APIGateway:
 
     def __call__(self, response: Response) -> dict:
         finalized_headers, multi_value_headers = handle_multi_value_headers(
-            response["headers"]
+            response["headers"], self.config["exclude_headers"]
         )
         finalized_body, is_base64_encoded = handle_base64_response_body(
             response["body"], finalized_headers, self.config["text_mime_types"]
