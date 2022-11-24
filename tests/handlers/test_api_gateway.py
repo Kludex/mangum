@@ -401,3 +401,31 @@ def test_aws_api_gateway_response_extra_mime_types():
         "multiValueHeaders": {},
         "body": utf_res_body,
     }
+
+
+def test_aws_api_gateway_exclude_headers():
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"x-custom-header", b"test"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = get_mock_aws_api_gateway_event("GET", "/test", {}, None, False)
+
+    handler = Mangum(app, lifespan="off", exclude_headers=["X-CUSTOM-HEADER"])
+
+    response = handler(event, {})
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": b"text/plain; charset=utf-8".decode()},
+        "multiValueHeaders": {},
+        "body": "Hello world",
+    }

@@ -342,3 +342,34 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
         },
         "body": utf_res_body,
     }
+
+
+def test_aws_lambda_at_edge_exclude_():
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"x-custom-header", b"test"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = mock_lambda_at_edge_event("GET", "/test", {}, None, False)
+
+    handler = Mangum(app, lifespan="off", exclude_headers=["x-custom-header"])
+
+    response = handler(event, {})
+    assert response == {
+        "status": 200,
+        "isBase64Encoded": False,
+        "headers": {
+            "content-type": [
+                {"key": "content-type", "value": b"text/plain; charset=utf-8".decode()}
+            ]
+        },
+        "body": "Hello world",
+    }

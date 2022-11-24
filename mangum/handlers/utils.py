@@ -1,8 +1,8 @@
 import base64
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from urllib.parse import unquote
 
-from mangum.types import Headers
+from mangum.types import Headers, LambdaConfig
 
 
 def maybe_encode_body(body: Union[str, bytes], *, is_base64: bool) -> bytes:
@@ -81,3 +81,15 @@ def handle_base64_response_body(
             is_base64_encoded = True
 
     return output_body, is_base64_encoded
+
+
+def handle_exclude_headers(
+    headers: Dict[str, Any], config: LambdaConfig
+) -> Dict[str, Any]:
+    finalized_headers = {}
+    for header_key, header_value in headers.items():
+        if header_key in config["exclude_headers"]:
+            continue
+        finalized_headers[header_key] = header_value
+
+    return finalized_headers

@@ -117,6 +117,7 @@ class Response(TypedDict):
 class LambdaConfig(TypedDict):
     api_gateway_base_path: str
     text_mime_types: List[str]
+    exclude_headers: List[str]
 
 
 class LambdaHandler(Protocol):
