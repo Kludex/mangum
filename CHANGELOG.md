@@ -1,17 +1,56 @@
+# 0.17.0
+
+* Remove 3.6 reference from frameworks docs by @aminalaee in https://github.com/jordaneremieff/mangum/pull/278
+* Add new blog post to external links by @aminalaee in https://github.com/jordaneremieff/mangum/pull/279
+* Add exclude_headers parameter by @aminalaee in https://github.com/jordaneremieff/mangum/pull/280
+
+# 0.16.0
+
+* Link to deployment tutorial by @simonw in https://github.com/jordaneremieff/mangum/pull/274
+* Added text_mime_types argument by @georgebv in https://github.com/jordaneremieff/mangum/pull/277
+
+# 0.15.1
+
+* Mention that Django works fine too by @WhyNotHugo in https://github.com/jordaneremieff/mangum/pull/261
+* Add vnd.oai.openapi to mime type list that are not base64 encoded by @khamaileon in https://github.com/jordaneremieff/mangum/pull/271
+
+# 0.15.0
+
+* Relax type annotations, refactor custom handler inferences, naming by @jordaneremieff in https://github.com/jordaneremieff/mangum/pull/259
+
+# 0.14.1
+
+* Remove references to Python 3.6, update setup.py. by @jordaneremieff in https://github.com/jordaneremieff/mangum/pull/246
+
+## 0.14.0
+
+* Removing Websocket from docs by @aminalaee in https://github.com/jordaneremieff/mangum/pull/241
+* Replace abstract handlers, customer handlers, type annotations, refactoring. by @jordaneremieff in https://github.com/jordaneremieff/mangum/pull/242
+
+## 0.13.0
+
+* Remove WebSocket support and misc cleanup/removals by @jordaneremieff in https://github.com/jordaneremieff/mangum/pull/234
+* Replace awslambdaric-stubs with new types, refactor import style. by @jordaneremieff in https://github.com/jordaneremieff/mangum/pull/235
+* Improve logging by @aminalaee in https://github.com/jordaneremieff/mangum/pull/230
+
+## 0.12.4
+
+* HTTP Gateway V2: Remove use of obsolete multiValueHeaders by @IlyaSukhanov in https://github.com/jordaneremieff/mangum/pull/216
+* mypy - Argument "api_gateway_base_path" to "Mangum" has incompatible type "str"; expected "Dict[str, Any]" by @relsunkaev in https://github.com/jordaneremieff/mangum/pull/220
+* Added explicit python3.9 and 3.10 support by @relsunkaev in https://github.com/jordaneremieff/mangum/pull/224
+* Fix aws_api_gateway handler not accepting combined headers and multiValueHeaders by @Feriixu in https://github.com/jordaneremieff/mangum/pull/229
+
 ## 0.12.3
 
 * Fix unhandled `api_gateway_base_path` in `AwsHttpGateway`. [#200](https://github.com/jordaneremieff/mangum/pull/204). Thanks [xpayn](https://github.com/xpayn)!
-
 
 ## 0.12.2
 
 * Exclude `tests/` directory from package. [#200](https://github.com/jordaneremieff/mangum/pull/200). Thanks [bradsbrown](https://github.com/bradsbrown)!
 
-
 ## 0.12.1
 
 * Make `boto3` optional [#197](https://github.com/jordaneremieff/mangum/pull/197).
-
 
 ## 0.12.0
 
@@ -20,8 +59,7 @@
 * Resolve several issues with ALB/ELB support [#184](https://github.com/jordaneremieff/mangum/pull/184), [#189](https://github.com/jordaneremieff/mangum/pull/189), [#186](https://github.com/jordaneremieff/mangum/pull/186), [#182](https://github.com/jordaneremieff/mangum/pull/182). Thanks [nathanglover](https://github.com/nathanglover) & [jurasofish](https://github.com/jurasofish)!
 
 * Refactor handlers to be separate from core logic [#170](https://github.com/jordaneremieff/mangum/pull/170). Thanks [four43](https://github.com/four43)!
-
-
+  
 ## 0.11.0
 
 * Remove deprecated `enable_lifespan` parameter [#109](https://github.com/jordaneremieff/mangum/issues/109).
