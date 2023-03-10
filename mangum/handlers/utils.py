@@ -26,15 +26,15 @@ def get_server_and_port(headers: dict) -> Tuple[str, int]:
     return server
 
 
-def strip_api_gateway_path(path: str, *, api_gateway_base_path: str) -> str:
+def strip_base_path(path: str, *, base_path: str) -> str:
     if not path:
         return "/"
 
-    if api_gateway_base_path and api_gateway_base_path != "/":
-        if not api_gateway_base_path.startswith("/"):
-            api_gateway_base_path = f"/{api_gateway_base_path}"
-        if path.startswith(api_gateway_base_path):
-            path = path[len(api_gateway_base_path) :]
+    if base_path and base_path != "/":
+        if not base_path.startswith("/"):
+            base_path = f"/{base_path}"
+        if path.startswith(base_path):
+            path = path[len(base_path) :]
 
     return unquote(path)
 

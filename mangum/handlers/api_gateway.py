@@ -7,7 +7,7 @@ from mangum.handlers.utils import (
     handle_exclude_headers,
     handle_multi_value_headers,
     maybe_encode_body,
-    strip_api_gateway_path,
+    strip_base_path,
 )
 from mangum.types import (
     Response,
@@ -93,9 +93,9 @@ class APIGateway:
             "http_version": "1.1",
             "method": self.event["httpMethod"],
             "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
-            "path": strip_api_gateway_path(
+            "path": strip_base_path(
                 self.event["path"],
-                api_gateway_base_path=self.config["api_gateway_base_path"],
+                base_path=self.config["base_path"],
             ),
             "raw_path": None,
             "root_path": "",
@@ -175,9 +175,9 @@ class HTTPGateway:
             http_method = self.event["httpMethod"]
             query_string = _encode_query_string_for_apigw(self.event)
 
-        path = strip_api_gateway_path(
+        path = strip_base_path(
             path,
-            api_gateway_base_path=self.config["api_gateway_base_path"],
+            base_path=self.config["base_path"],
         )
         server = get_server_and_port(headers)
         client = (source_ip, 0)

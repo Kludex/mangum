@@ -3,6 +3,7 @@ References:
 1. https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
 2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
 """
+import urllib
 from typing import Dict, List, Optional
 
 import pytest
@@ -199,7 +200,7 @@ def test_aws_alb_scope_real(
         multi_value_headers,
     )
     example_context = {}
-    handler = ALB(event, example_context, {"api_gateway_base_path": "/"})
+    handler = ALB(event, example_context, {"base_path": "test"})
 
     scope_path = path
     if scope_path == "":
@@ -248,6 +249,81 @@ def test_aws_alb_scope_real(
         assert handler.body == scope_body
     else:
         assert handler.body == b""
+
+
+@pytest.mark.parametrize(
+    "method,path,query_parameters,headers,req_body,body_base64_encoded,"
+    "query_string,scope_body,multi_value_headers",
+    [
+        ("GET", "/test/hello/world", None, None, None, False, b"", None, False),
+    ],
+)
+def test_aws_alb_base_path(
+    method,
+    path,
+    query_parameters,
+    headers,
+    req_body,
+    body_base64_encoded,
+    query_string,
+    scope_body,
+    multi_value_headers,
+):
+    event = get_mock_aws_alb_event(
+        method,
+        path,
+        query_parameters,
+        headers,
+        req_body,
+        body_base64_encoded,
+        multi_value_headers,
+    )
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(event["path"])
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    handler = Mangum(app, lifespan="off", base_path=None)
+    response = handler(event, {})
+
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(
+            event["path"][len(f"/{base_path}") :]
+        )
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    base_path = "test"
+    handler = Mangum(app, lifespan="off", base_path=base_path)
+    response = handler(event, {})
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
 
 
 @pytest.mark.parametrize("multi_value_headers_enabled", (True, False))

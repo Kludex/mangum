@@ -196,7 +196,7 @@ def test_aws_http_gateway_scope_basic_v1():
 
     example_context = {}
     handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
+        example_event, example_context, {"base_path": "/"}
     )
 
     assert type(handler.body) == bytes
@@ -229,7 +229,7 @@ def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     del example_event["multiValueQueryStringParameters"]
     example_context = {}
     handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
+        example_event, example_context, {"base_path": "/"}
     )
     assert handler.scope["query_string"] == b"hello=world"
 
@@ -245,7 +245,7 @@ def test_aws_http_gateway_scope_v1_no_headers():
     del example_event["queryStringParameters"]
     example_context = {}
     handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
+        example_event, example_context, {"base_path": "/"}
     )
     assert handler.scope["query_string"] == b""
 
@@ -305,7 +305,7 @@ def test_aws_http_gateway_scope_basic_v2():
     }
     example_context = {}
     handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
+        example_event, example_context, {"base_path": "/"}
     )
 
     assert type(handler.body) == bytes
@@ -363,7 +363,7 @@ def test_aws_http_gateway_scope_real_v1(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
+    handler = HTTPGateway(event, example_context, {"base_path": "/"})
 
     scope_path = path
     if scope_path == "":
@@ -429,7 +429,7 @@ def test_aws_http_gateway_scope_real_v2(
         method, path, query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
+    handler = HTTPGateway(event, example_context, {"base_path": "/"})
 
     scope_path = path
     if scope_path == "":

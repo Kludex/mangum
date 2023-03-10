@@ -51,7 +51,7 @@ class CustomHandler:
 
 def test_custom_handler():
     event = {"my-custom-key": 1}
-    handler = CustomHandler(event, {}, {"api_gateway_base_path": "/"})
+    handler = CustomHandler(event, {}, {"base_path": "/"})
     assert type(handler.body) == bytes
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},

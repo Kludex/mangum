@@ -41,7 +41,7 @@ class Mangum:
         self,
         app: ASGI,
         lifespan: LifespanMode = "auto",
-        api_gateway_base_path: str = "/",
+        base_path: str = "/",
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
         text_mime_types: Optional[List[str]] = None,
         exclude_headers: Optional[List[str]] = None,
@@ -56,7 +56,7 @@ class Mangum:
         self.custom_handlers = custom_handlers or []
         exclude_headers = exclude_headers or []
         self.config = LambdaConfig(
-            api_gateway_base_path=api_gateway_base_path or "/",
+            base_path=base_path or "/",
             text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
             exclude_headers=[header.lower() for header in exclude_headers],
         )
