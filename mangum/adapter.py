@@ -1,4 +1,5 @@
 import logging
+import warnings
 from itertools import chain
 from contextlib import ExitStack
 from typing import List, Optional, Type
@@ -41,6 +42,7 @@ class Mangum:
         self,
         app: ASGI,
         lifespan: LifespanMode = "auto",
+        api_gateway_base_path: str = "/",
         base_path: str = "/",
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
         text_mime_types: Optional[List[str]] = None,
@@ -55,6 +57,14 @@ class Mangum:
         self.lifespan = lifespan
         self.custom_handlers = custom_handlers or []
         exclude_headers = exclude_headers or []
+        if api_gateway_base_path and api_gateway_base_path != "/":
+            warnings.warn(
+                "`api_gateway_base_path` parameter is deprecated and will be "
+                "removed in future versions. Please use `base_path` instead.",
+                DeprecationWarning,
+            )
+            base_path = api_gateway_base_path
+
         self.config = LambdaConfig(
             base_path=base_path or "/",
             text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
