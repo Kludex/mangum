@@ -318,6 +318,76 @@ def test_aws_base_path(
     }
 
 
+
+@pytest.mark.parametrize(
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
+    "query_string,scope_body",
+    [
+        ("GET", "/test/hello", None, None, False, b"", None),
+    ],
+)
+def test_aws_api_gateway_base_path(
+    method,
+    path,
+    multi_value_query_parameters,
+    req_body,
+    body_base64_encoded,
+    query_string,
+    scope_body,
+):
+    event = get_mock_aws_api_gateway_event(
+        method, path, multi_value_query_parameters, req_body, body_base64_encoded
+    )
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(event["path"])
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=None)
+    response = handler(event, {})
+
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(
+            event["path"][len(f"/{api_gateway_base_path}") :]
+        )
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    api_gateway_base_path = "test"
+    handler = Mangum(app, lifespan="off", api_gateway_base_path=api_gateway_base_path)
+    response = handler(event, {})
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+
 @pytest.mark.parametrize(
     "method,content_type,raw_res_body,res_body,res_base64_encoded",
     [
