@@ -318,7 +318,6 @@ def test_aws_base_path(
     }
 
 
-
 @pytest.mark.parametrize(
     "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
     "query_string,scope_body",
