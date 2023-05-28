@@ -1,10 +1,10 @@
 from typing import Dict, List
-
 from mangum.handlers.utils import (
     handle_base64_response_body,
     handle_exclude_headers,
     handle_multi_value_headers,
     maybe_encode_body,
+    TypedCachedProperty,
 )
 from mangum.types import Scope, Response, LambdaConfig, LambdaEvent, LambdaContext
 
@@ -31,7 +31,7 @@ class LambdaAtEdge:
         self.context = context
         self.config = config
 
-    @property
+    @TypedCachedProperty
     def body(self) -> bytes:
         cf_request_body = self.event["Records"][0]["cf"]["request"].get("body", {})
         return maybe_encode_body(
@@ -39,7 +39,7 @@ class LambdaAtEdge:
             is_base64=cf_request_body.get("encoding", "") == "base64",
         )
 
-    @property
+    @TypedCachedProperty
     def scope(self) -> Scope:
         cf_request = self.event["Records"][0]["cf"]["request"]
         scheme_header = cf_request["headers"].get("cloudfront-forwarded-proto", [{}])

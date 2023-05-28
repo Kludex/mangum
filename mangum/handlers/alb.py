@@ -7,6 +7,7 @@ from mangum.handlers.utils import (
     handle_base64_response_body,
     handle_exclude_headers,
     maybe_encode_body,
+    TypedCachedProperty,
 )
 from mangum.types import (
     Response,
@@ -95,16 +96,15 @@ class ALB:
         self.context = context
         self.config = config
 
-    @property
+    @TypedCachedProperty
     def body(self) -> bytes:
         return maybe_encode_body(
             self.event.get("body", b""),
             is_base64=self.event.get("isBase64Encoded", False),
         )
 
-    @property
+    @TypedCachedProperty
     def scope(self) -> Scope:
-
         headers = transform_headers(self.event)
         list_headers = [list(x) for x in headers]
         # Unique headers. If there are duplicates, it will use the last defined.

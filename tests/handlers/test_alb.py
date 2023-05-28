@@ -4,6 +4,7 @@ References:
 2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
 """
 from typing import Dict, List, Optional
+from unittest import mock
 
 import pytest
 
@@ -409,3 +410,26 @@ def test_aws_alb_exclude_headers(multi_value_headers_enabled) -> None:
             "content-type": "text/plain; charset=utf-8",
         }
     assert response == expected_response
+
+
+def test_aws_alb_scope_called_once() -> None:
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan="off")
+    event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, False)
+
+    with mock.patch(
+        "mangum.handlers.alb.transform_headers",
+    ) as mock_func:
+        handler(event, {})
+        mock_func.assert_called_once()

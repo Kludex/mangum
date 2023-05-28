@@ -1,4 +1,5 @@
 import urllib.parse
+from unittest import mock
 
 import pytest
 
@@ -429,3 +430,27 @@ def test_aws_api_gateway_exclude_headers():
         "multiValueHeaders": {},
         "body": "Hello world",
     }
+
+
+def test_aws_api_gateway_scope_called_once():
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = get_mock_aws_api_gateway_event("GET", "/test", {}, None, False)
+
+    handler = Mangum(app, lifespan="off")
+
+    with mock.patch(
+        "mangum.handlers.api_gateway._handle_multi_value_headers_for_request",
+    ) as mock_func:
+        handler(event, {})
+        mock_func.assert_called_once()
