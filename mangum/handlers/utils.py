@@ -1,5 +1,5 @@
 import base64
-from typing import Any, Dict, List, Tuple, Union, TypeVar, Callable, cast
+from typing import Any, Dict, List, Tuple, Union, TypeVar, Callable
 from urllib.parse import unquote
 from cached_property import cached_property
 from mangum.types import Headers, LambdaConfig
