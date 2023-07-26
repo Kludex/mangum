@@ -43,10 +43,7 @@ class HTTPCycle:
 
     def __call__(self, app: ASGI) -> Response:
         asgi_instance = self.run(app)
-        loop = asyncio.get_event_loop()
-        asgi_task = loop.create_task(asgi_instance)
-        loop.run_until_complete(asgi_task)
-
+        asyncio.run(asgi_instance)
         return {
             "status": self.status,
             "headers": self.headers,
@@ -93,7 +90,6 @@ class HTTPCycle:
             self.state is HTTPCycleState.RESPONSE
             and message["type"] == "http.response.body"
         ):
-
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
             self.buffer.write(body)
