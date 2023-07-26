@@ -57,12 +57,15 @@ class LifespanCycle:
         self.lifespan = lifespan
         self.state: LifespanCycleState = LifespanCycleState.CONNECTING
         self.exception: Optional[BaseException] = None
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
         self.logger = logging.getLogger("mangum.lifespan")
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
     def __enter__(self) -> None:
         """Runs the event loop for application startup."""
