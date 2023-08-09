@@ -3,6 +3,7 @@ import enum
 import logging
 from types import TracebackType
 from typing import Optional, Type
+import sys
 
 from mangum.types import ASGI, LifespanMode, Message
 from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
@@ -61,11 +62,14 @@ class LifespanCycle:
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
         self.logger = logging.getLogger("mangum.lifespan")
-        try:
-            self.loop = asyncio.get_running_loop()
-        except RuntimeError:
-            self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        if sys.version_info < (3, 10):
+            self.loop = asyncio.get_event_loop()
+        else:
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
 
     def __enter__(self) -> None:
         """Runs the event loop for application startup."""

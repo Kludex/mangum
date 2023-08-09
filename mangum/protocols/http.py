@@ -2,6 +2,7 @@ import asyncio
 import enum
 import logging
 from io import BytesIO
+import sys
 
 from mangum.types import ASGI, Message, Scope, Response
 from mangum.exceptions import UnexpectedMessage
@@ -43,7 +44,13 @@ class HTTPCycle:
 
     def __call__(self, app: ASGI) -> Response:
         asgi_instance = self.run(app)
-        asyncio.run(asgi_instance)
+        if sys.version_info < (3, 10):
+            loop = asyncio.get_event_loop()
+            asgi_task = loop.create_task(asgi_instance)
+            loop.run_until_complete(asgi_task)
+        else:
+            asyncio.run(asgi_instance)
+
         return {
             "status": self.status,
             "headers": self.headers,

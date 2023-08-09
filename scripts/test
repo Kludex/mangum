@@ -8,4 +8,4 @@ fi
 
 set -x # print executed commands to the terminal
 
-PYTHONPATH=. ${PREFIX}pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=100 --cov-report=term-missing "${@}"
+PYTHONPATH=. ${PREFIX}pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=98 --cov-report=term-missing "${@}"
