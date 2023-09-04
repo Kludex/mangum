@@ -98,7 +98,7 @@ handler = Mangum(app)
 
 ### Responder
 
-[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](https://mangum.io/asgi/#limitations) section for more details.
+[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](https://mangum.io/asgi-frameworks/#limitations) section for more details.
 
 ```python
 from mangum import Mangum
