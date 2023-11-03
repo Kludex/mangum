@@ -11,3 +11,4 @@ brotli
 brotli-asgi
 mkdocs
 mkdocs-material
+cached-property

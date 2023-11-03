@@ -1,8 +1,11 @@
 import base64
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, TypeVar, Callable
 from urllib.parse import unquote
-
+from cached_property import cached_property
 from mangum.types import Headers, LambdaConfig
+
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def maybe_encode_body(body: Union[str, bytes], *, is_base64: bool) -> bytes:
@@ -93,3 +96,8 @@ def handle_exclude_headers(
         finalized_headers[header_key] = header_value
 
     return finalized_headers
+
+
+class TypedCachedProperty(cached_property):
+    def __init__(self, func: F) -> None:
+        super().__init__(func)

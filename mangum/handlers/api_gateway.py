@@ -1,6 +1,5 @@
 from typing import Dict, List, Tuple
 from urllib.parse import urlencode
-
 from mangum.handlers.utils import (
     get_server_and_port,
     handle_base64_response_body,
@@ -8,6 +7,7 @@ from mangum.handlers.utils import (
     handle_multi_value_headers,
     maybe_encode_body,
     strip_api_gateway_path,
+    TypedCachedProperty,
 )
 from mangum.types import (
     Response,
@@ -78,14 +78,14 @@ class APIGateway:
         self.context = context
         self.config = config
 
-    @property
+    @TypedCachedProperty
     def body(self) -> bytes:
         return maybe_encode_body(
             self.event.get("body", b""),
             is_base64=self.event.get("isBase64Encoded", False),
         )
 
-    @property
+    @TypedCachedProperty
     def scope(self) -> Scope:
         headers = _handle_multi_value_headers_for_request(self.event)
         return {
@@ -144,14 +144,14 @@ class HTTPGateway:
         self.context = context
         self.config = config
 
-    @property
+    @TypedCachedProperty
     def body(self) -> bytes:
         return maybe_encode_body(
             self.event.get("body", b""),
             is_base64=self.event.get("isBase64Encoded", False),
         )
 
-    @property
+    @TypedCachedProperty
     def scope(self) -> Scope:
         request_context = self.event["requestContext"]
         event_version = self.event["version"]

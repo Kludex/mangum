@@ -1,4 +1,5 @@
 import urllib.parse
+from unittest import mock
 
 import pytest
 
@@ -687,3 +688,25 @@ def test_aws_http_gateway_response_v2_extra_mime_types():
         "headers": {"content-type": content_type.decode()},
         "body": utf_res_body,
     }
+
+
+def test_aws_http_gateway_scope_called_once():
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"header1", b"value1"], [b"header2", b"value1, value2"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = get_mock_aws_http_gateway_event_v2("GET", "/test", {}, None, False)
+
+    handler = Mangum(app, lifespan="off")
+
+    with mock.patch(
+        "mangum.handlers.api_gateway.strip_api_gateway_path",
+    ) as mock_func:
+        handler(event, {})
+        mock_func.assert_called_once()

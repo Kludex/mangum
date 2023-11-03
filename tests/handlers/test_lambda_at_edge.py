@@ -1,4 +1,5 @@
 import urllib.parse
+from unittest import mock
 
 import pytest
 
@@ -373,3 +374,24 @@ def test_aws_lambda_at_edge_exclude_():
         },
         "body": "Hello world",
     }
+
+
+def test_aws_lambda_at_edge_scope_called_once():
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = mock_lambda_at_edge_event("GET", "/test", {}, None, False)
+    handler = Mangum(app, lifespan="off")
+
+    with mock.patch.object(
+        LambdaAtEdge, "context", new_callable=mock.PropertyMock, create=True
+    ) as mock_ctx:
+        handler(event, {})
+        assert mock_ctx.call_count == 2
