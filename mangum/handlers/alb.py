@@ -7,6 +7,7 @@ from mangum.handlers.utils import (
     handle_base64_response_body,
     handle_exclude_headers,
     maybe_encode_body,
+    strip_base_path,
 )
 from mangum.types import (
     Response,
@@ -104,7 +105,6 @@ class ALB:
 
     @property
     def scope(self) -> Scope:
-
         headers = transform_headers(self.event)
         list_headers = [list(x) for x in headers]
         # Unique headers. If there are duplicates, it will use the last defined.
@@ -130,7 +130,10 @@ class ALB:
             "method": http_method,
             "http_version": "1.1",
             "headers": list_headers,
-            "path": path,
+            "path": strip_base_path(
+                path,
+                base_path=self.config["base_path"],
+            ),
             "raw_path": None,
             "root_path": "",
             "scheme": uq_headers.get("x-forwarded-proto", "https"),

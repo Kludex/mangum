@@ -134,9 +134,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
         ]
     }
     example_context = {}
-    handler = LambdaAtEdge(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = LambdaAtEdge(example_event, example_context, {"base_path": "/"})
 
     assert type(handler.body) == bytes
     assert handler.scope == {
@@ -225,7 +223,7 @@ def test_aws_api_gateway_scope_real(
         method, path, multi_value_query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = LambdaAtEdge(event, example_context, {"api_gateway_base_path": "/"})
+    handler = LambdaAtEdge(event, example_context, {"base_path": "/"})
 
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},

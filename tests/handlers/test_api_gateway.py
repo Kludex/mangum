@@ -103,7 +103,7 @@ def test_aws_api_gateway_scope_basic():
         "isBase64Encoded": False,
     }
     example_context = {}
-    handler = APIGateway(example_event, example_context, {"api_gateway_base_path": "/"})
+    handler = APIGateway(example_event, example_context, {"base_path": "/"})
 
     assert type(handler.body) == bytes
     assert handler.scope == {
@@ -200,7 +200,7 @@ def test_aws_api_gateway_scope_real(
         method, path, multi_value_query_parameters, req_body, body_base64_encoded
     )
     example_context = {}
-    handler = APIGateway(event, example_context, {"api_gateway_base_path": "/"})
+    handler = APIGateway(event, example_context, {"base_path": "/"})
 
     scope_path = path
     if scope_path == "":
@@ -247,6 +247,75 @@ def test_aws_api_gateway_scope_real(
         assert handler.body == scope_body
     else:
         assert handler.body == b""
+
+
+@pytest.mark.parametrize(
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
+    "query_string,scope_body",
+    [
+        ("GET", "/test/hello", None, None, False, b"", None),
+    ],
+)
+def test_aws_base_path(
+    method,
+    path,
+    multi_value_query_parameters,
+    req_body,
+    body_base64_encoded,
+    query_string,
+    scope_body,
+):
+    event = get_mock_aws_api_gateway_event(
+        method, path, multi_value_query_parameters, req_body, body_base64_encoded
+    )
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(event["path"])
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    handler = Mangum(app, lifespan="off", base_path=None)
+    response = handler(event, {})
+
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    async def app(scope, receive, send):
+        assert scope["type"] == "http"
+        assert scope["path"] == urllib.parse.unquote(
+            event["path"][len(f"/{base_path}") :]
+        )
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    base_path = "test"
+    handler = Mangum(app, lifespan="off", base_path=base_path)
+    response = handler(event, {})
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
 
 
 @pytest.mark.parametrize(
