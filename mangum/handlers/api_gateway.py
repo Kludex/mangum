@@ -64,6 +64,19 @@ def _combine_headers_v2(
     return output_headers, cookies
 
 
+def _infer_root_path(event: LambdaEvent) -> str:
+    # This is the full path, as received by API Gateway
+    request_path = event.get("requestContext", {}).get("path", "")
+    # This is the relative path of the resource within API Gateway
+    resource_path = event.get("path", "")
+
+    root_path = ""
+    if request_path.endswith(resource_path):
+        root_path = request_path[: -len(resource_path)]
+
+    return root_path
+
+
 class APIGateway:
     @classmethod
     def infer(
@@ -98,7 +111,9 @@ class APIGateway:
                 api_gateway_base_path=self.config["api_gateway_base_path"],
             ),
             "raw_path": None,
-            "root_path": "",
+            "root_path": _infer_root_path(self.event)
+            if self.config.get("api_gateway_infer_root_path", False)
+            else "",
             "scheme": headers.get("x-forwarded-proto", "https"),
             "query_string": _encode_query_string_for_apigw(self.event),
             "server": get_server_and_port(headers),

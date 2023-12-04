@@ -3,7 +3,7 @@ import urllib.parse
 import pytest
 
 from mangum import Mangum
-from mangum.handlers.api_gateway import APIGateway
+from mangum.handlers.api_gateway import APIGateway, _infer_root_path
 
 
 def get_mock_aws_api_gateway_event(
@@ -36,6 +36,7 @@ def get_mock_aws_api_gateway_event(
             "accountId": "123456789012",
             "resourceId": "us4z18",
             "stage": "Prod",
+            "path": f"/Prod{path}",
             "requestId": "41b45ea3-70b5-11e6-b7bd-69b5aaebc7d9",
             "identity": {
                 "cognitoIdentityPoolId": "",
@@ -429,3 +430,89 @@ def test_aws_api_gateway_exclude_headers():
         "multiValueHeaders": {},
         "body": "Hello world",
     }
+
+
+@pytest.mark.parametrize(
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
+    "query_string,scope_body",
+    [
+        ("GET", "/test/hello", None, None, False, b"", None),
+    ],
+)
+def test_aws_api_gateway_root_path(
+    method,
+    path,
+    multi_value_query_parameters,
+    req_body,
+    body_base64_encoded,
+    query_string,
+    scope_body,
+):
+    event = get_mock_aws_api_gateway_event(
+        method, path, multi_value_query_parameters, req_body, body_base64_encoded
+    )
+
+    # Test with root path inferred
+    async def app(scope, receive, send):
+        assert scope["root_path"] == "/Prod"
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    handler = Mangum(app, lifespan="off", api_gateway_infer_root_path=True)
+    response = handler(event, {})
+
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+    # Test without root path inferred
+    async def app(scope, receive, send):
+        assert scope["root_path"] == ""
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world!"})
+
+    handler = Mangum(app, lifespan="off", api_gateway_infer_root_path=False)
+    response = handler(event, {})
+    assert response == {
+        "body": "Hello world!",
+        "headers": {"content-type": "text/plain"},
+        "multiValueHeaders": {},
+        "isBase64Encoded": False,
+        "statusCode": 200,
+    }
+
+
+@pytest.mark.parametrize(
+    "path,requestPath,root_path",
+    [
+        ("/", "/", ""),
+        ("/", "/Prod", ""),
+        ("/", "/Prod/", "/Prod"),
+        ("/some/path", "/Prod/", ""),
+        ("/some/path", "/Prod/some/path", "/Prod"),
+        ("/baz", "/foo/bar/baz", "/foo/bar"),
+        ("/foo", "/fooo", ""),
+        ("/fooo", "/foo", ""),
+    ],
+)
+def test_infer_root_path(path, requestPath, root_path):
+    assert (
+        _infer_root_path({"path": path, "requestContext": {"path": requestPath}})
+        == root_path
+    )

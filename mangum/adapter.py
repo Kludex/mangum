@@ -45,6 +45,7 @@ class Mangum:
         custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
         text_mime_types: Optional[List[str]] = None,
         exclude_headers: Optional[List[str]] = None,
+        api_gateway_infer_root_path: bool = False,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
@@ -57,6 +58,7 @@ class Mangum:
         exclude_headers = exclude_headers or []
         self.config = LambdaConfig(
             api_gateway_base_path=api_gateway_base_path or "/",
+            api_gateway_infer_root_path=api_gateway_infer_root_path,
             text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
             exclude_headers=[header.lower() for header in exclude_headers],
         )

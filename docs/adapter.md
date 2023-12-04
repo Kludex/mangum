@@ -9,6 +9,7 @@ handler = Mangum(
     api_gateway_base_path=None,
     custom_handlers=None,
     text_mime_types=None,
+    api_gateway_infer_root_path=False
 )
 ```
 

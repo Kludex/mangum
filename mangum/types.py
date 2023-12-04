@@ -116,6 +116,7 @@ class Response(TypedDict):
 
 class LambdaConfig(TypedDict):
     api_gateway_base_path: str
+    api_gateway_infer_root_path: bool
     text_mime_types: List[str]
     exclude_headers: List[str]
 
