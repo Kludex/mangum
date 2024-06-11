@@ -1,20 +1,19 @@
 import logging
-from itertools import chain
 from contextlib import ExitStack
+from itertools import chain
 from typing import List, Optional, Type
 
-from mangum.protocols import HTTPCycle, LifespanCycle
-from mangum.handlers import ALB, HTTPGateway, APIGateway, LambdaAtEdge
 from mangum.exceptions import ConfigurationError
+from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
+from mangum.protocols import HTTPCycle, LifespanCycle
 from mangum.types import (
     ASGI,
-    LifespanMode,
     LambdaConfig,
-    LambdaEvent,
     LambdaContext,
+    LambdaEvent,
     LambdaHandler,
+    LifespanMode,
 )
-
 
 logger = logging.getLogger("mangum")
 
@@ -72,12 +71,14 @@ class Mangum:
 
     def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict:
         handler = self.infer(event, context)
+        scope = handler.scope
         with ExitStack() as stack:
             if self.lifespan in ("auto", "on"):
                 lifespan_cycle = LifespanCycle(self.app, self.lifespan)
                 stack.enter_context(lifespan_cycle)
+                scope |= {"state": lifespan_cycle.lifespan_state.copy()}
 
-            http_cycle = HTTPCycle(handler.scope, handler.body)
+            http_cycle = HTTPCycle(scope, handler.body)
             http_response = http_cycle(self.app)
 
             return handler(http_response)
