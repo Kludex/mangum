@@ -65,7 +65,7 @@ class Mangum:
             if self.lifespan in ("auto", "on"):
                 lifespan_cycle = LifespanCycle(self.app, self.lifespan)
                 stack.enter_context(lifespan_cycle)
-                scope |= {"state": lifespan_cycle.lifespan_state.copy()}
+                scope.update({"state": lifespan_cycle.lifespan_state.copy()})
 
             http_cycle = HTTPCycle(scope, handler.body)
             http_response = http_cycle(self.app)
