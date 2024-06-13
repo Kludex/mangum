@@ -2,10 +2,10 @@ import asyncio
 import enum
 import logging
 from types import TracebackType
-from typing import Optional, Type, Any
+from typing import Any, Dict, Optional, Type
 
+from mangum.exceptions import LifespanFailure, LifespanUnsupported, UnexpectedMessage
 from mangum.types import ASGI, LifespanMode, Message
-from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
 
 
 class LifespanCycleState(enum.Enum):
@@ -62,7 +62,7 @@ class LifespanCycle:
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
         self.logger = logging.getLogger("mangum.lifespan")
-        self.lifespan_state: dict[str, Any] = {}
+        self.lifespan_state: Dict[str, Any] = {}
 
     def __enter__(self) -> None:
         """Runs the event loop for application startup."""

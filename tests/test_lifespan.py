@@ -1,14 +1,12 @@
 import logging
 
 import pytest
-
+from quart import Quart
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
-
-from quart import Quart
 
 
 @pytest.mark.parametrize(
@@ -209,6 +207,58 @@ def test_lifespan_failure(mock_aws_api_gateway_event, lifespan, failure_type) ->
 
     with pytest.raises(LifespanFailure):
         handler(mock_aws_api_gateway_event, {})
+
+
+@pytest.mark.parametrize(
+    "mock_aws_api_gateway_event,lifespan_state,lifespan",
+    [
+        (["GET", None, None], {"test_key": "test_value"}, "auto"),
+        (["GET", None, None], {"test_key": "test_value"}, "on"),
+    ],
+    indirect=["mock_aws_api_gateway_event"],
+)
+def test_lifespan_state(mock_aws_api_gateway_event, lifespan_state, lifespan) -> None:
+    startup_complete = False
+    shutdown_complete = False
+
+    async def app(scope, receive, send):
+        nonlocal startup_complete, shutdown_complete
+
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    scope["state"].update(lifespan_state)
+                    await send({"type": "lifespan.startup.complete"})
+                    startup_complete = True
+                elif message["type"] == "lifespan.shutdown":
+                    await send({"type": "lifespan.shutdown.complete"})
+                    shutdown_complete = True
+                    return
+
+        if scope["type"] == "http":
+            assert lifespan_state.items() <= scope["state"].items()
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"Hello, world!"})
+
+    handler = Mangum(app, lifespan=lifespan)
+    response = handler(mock_aws_api_gateway_event, {})
+
+    assert startup_complete
+    assert shutdown_complete
+    assert response == {
+        "statusCode": 200,
+        "isBase64Encoded": False,
+        "headers": {"content-type": "text/plain; charset=utf-8"},
+        "multiValueHeaders": {},
+        "body": "Hello, world!",
+    }
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
