@@ -6,16 +6,13 @@ from mangum import Mangum
 from mangum.handlers.api_gateway import APIGateway
 
 
-def get_mock_aws_api_gateway_event(
-    method, path, multi_value_query_parameters, body, body_base64_encoded
-):
+def get_mock_aws_api_gateway_event(method, path, multi_value_query_parameters, body, body_base64_encoded):
     return {
         "path": path,
         "body": body,
         "isBase64Encoded": body_base64_encoded,
         "headers": {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
-            "image/webp,*/*;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9," "image/webp,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
             "Accept-Language": "en-US,en;q=0.8",
             "CloudFront-Forwarded-Proto": "https",
@@ -58,11 +55,9 @@ def get_mock_aws_api_gateway_event(
         },
         "resource": "/{proxy+}",
         "httpMethod": method,
-        "multiValueQueryStringParameters": {
-            k: v for k, v in multi_value_query_parameters.items()
-        }
-        if multi_value_query_parameters
-        else None,
+        "multiValueQueryStringParameters": (
+            {k: v for k, v in multi_value_query_parameters.items()} if multi_value_query_parameters else None
+        ),
         "stageVariables": {"stageVarName": "stageVarValue"},
     }
 
@@ -105,7 +100,7 @@ def test_aws_api_gateway_scope_basic():
     example_context = {}
     handler = APIGateway(example_event, example_context, {"api_gateway_base_path": "/"})
 
-    assert type(handler.body) == bytes
+    assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
@@ -142,8 +137,7 @@ def test_aws_api_gateway_scope_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
-    "query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded," "query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         (
@@ -196,9 +190,7 @@ def test_aws_api_gateway_scope_real(
     query_string,
     scope_body,
 ):
-    event = get_mock_aws_api_gateway_event(
-        method, path, multi_value_query_parameters, req_body, body_base64_encoded
-    )
+    event = get_mock_aws_api_gateway_event(method, path, multi_value_query_parameters, req_body, body_base64_encoded)
     example_context = {}
     handler = APIGateway(event, example_context, {"api_gateway_base_path": "/"})
 
@@ -214,8 +206,7 @@ def test_aws_api_gateway_scope_real(
         "headers": [
             [
                 b"accept",
-                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/"
-                b"webp,*/*;q=0.8",
+                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/" b"webp,*/*;q=0.8",
             ],
             [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
             [b"accept-language", b"en-US,en;q=0.8"],
@@ -250,8 +241,7 @@ def test_aws_api_gateway_scope_real(
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,"
-    "query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded," "query_string,scope_body",
     [
         ("GET", "/test/hello", None, None, False, b"", None),
     ],
@@ -265,9 +255,7 @@ def test_aws_api_gateway_base_path(
     query_string,
     scope_body,
 ):
-    event = get_mock_aws_api_gateway_event(
-        method, path, multi_value_query_parameters, req_body, body_base64_encoded
-    )
+    event = get_mock_aws_api_gateway_event(method, path, multi_value_query_parameters, req_body, body_base64_encoded)
 
     async def app(scope, receive, send):
         assert scope["type"] == "http"
@@ -294,9 +282,7 @@ def test_aws_api_gateway_base_path(
 
     async def app(scope, receive, send):
         assert scope["type"] == "http"
-        assert scope["path"] == urllib.parse.unquote(
-            event["path"][len(f"/{api_gateway_base_path}") :]
-        )
+        assert scope["path"] == urllib.parse.unquote(event["path"][len(f"/{api_gateway_base_path}") :])
         await send(
             {
                 "type": "http.response.start",
@@ -333,9 +319,7 @@ def test_aws_api_gateway_base_path(
         ),
     ],
 )
-def test_aws_api_gateway_response(
-    method, content_type, raw_res_body, res_body, res_base64_encoded
-):
+def test_aws_api_gateway_response(method, content_type, raw_res_body, res_body, res_base64_encoded):
     async def app(scope, receive, send):
         await send(
             {

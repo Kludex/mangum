@@ -11,22 +11,14 @@ from mangum.types import Scope, Response, LambdaConfig, LambdaEvent, LambdaConte
 
 class LambdaAtEdge:
     @classmethod
-    def infer(
-        cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> bool:
-        return (
-            "Records" in event
-            and len(event["Records"]) > 0
-            and "cf" in event["Records"][0]
-        )
+    def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool:
+        return "Records" in event and len(event["Records"]) > 0 and "cf" in event["Records"][0]
 
         # FIXME: Since this is the last in the chain it doesn't get coverage by default,
         # # just ignoring it for now.
         # return None  # pragma: nocover
 
-    def __init__(
-        self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> None:
+    def __init__(self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> None:
         self.event = event
         self.context = context
         self.config = config
@@ -61,10 +53,7 @@ class LambdaAtEdge:
             "type": "http",
             "method": http_method,
             "http_version": "1.1",
-            "headers": [
-                [k.encode(), v[0]["value"].encode()]
-                for k, v in cf_request["headers"].items()
-            ],
+            "headers": [[k.encode(), v[0]["value"].encode()] for k, v in cf_request["headers"].items()],
             "path": cf_request["uri"],
             "raw_path": None,
             "root_path": "",

@@ -9,14 +9,10 @@ from mangum.types import (
 
 class CustomHandler:
     @classmethod
-    def infer(
-        cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> bool:
+    def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool:
         return "my-custom-key" in event
 
-    def __init__(
-        self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> None:
+    def __init__(self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> None:
         self.event = event
         self.context = context
         self.config = config
@@ -52,7 +48,7 @@ class CustomHandler:
 def test_custom_handler():
     event = {"my-custom-key": 1}
     handler = CustomHandler(event, {}, {"api_gateway_base_path": "/"})
-    assert type(handler.body) == bytes
+    assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},

@@ -47,9 +47,7 @@ class Mangum:
         exclude_headers: Optional[List[str]] = None,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
-            raise ConfigurationError(
-                "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
-            )
+            raise ConfigurationError("Invalid argument supplied for `lifespan`. Choices are: auto|on|off")
 
         self.app = app
         self.lifespan = lifespan

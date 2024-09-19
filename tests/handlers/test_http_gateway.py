@@ -6,9 +6,7 @@ from mangum import Mangum
 from mangum.handlers.api_gateway import HTTPGateway
 
 
-def get_mock_aws_http_gateway_event_v1(
-    method, path, query_parameters, body, body_base64_encoded
-):
+def get_mock_aws_http_gateway_event_v1(method, path, query_parameters, body, body_base64_encoded):
     query_string = urllib.parse.urlencode(query_parameters if query_parameters else {})
     return {
         "version": "1.0",
@@ -27,12 +25,8 @@ def get_mock_aws_http_gateway_event_v1(
             "x-forwarded-proto": ["https"],
             "host": ["test.execute-api.us-west-2.amazonaws.com"],
         },
-        "queryStringParameters": {k: v[0] for k, v in query_parameters.items()}
-        if query_parameters
-        else {},
-        "multiValueQueryStringParameters": {k: v for k, v in query_parameters.items()}
-        if query_parameters
-        else {},
+        "queryStringParameters": ({k: v[0] for k, v in query_parameters.items()} if query_parameters else {}),
+        "multiValueQueryStringParameters": ({k: v for k, v in query_parameters.items()} if query_parameters else {}),
         "requestContext": {
             "accountId": "123456789012",
             "apiId": "id",
@@ -81,9 +75,7 @@ def get_mock_aws_http_gateway_event_v1(
     }
 
 
-def get_mock_aws_http_gateway_event_v2(
-    method, path, query_parameters, body, body_base64_encoded
-):
+def get_mock_aws_http_gateway_event_v2(method, path, query_parameters, body, body_base64_encoded):
     query_string = urllib.parse.urlencode(query_parameters if query_parameters else {})
     return {
         "version": "2.0",
@@ -97,9 +89,7 @@ def get_mock_aws_http_gateway_event_v2(
             "x-forwarded-proto": "https",
             "host": "test.execute-api.us-west-2.amazonaws.com",
         },
-        "queryStringParameters": {k: v[0] for k, v in query_parameters.items()}
-        if query_parameters
-        else {},
+        "queryStringParameters": ({k: v[0] for k, v in query_parameters.items()} if query_parameters else {}),
         "requestContext": {
             "accountId": "123456789012",
             "apiId": "api-id",
@@ -195,11 +185,9 @@ def test_aws_http_gateway_scope_basic_v1():
     }
 
     example_context = {}
-    handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = HTTPGateway(example_event, example_context, {"api_gateway_base_path": "/"})
 
-    assert type(handler.body) == bytes
+    assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
@@ -223,14 +211,10 @@ def test_aws_http_gateway_scope_v1_only_non_multi_headers():
     Ensure only queryStringParameters headers still works (unsure if this is possible
     from HTTP Gateway)
     """
-    example_event = get_mock_aws_http_gateway_event_v1(
-        "GET", "/test", {"hello": ["world", "life"]}, None, False
-    )
+    example_event = get_mock_aws_http_gateway_event_v1("GET", "/test", {"hello": ["world", "life"]}, None, False)
     del example_event["multiValueQueryStringParameters"]
     example_context = {}
-    handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = HTTPGateway(example_event, example_context, {"api_gateway_base_path": "/"})
     assert handler.scope["query_string"] == b"hello=world"
 
 
@@ -238,15 +222,11 @@ def test_aws_http_gateway_scope_v1_no_headers():
     """
     Ensure no headers still works (unsure if this is possible from HTTP Gateway)
     """
-    example_event = get_mock_aws_http_gateway_event_v1(
-        "GET", "/test", {"hello": ["world", "life"]}, None, False
-    )
+    example_event = get_mock_aws_http_gateway_event_v1("GET", "/test", {"hello": ["world", "life"]}, None, False)
     del example_event["multiValueQueryStringParameters"]
     del example_event["queryStringParameters"]
     example_context = {}
-    handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = HTTPGateway(example_event, example_context, {"api_gateway_base_path": "/"})
     assert handler.scope["query_string"] == b""
 
 
@@ -304,11 +284,9 @@ def test_aws_http_gateway_scope_basic_v2():
         "stageVariables": {"stageVariable1": "value1", "stageVariable2": "value2"},
     }
     example_context = {}
-    handler = HTTPGateway(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = HTTPGateway(example_event, example_context, {"api_gateway_base_path": "/"})
 
-    assert type(handler.body) == bytes
+    assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
@@ -359,9 +337,7 @@ def test_aws_http_gateway_scope_real_v1(
     query_string,
     scope_body,
 ) -> None:
-    event = get_mock_aws_http_gateway_event_v1(
-        method, path, query_parameters, req_body, body_base64_encoded
-    )
+    event = get_mock_aws_http_gateway_event_v1(method, path, query_parameters, req_body, body_base64_encoded)
     example_context = {}
     handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
 
@@ -425,9 +401,7 @@ def test_aws_http_gateway_scope_real_v2(
     query_string,
     scope_body,
 ) -> None:
-    event = get_mock_aws_http_gateway_event_v2(
-        method, path, query_parameters, req_body, body_base64_encoded
-    )
+    event = get_mock_aws_http_gateway_event_v2(method, path, query_parameters, req_body, body_base64_encoded)
     example_context = {}
     handler = HTTPGateway(event, example_context, {"api_gateway_base_path": "/"})
 
@@ -494,9 +468,7 @@ def test_aws_http_gateway_scope_real_v2(
         ),
     ],
 )
-def test_aws_http_gateway_response_v1(
-    method, content_type, raw_res_body, res_body, res_base64_encoded
-):
+def test_aws_http_gateway_response_v1(method, content_type, raw_res_body, res_body, res_base64_encoded):
     """
     Test response types make sense. v1 does less magic than v2.
     """
@@ -564,9 +536,7 @@ def test_aws_http_gateway_response_v1(
         ),
     ],
 )
-def test_aws_http_gateway_response_v2(
-    method, content_type, raw_res_body, res_body, res_base64_encoded
-):
+def test_aws_http_gateway_response_v2(method, content_type, raw_res_body, res_body, res_base64_encoded):
     async def app(scope, receive, send):
         headers = []
         if content_type is not None:

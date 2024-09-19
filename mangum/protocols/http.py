@@ -82,17 +82,11 @@ class HTTPCycle:
         return await self.app_queue.get()  # pragma: no cover
 
     async def send(self, message: Message) -> None:
-        if (
-            self.state is HTTPCycleState.REQUEST
-            and message["type"] == "http.response.start"
-        ):
+        if self.state is HTTPCycleState.REQUEST and message["type"] == "http.response.start":
             self.status = message["status"]
             self.headers = message.get("headers", [])
             self.state = HTTPCycleState.RESPONSE
-        elif (
-            self.state is HTTPCycleState.RESPONSE
-            and message["type"] == "http.response.body"
-        ):
+        elif self.state is HTTPCycleState.RESPONSE and message["type"] == "http.response.body":
 
             body = message.get("body", b"")
             more_body = message.get("more_body", False)

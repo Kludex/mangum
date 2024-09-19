@@ -86,8 +86,7 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
             "headers": [
                 [
                     b"accept",
-                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/"
-                    b"webp,*/*;q=0.8",
+                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/" b"webp,*/*;q=0.8",
                 ],
                 [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
                 [b"accept-language", b"en-US,en;q=0.8"],
@@ -133,16 +132,12 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "multiValueHeaders": {
-            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]
-        },
+        "multiValueHeaders": {"set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]},
         "body": "Hello, world!",
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
 def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         await send({"type": "http.response.start", "status": 200})
@@ -160,9 +155,7 @@ def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
 def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
     path = mock_aws_api_gateway_event["path"]
     app = Starlette()
@@ -188,9 +181,7 @@ def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
 def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
@@ -223,9 +214,7 @@ def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
 def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
     body = json.dumps({"abc": "defg"})
 
@@ -288,9 +277,7 @@ def test_set_cookies_v2(mock_http_api_event_v2) -> None:
                     "x-forwarded-proto": "https",
                     "host": "test.execute-api.us-west-2.amazonaws.com",
                 },
-                "queryStringParameters": mock_http_api_event_v2[
-                    "queryStringParameters"
-                ],
+                "queryStringParameters": mock_http_api_event_v2["queryStringParameters"],
                 "requestContext": {
                     "accountId": "123456789012",
                     "apiId": "api-id",
@@ -407,12 +394,8 @@ def test_set_cookies_v1(mock_http_api_event_v1) -> None:
                     "x-forwarded-proto": "https",
                     "host": "test.execute-api.us-west-2.amazonaws.com",
                 },
-                "queryStringParameters": mock_http_api_event_v1[
-                    "queryStringParameters"
-                ],
-                "multiValueQueryStringParameters": mock_http_api_event_v1[
-                    "multiValueQueryStringParameters"
-                ],
+                "queryStringParameters": mock_http_api_event_v1["queryStringParameters"],
+                "multiValueQueryStringParameters": mock_http_api_event_v1["multiValueQueryStringParameters"],
                 "requestContext": {
                     "accountId": "123456789012",
                     "apiId": "api-id",
@@ -480,16 +463,12 @@ def test_set_cookies_v1(mock_http_api_event_v1) -> None:
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
-        "multiValueHeaders": {
-            "set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]
-        },
+        "multiValueHeaders": {"set-cookie": ["cookie1=cookie1; Secure", "cookie2=cookie2; Secure"]},
         "body": "Hello, world!",
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
 def test_http_empty_header(mock_aws_api_gateway_event) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
@@ -552,8 +531,7 @@ def test_http_response_headers(
             {
                 "type": "http.response.start",
                 "status": 200,
-                "headers": [[b"content-type", b"text/plain; charset=utf-8"]]
-                + response_headers,
+                "headers": [[b"content-type", b"text/plain; charset=utf-8"]] + response_headers,
             }
         )
         await send({"type": "http.response.body", "body": b"Hello, world!"})
@@ -574,9 +552,7 @@ def test_http_response_headers(
     assert response == expected
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", "", None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
 def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
     body = json.dumps({"abc": "defg"})
 
@@ -605,9 +581,7 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
     assert response["body"] == base64.b64encode(brotli.compress(body.encode())).decode()
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
 def test_http_logging(mock_aws_api_gateway_event, caplog) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
