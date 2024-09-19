@@ -58,9 +58,9 @@ def encode_query_string_for_alb(params: QueryParams) -> bytes:
         "them. You must decode them in your Lambda function."
     """
     params = {
-        unquote_plus(key): unquote_plus(value)
-        if isinstance(value, str)
-        else tuple(unquote_plus(element) for element in value)
+        unquote_plus(key): (
+            unquote_plus(value) if isinstance(value, str) else tuple(unquote_plus(element) for element in value)
+        )
         for key, value in params.items()
     }
     query_string = urlencode(params, doseq=True).encode()
@@ -83,14 +83,10 @@ def transform_headers(event: LambdaEvent) -> List[Tuple[bytes, bytes]]:
 
 class ALB:
     @classmethod
-    def infer(
-        cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> bool:
+    def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool:
         return "requestContext" in event and "elb" in event["requestContext"]
 
-    def __init__(
-        self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig
-    ) -> None:
+    def __init__(self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> None:
         self.event = event
         self.context = context
         self.config = config
@@ -167,9 +163,7 @@ class ALB:
         # headers otherwise.
         multi_value_headers_enabled = "multiValueHeaders" in self.scope["aws.event"]
         if multi_value_headers_enabled:
-            out["multiValueHeaders"] = handle_exclude_headers(
-                multi_value_headers, self.config
-            )
+            out["multiValueHeaders"] = handle_exclude_headers(multi_value_headers, self.config)
         else:
             out["headers"] = handle_exclude_headers(finalized_headers, self.config)
 

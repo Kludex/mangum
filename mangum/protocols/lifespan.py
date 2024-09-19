@@ -116,15 +116,11 @@ class LifespanCycle:
     async def send(self, message: Message) -> None:
         """Awaited by the application to send ASGI `lifespan` events."""
         message_type = message["type"]
-        self.logger.info(
-            "%s:  '%s' event received from application.", self.state, message_type
-        )
+        self.logger.info("%s:  '%s' event received from application.", self.state, message_type)
 
         if self.state is LifespanCycleState.CONNECTING:
             if self.lifespan == "on":
-                raise LifespanFailure(
-                    "Lifespan connection failed during startup and lifespan is 'on'."
-                )
+                raise LifespanFailure("Lifespan connection failed during startup and lifespan is 'on'.")
 
             # If a message is sent before the startup event is received by the
             # application, then assume that lifespan is unsupported.

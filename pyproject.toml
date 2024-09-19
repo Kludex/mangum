@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mangum"
+version = "0.17.0"
+authors = [
+    { name = "Jordan Eremieff", email = "jordan@eremieff.com" },
+    { name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" },
+]
+description = "AWS Lambda support for ASGI applications"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = ["typing_extensions"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "codecov",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "starlette",
+    "quart",
+    "mypy",
+    "brotli",
+    "brotli-asgi",
+    "mkdocs",
+    "mkdocs-material",
+]
+
+[project.urls]
+Homepage = "https://github.com/Kludex/mangum"
+Documentation = "https://mangum.fastapiexpert.com"
+Changelog = "https://github.com/Kludex/mangum/blob/main/CHANGELOG.md"
+Funding = "https://github.com/sponsors/Kludex"
+Source = "https://github.com/Kludex/mangum"
+
+[tool.black]
+line-length = 120

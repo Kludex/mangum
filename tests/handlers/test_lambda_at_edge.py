@@ -6,9 +6,7 @@ from mangum import Mangum
 from mangum.handlers.lambda_at_edge import LambdaAtEdge
 
 
-def mock_lambda_at_edge_event(
-    method, path, multi_value_query_parameters, body, body_base64_encoded
-):
+def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, body_base64_encoded):
     headers_raw = {
         "accept-encoding": "gzip,deflate",
         "x-forwarded-port": "443",
@@ -54,9 +52,7 @@ def mock_lambda_at_edge_event(
                             }
                         },
                         "querystring": urllib.parse.urlencode(
-                            multi_value_query_parameters
-                            if multi_value_query_parameters
-                            else {},
+                            (multi_value_query_parameters if multi_value_query_parameters else {}),
                             doseq=True,
                         ),
                         "uri": path,
@@ -93,12 +89,8 @@ def test_aws_cf_lambda_at_edge_scope_basic():
                     "request": {
                         "clientIp": "203.0.113.178",
                         "headers": {
-                            "x-forwarded-for": [
-                                {"key": "X-Forwarded-For", "value": "203.0.113.178"}
-                            ],
-                            "user-agent": [
-                                {"key": "User-Agent", "value": "Amazon CloudFront"}
-                            ],
+                            "x-forwarded-for": [{"key": "X-Forwarded-For", "value": "203.0.113.178"}],
+                            "user-agent": [{"key": "User-Agent", "value": "Amazon CloudFront"}],
                             "via": [
                                 {
                                     "key": "Via",
@@ -134,11 +126,9 @@ def test_aws_cf_lambda_at_edge_scope_basic():
         ]
     }
     example_context = {}
-    handler = LambdaAtEdge(
-        example_event, example_context, {"api_gateway_base_path": "/"}
-    )
+    handler = LambdaAtEdge(example_event, example_context, {"api_gateway_base_path": "/"})
 
-    assert type(handler.body) == bytes
+    assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
         "aws.context": {},
@@ -167,8 +157,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,"
-    "body_base64_encoded,query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body," "body_base64_encoded,query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         (
@@ -221,9 +210,7 @@ def test_aws_api_gateway_scope_real(
     query_string,
     scope_body,
 ):
-    event = mock_lambda_at_edge_event(
-        method, path, multi_value_query_parameters, req_body, body_base64_encoded
-    )
+    event = mock_lambda_at_edge_event(method, path, multi_value_query_parameters, req_body, body_base64_encoded)
     example_context = {}
     handler = LambdaAtEdge(event, example_context, {"api_gateway_base_path": "/"})
 
@@ -271,9 +258,7 @@ def test_aws_api_gateway_scope_real(
         ),
     ],
 )
-def test_aws_lambda_at_edge_response(
-    method, content_type, raw_res_body, res_body, res_base64_encoded
-):
+def test_aws_lambda_at_edge_response(method, content_type, raw_res_body, res_body, res_base64_encoded):
     async def app(scope, receive, send):
         await send(
             {
@@ -292,9 +277,7 @@ def test_aws_lambda_at_edge_response(
     assert response == {
         "status": 200,
         "isBase64Encoded": res_base64_encoded,
-        "headers": {
-            "content-type": [{"key": "content-type", "value": content_type.decode()}]
-        },
+        "headers": {"content-type": [{"key": "content-type", "value": content_type.decode()}]},
         "body": res_body,
     }
 
@@ -324,9 +307,7 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
     assert response == {
         "status": 200,
         "isBase64Encoded": True,
-        "headers": {
-            "content-type": [{"key": "content-type", "value": content_type.decode()}]
-        },
+        "headers": {"content-type": [{"key": "content-type", "value": content_type.decode()}]},
         "body": b64_res_body,
     }
 
@@ -337,9 +318,7 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
     assert response == {
         "status": 200,
         "isBase64Encoded": False,
-        "headers": {
-            "content-type": [{"key": "content-type", "value": content_type.decode()}]
-        },
+        "headers": {"content-type": [{"key": "content-type", "value": content_type.decode()}]},
         "body": utf_res_body,
     }
 
@@ -366,10 +345,6 @@ def test_aws_lambda_at_edge_exclude_():
     assert response == {
         "status": 200,
         "isBase64Encoded": False,
-        "headers": {
-            "content-type": [
-                {"key": "content-type", "value": b"text/plain; charset=utf-8".decode()}
-            ]
-        },
+        "headers": {"content-type": [{"key": "content-type", "value": b"text/plain; charset=utf-8".decode()}]},
         "body": "Hello world",
     }

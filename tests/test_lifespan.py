@@ -171,9 +171,7 @@ def test_lifespan_unexpected_message(mock_aws_api_gateway_event, lifespan) -> No
                         {
                             "type": "http.response.start",
                             "status": 200,
-                            "headers": [
-                                [b"content-type", b"text/plain; charset=utf-8"]
-                            ],
+                            "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
                         }
                     )
 
@@ -199,16 +197,12 @@ def test_lifespan_failure(mock_aws_api_gateway_event, lifespan, failure_type) ->
                 message = await receive()
                 if message["type"] == "lifespan.startup":
                     if failure_type == "startup":
-                        await send(
-                            {"type": "lifespan.startup.failed", "message": "Failed."}
-                        )
+                        await send({"type": "lifespan.startup.failed", "message": "Failed."})
                     else:
                         await send({"type": "lifespan.startup.complete"})
                 if message["type"] == "lifespan.shutdown":
                     if failure_type == "shutdown":
-                        await send(
-                            {"type": "lifespan.shutdown.failed", "message": "Failed."}
-                        )
+                        await send({"type": "lifespan.shutdown.failed", "message": "Failed."})
                     await send({"type": "lifespan.shutdown.complete"})
 
     handler = Mangum(app, lifespan=lifespan)
@@ -217,9 +211,7 @@ def test_lifespan_failure(mock_aws_api_gateway_event, lifespan, failure_type) ->
         handler(mock_aws_api_gateway_event, {})
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
 def test_starlette_lifespan(mock_aws_api_gateway_event) -> None:
     startup_complete = False
     shutdown_complete = False
@@ -262,9 +254,7 @@ def test_starlette_lifespan(mock_aws_api_gateway_event) -> None:
     }
 
 
-@pytest.mark.parametrize(
-    "mock_aws_api_gateway_event", [["GET", None, None]], indirect=True
-)
+@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
 def test_quart_lifespan(mock_aws_api_gateway_event) -> None:
     startup_complete = False
     shutdown_complete = False

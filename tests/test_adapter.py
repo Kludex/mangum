@@ -3,10 +3,10 @@ import pytest
 from mangum import Mangum
 from mangum.adapter import DEFAULT_TEXT_MIME_TYPES
 from mangum.exceptions import ConfigurationError
+from mangum.types import Receive, Scope, Send
 
 
-async def app(scope, receive, send):
-    ...
+async def app(scope: Scope, receive: Receive, send: Send): ...
 
 
 def test_default_settings():
