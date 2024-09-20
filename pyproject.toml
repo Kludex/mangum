@@ -30,7 +30,6 @@ dependencies = ["typing_extensions"]
 [tool.uv]
 dev-dependencies = [
     "pytest",
-    "codecov",
     "pytest-cov",
     "black",
     "flake8",
