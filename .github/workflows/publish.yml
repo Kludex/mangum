@@ -1,10 +1,10 @@
 name: Publish Python Package
 
 on:
-  pull_request:
-    branches: ["main"]
-  # release:
-  #   types: [created]
+  push:
+    tags:
+      - "**"
+
 
 jobs:
   build:
@@ -33,30 +33,28 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist
+          name: package-distributions
+          path: dist/
 
-  deploy:
+  pypi-publish:
     runs-on: ubuntu-latest
     needs: build
+
+    permissions:
+      id-token: write
 
     environment:
       name: pypi
       url: https://pypi.org/project/mangum/${{ needs.build.outputs.version }}
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
+    - name: Download package
+      uses: actions/download-artifact@v4
       with:
-        version: "0.4.12"
-        enable-cache: true
+        name: package-distributions
+        path: dist/
 
-    - name: Set up Python
-      run: uv python install 3.12
-
-    - name: Install dependencies
-      run: uv build
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
