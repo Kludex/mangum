@@ -1,3 +1,11 @@
+# 0.18.0
+
+No changes were made compared to 0.18.0a1.
+
+# 0.18.0a1
+
+* Support Python 3.13 by @Kludex in https://github.com/Kludex/mangum/pull/327
+
 # 0.17.0
 
 * Remove 3.6 reference from frameworks docs by @aminalaee in https://github.com/jordaneremieff/mangum/pull/278
@@ -59,7 +67,7 @@
 * Resolve several issues with ALB/ELB support [#184](https://github.com/jordaneremieff/mangum/pull/184), [#189](https://github.com/jordaneremieff/mangum/pull/189), [#186](https://github.com/jordaneremieff/mangum/pull/186), [#182](https://github.com/jordaneremieff/mangum/pull/182). Thanks [nathanglover](https://github.com/nathanglover) & [jurasofish](https://github.com/jurasofish)!
 
 * Refactor handlers to be separate from core logic [#170](https://github.com/jordaneremieff/mangum/pull/170). Thanks [four43](https://github.com/four43)!
-  
+
 ## 0.11.0
 
 * Remove deprecated `enable_lifespan` parameter [#109](https://github.com/jordaneremieff/mangum/issues/109).
@@ -74,7 +82,7 @@
 
 * Extract ASGI scope creation into function [#162](https://github.com/jordaneremieff/mangum/pull/162).  Thanks [emcpow2](https://github.com/emcpow2)!
 
-## 0.10.0 
+## 0.10.0
 
 * Remove WebSocket support to focus on HTTP [#127](https://github.com/jordaneremieff/mangum/issues/127).
 

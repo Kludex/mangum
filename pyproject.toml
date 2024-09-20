@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mangum"
-version = "0.18.0a1"
+version = "0.18.0"
 authors = [
     { name = "Jordan Eremieff", email = "jordan@eremieff.com" },
     { name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" },
