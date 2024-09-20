@@ -1,6 +1,6 @@
 # Frameworks
 
-Mangum is intended to provide support to any [ASGI](https://asgi.readthedocs.io/en/latest/) (*Asynchronous Server Gateway Interface*) application or framework. The ["turtles all the way down"](https://simonwillison.net/2009/May/19/djng/?#turtles-all-the-way-down) principle of ASGI allows for a great deal of interoperability across many different implementations, so the adapter should "just work"* for any ASGI application or framework. 
+Mangum is intended to provide support to any [ASGI](https://asgi.readthedocs.io/en/latest/) (*Asynchronous Server Gateway Interface*) application or framework. The ["turtles all the way down"](https://simonwillison.net/2009/May/19/djng/?#turtles-all-the-way-down) principle of ASGI allows for a great deal of interoperability across many different implementations, so the adapter should "just work"* for any ASGI application or framework.
 
 <small>* if it doesn't, then please open an [issue](https://github.com/erm/mangum/issues). :)</small>
 
@@ -75,7 +75,7 @@ handler = Mangum(app)
 
 ### FastAPI
 
-[FastAPI](https://fastapi.tiangolo.com/) is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. 
+[FastAPI](https://fastapi.tiangolo.com/) is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.
 
 ```python
 from fastapi import FastAPI
@@ -98,7 +98,7 @@ handler = Mangum(app)
 
 ### Responder
 
-[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](https://mangum.io/asgi-frameworks/#limitations) section for more details.
+[Responder](https://responder.readthedocs.io/en/latest) is a familiar HTTP Service Framework for Python, powered by Starlette. The `static_dir` and `templates_dir` parameters must be set to none to disable Responder's automatic directory creation behaviour because AWS Lambda is a read-only file system - see the [limitations](#limitations) section for more details.
 
 ```python
 from mangum import Mangum
@@ -157,7 +157,7 @@ handler = Mangum(app)
 
 ### Django
 
-[Django](https://docs.djangoproject.com/) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design. 
+[Django](https://docs.djangoproject.com/) is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.
 
 It started introducing ASGI support in version [3.0](https://docs.djangoproject.com/en/3.0/releases/3.0/#asgi-support). Certain async capabilities are not yet implemented and planned for future releases, however it can still be used with Mangum and other ASGI applications at the outer application level.
 
