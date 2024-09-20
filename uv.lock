@@ -459,17 +459,42 @@ wheels = [
 name = "hypercorn"
 version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.8'",
+]
 dependencies = [
-    { name = "h11" },
-    { name = "h2" },
-    { name = "priority" },
-    { name = "taskgroup", marker = "python_full_version < '3.11'" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "wsproto" },
+    { name = "h11", marker = "python_full_version < '3.8'" },
+    { name = "h2", marker = "python_full_version < '3.8'" },
+    { name = "priority", marker = "python_full_version < '3.8'" },
+    { name = "taskgroup", marker = "python_full_version < '3.8'" },
+    { name = "tomli", marker = "python_full_version < '3.8'" },
+    { name = "wsproto", marker = "python_full_version < '3.8'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0c/11/380a8bdf92d297ff636903e99a0a0c84112b3e271119c06389b672e9b647/hypercorn-0.15.0.tar.gz", hash = "sha256:d517f68d5dc7afa9a9d50ecefb0f769f466ebe8c1c18d2c2f447a24e763c9a63", size = 41504 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/75/01/454a0127f2e554502fca9aca2a3b39ab850c7962dbabf32ce5ab113f229f/hypercorn-0.15.0-py3-none-any.whl", hash = "sha256:5008944999612fd188d7a1ca02e89d20065642b89503020ac392dfed11840730", size = 57813 },
+]
+
+[[package]]
+name = "hypercorn"
+version = "0.17.3"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.8'",
+]
+dependencies = [
+    { name = "exceptiongroup", marker = "python_full_version >= '3.8' and python_full_version < '3.11'" },
+    { name = "h11", marker = "python_full_version >= '3.8'" },
+    { name = "h2", marker = "python_full_version >= '3.8'" },
+    { name = "priority", marker = "python_full_version >= '3.8'" },
+    { name = "taskgroup", marker = "python_full_version >= '3.8' and python_full_version < '3.11'" },
+    { name = "tomli", marker = "python_full_version >= '3.8' and python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version >= '3.8' and python_full_version < '3.11'" },
+    { name = "wsproto", marker = "python_full_version >= '3.8'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/3a/df6c27642e0dcb7aff688ca4be982f0fb5d89f2afd3096dc75347c16140f/hypercorn-0.17.3.tar.gz", hash = "sha256:1b37802ee3ac52d2d85270700d565787ab16cf19e1462ccfa9f089ca17574165", size = 44409 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0e/3b/dfa13a8d96aa24e40ea74a975a9906cfdc2ab2f4e3b498862a57052f04eb/hypercorn-0.17.3-py3-none-any.whl", hash = "sha256:059215dec34537f9d40a69258d323f56344805efb462959e727152b0aa504547", size = 61742 },
 ]
 
 [[package]]
@@ -548,6 +573,8 @@ dev = [
     { name = "brotli-asgi" },
     { name = "codecov" },
     { name = "flake8" },
+    { name = "hypercorn", version = "0.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8'" },
+    { name = "hypercorn", version = "0.17.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8'" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mypy" },
@@ -568,13 +595,14 @@ dev = [
     { name = "brotli-asgi" },
     { name = "codecov" },
     { name = "flake8" },
+    { name = "hypercorn", marker = "python_full_version < '3.8'", specifier = "<=0.15.0" },
+    { name = "hypercorn", marker = "python_full_version >= '3.8'", specifier = ">0.15.0" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "quart", marker = "python_full_version < '3.8'", specifier = "<=0.18.3" },
-    { name = "quart", marker = "python_full_version >= '3.8'", specifier = ">0.18.3" },
+    { name = "quart" },
     { name = "starlette" },
 ]
 
@@ -979,7 +1007,7 @@ dependencies = [
     { name = "aiofiles", marker = "python_full_version < '3.8'" },
     { name = "blinker", marker = "python_full_version < '3.8'" },
     { name = "click", marker = "python_full_version < '3.8'" },
-    { name = "hypercorn", marker = "python_full_version < '3.8'" },
+    { name = "hypercorn", version = "0.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8'" },
     { name = "importlib-metadata", marker = "python_full_version < '3.8'" },
     { name = "itsdangerous", marker = "python_full_version < '3.8'" },
     { name = "jinja2", marker = "python_full_version < '3.8'" },
@@ -1003,7 +1031,7 @@ dependencies = [
     { name = "aiofiles", marker = "python_full_version >= '3.8'" },
     { name = "blinker", marker = "python_full_version >= '3.8'" },
     { name = "click", marker = "python_full_version >= '3.8'" },
-    { name = "hypercorn", marker = "python_full_version >= '3.8'" },
+    { name = "hypercorn", version = "0.17.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8'" },
     { name = "importlib-metadata", marker = "python_full_version >= '3.8' and python_full_version < '3.10'" },
     { name = "itsdangerous", marker = "python_full_version >= '3.8'" },
     { name = "jinja2", marker = "python_full_version >= '3.8'" },
