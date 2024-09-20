@@ -40,8 +40,9 @@ dev-dependencies = [
     "mypy",
     "brotli",
     "brotli-asgi",
-    "mkdocs",
-    "mkdocs-material",
+    "mkautodoc",
+    "mkdocs>=1.6.0; python_version >= '3.12'",
+    "mkdocs-material; python_version >= '3.12'",
 ]
 
 [project.urls]

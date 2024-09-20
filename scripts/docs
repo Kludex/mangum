@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+set -x # print executed commands to the terminal
+
+uv run mkdocs serve

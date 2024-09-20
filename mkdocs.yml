@@ -3,10 +3,10 @@ site_description: AWS Lambda & API Gateway support for ASGI
 site_url: http://mangum.fastapiexpert.com
 
 theme:
-  name: "material"
+  name: material
   palette:
-    primary: "brown"
-    accent: "orange"
+    primary: brown
+    accent: orange
 
 repo_name: Kludex/mangum
 repo_url: https://github.com/Kludex/mangum
@@ -25,3 +25,11 @@ markdown_extensions:
   - mkautodoc
   - markdown.extensions.codehilite:
       guess_lang: false
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      pygments_lang_class: true
+
+plugins:
+  - search
