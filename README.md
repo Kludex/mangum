@@ -10,7 +10,7 @@
 
 Mangum is an adapter for running [ASGI](https://asgi.readthedocs.io/en/latest/) applications in AWS Lambda to handle Function URL, API Gateway, ALB, and Lambda@Edge events.
 
-***Documentation***: https://mangum.io/
+***Documentation***: https://mangum.fastapiexpert.com/
 
 ## Features
 
