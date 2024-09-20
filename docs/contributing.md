@@ -4,18 +4,21 @@ Hello. Contributions to this project are highly encouraged and appreciated. This
 
 ## Contents
 
-- [Creating a pull request](#creating-a-pull-request)
-  * [Setting up the repository](#setting-up-the-repository)
-- [Developing the project locally](#developing-the-project-locally)
-  * [Setup](#setup)
-  * [Test](#test)
-    + [Coverage requirements](#coverage-requirements)
-  * [Lint](#lint)
-    + [Code style and formatting](#code-style-and-formatting)
-    + [Static type checking](#static-type-checking)
-- [Using the issue tracker](#using-the-issue-tracker)
-  * [Technical support](#technical-support)
-  * [Feature requests](#feature-requests)
+- [Contributing to Mangum](#contributing-to-mangum)
+  - [Contents](#contents)
+  - [Creating a pull request](#creating-a-pull-request)
+    - [Setting up the repository](#setting-up-the-repository)
+  - [Developing the project locally](#developing-the-project-locally)
+    - [Setup](#setup)
+    - [Test](#test)
+      - [Coverage requirements](#coverage-requirements)
+    - [Lint](#lint)
+      - [Code style and formatting](#code-style-and-formatting)
+      - [Static type checking](#static-type-checking)
+  - [Using the issue tracker](#using-the-issue-tracker)
+    - [Technical support](#technical-support)
+    - [Feature requests](#feature-requests)
+  - [Thank you](#thank-you)
 
 ## Creating a pull request
 
@@ -103,9 +106,9 @@ The issue [tracker](https://github.com/jordaneremieff/mangum/issues) can be used
 
 Here are a few things you might consider before opening a new issue:
 
-- Is this covered in the [documentation](https://mangum.io/)?
+- Is this covered in the [documentation](https://mangum.fastapiexpert.com/)?
 
-- Is there already a related issue in the [tracker](https://github.com/jordaneremieff/mangum/issues)?
+- Is there already a related issue in the [tracker](https://github.com/Kludex/mangum/issues)?
 
 - Is this a problem related to Mangum itself or a third-party dependency?
 
