@@ -106,9 +106,9 @@ The issue [tracker](https://github.com/jordaneremieff/mangum/issues) can be used
 
 Here are a few things you might consider before opening a new issue:
 
-- Is this covered in the [documentation](https://mangum.io/)?
+- Is this covered in the [documentation](https://mangum.fastapiexpert.com/)?
 
-- Is there already a related issue in the [tracker](https://github.com/jordaneremieff/mangum/issues)?
+- Is there already a related issue in the [tracker](https://github.com/Kludex/mangum/issues)?
 
 - Is this a problem related to Mangum itself or a third-party dependency?
 
