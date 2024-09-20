@@ -24,6 +24,10 @@ Mangum is an adapter for running [ASGI](https://asgi.readthedocs.io/en/latest/) 
 
 - Startup and shutdown [lifespan](https://asgi.readthedocs.io/en/latest/specs/lifespan.html) events.
 
+## Requirements
+
+Python 3.7+
+
 ## Installation
 
 ```shell
