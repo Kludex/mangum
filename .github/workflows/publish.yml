@@ -44,7 +44,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/mangum/${{ needs.build.outputs.version }}
+      url: https://pypi.org/project/mangum/${{ needs.build.outputs.version }}
 
     steps:
     - uses: actions/checkout@v4
