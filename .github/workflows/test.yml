@@ -32,6 +32,3 @@ jobs:
 
       - name: Run linters
         run: scripts/lint
-
-      - name: Run codecov
-        run: uv run codecov
