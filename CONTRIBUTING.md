@@ -4,18 +4,21 @@ Hello. Contributions to this project are highly encouraged and appreciated. This
 
 ## Contents
 
-- [Creating a pull request](#creating-a-pull-request)
-  * [Setting up the repository](#setting-up-the-repository)
-- [Developing the project locally](#developing-the-project-locally)
-  * [Setup](#setup)
-  * [Test](#test)
-    + [Coverage requirements](#coverage-requirements)
-  * [Lint](#lint)
-    + [Code style and formatting](#code-style-and-formatting)
-    + [Static type checking](#static-type-checking)
-- [Using the issue tracker](#using-the-issue-tracker)
-  * [Technical support](#technical-support)
-  * [Feature requests](#feature-requests)
+- [Contributing to Mangum](#contributing-to-mangum)
+  - [Contents](#contents)
+  - [Creating a pull request](#creating-a-pull-request)
+    - [Setting up the repository](#setting-up-the-repository)
+  - [Developing the project locally](#developing-the-project-locally)
+    - [Setup](#setup)
+    - [Test](#test)
+      - [Coverage requirements](#coverage-requirements)
+    - [Lint](#lint)
+      - [Code style and formatting](#code-style-and-formatting)
+      - [Static type checking](#static-type-checking)
+  - [Using the issue tracker](#using-the-issue-tracker)
+    - [Technical support](#technical-support)
+    - [Feature requests](#feature-requests)
+  - [Thank you](#thank-you)
 
 ## Creating a pull request
 
@@ -65,7 +68,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-This environment is used to run the tests for Python versions 3.7, 3.8, 3.9, and 3.10.
+This environment is used to run the tests for Python versions 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13.
 
 ### Test
 

@@ -6,7 +6,8 @@ from mangum.exceptions import ConfigurationError
 from mangum.types import Receive, Scope, Send
 
 
-async def app(scope: Scope, receive: Receive, send: Send): ...
+async def app(scope: Scope, receive: Receive, send: Send):
+    ...
 
 
 def test_default_settings():
