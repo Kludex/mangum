@@ -7,11 +7,44 @@ on:
   #   types: [created]
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.inspect_package.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: "0.4.12"
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build package
+        run: uv build
+
+      - name: Inspect package version
+        id: inspect_package
+        run: |
+          version=$(uvx hatchling version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
   deploy:
     runs-on: ubuntu-latest
+    needs: build
+
     environment:
       name: pypi
-      url: https://pypi.org/p/mangum/${{ steps.my_step.outputs.version }}
+      url: https://pypi.org/p/mangum/${{ needs.build.outputs.version }}
 
     steps:
     - uses: actions/checkout@v4
@@ -27,8 +60,3 @@ jobs:
 
     - name: Install dependencies
       run: uv build
-
-    - name: Publish to PyPI
-      id: my_step
-      run: |
-        echo "version=0.1.0" >> "$GITHUB_OUTPUT"
