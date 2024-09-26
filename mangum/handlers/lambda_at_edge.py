@@ -1,4 +1,6 @@
-from typing import Dict, List
+from __future__ import annotations
+
+from typing import Any
 
 from mangum.handlers.utils import (
     handle_base64_response_body,
@@ -6,7 +8,7 @@ from mangum.handlers.utils import (
     handle_multi_value_headers,
     maybe_encode_body,
 )
-from mangum.types import Scope, Response, LambdaConfig, LambdaEvent, LambdaContext
+from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
 
 
 class LambdaAtEdge:
@@ -66,12 +68,12 @@ class LambdaAtEdge:
             "aws.context": self.context,
         }
 
-    def __call__(self, response: Response) -> dict:
+    def __call__(self, response: Response) -> dict[str, Any]:
         multi_value_headers, _ = handle_multi_value_headers(response["headers"])
         response_body, is_base64_encoded = handle_base64_response_body(
             response["body"], multi_value_headers, self.config["text_mime_types"]
         )
-        finalized_headers: Dict[str, List[Dict[str, str]]] = {
+        finalized_headers: dict[str, list[dict[str, str]]] = {
             key.decode().lower(): [{"key": key.decode().lower(), "value": val.decode()}]
             for key, val in response["headers"]
         }

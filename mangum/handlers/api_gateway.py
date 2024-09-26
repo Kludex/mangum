@@ -1,4 +1,6 @@
-from typing import Dict, List, Tuple
+from __future__ import annotations
+
+from typing import Any
 from urllib.parse import urlencode
 
 from mangum.handlers.utils import (
@@ -10,12 +12,12 @@ from mangum.handlers.utils import (
     strip_api_gateway_path,
 )
 from mangum.types import (
-    Response,
-    LambdaConfig,
     Headers,
-    LambdaEvent,
+    LambdaConfig,
     LambdaContext,
+    LambdaEvent,
     QueryParams,
+    Response,
     Scope,
 )
 
@@ -30,7 +32,7 @@ def _encode_query_string_for_apigw(event: LambdaEvent) -> bytes:
     return urlencode(params, doseq=True).encode()
 
 
-def _handle_multi_value_headers_for_request(event: LambdaEvent) -> Dict[str, str]:
+def _handle_multi_value_headers_for_request(event: LambdaEvent) -> dict[str, str]:
     headers = event.get("headers", {}) or {}
     headers = {k.lower(): v for k, v in headers.items()}
     if event.get("multiValueHeaders"):
@@ -46,9 +48,9 @@ def _handle_multi_value_headers_for_request(event: LambdaEvent) -> Dict[str, str
 
 def _combine_headers_v2(
     input_headers: Headers,
-) -> Tuple[Dict[str, str], List[str]]:
-    output_headers: Dict[str, str] = {}
-    cookies: List[str] = []
+) -> tuple[dict[str, str], list[str]]:
+    output_headers: dict[str, str] = {}
+    cookies: list[str] = []
     for key, value in input_headers:
         normalized_key: str = key.decode().lower()
         normalized_value: str = value.decode()
@@ -105,7 +107,7 @@ class APIGateway:
             "aws.context": self.context,
         }
 
-    def __call__(self, response: Response) -> dict:
+    def __call__(self, response: Response) -> dict[str, Any]:
         finalized_headers, multi_value_headers = handle_multi_value_headers(response["headers"])
         finalized_body, is_base64_encoded = handle_base64_response_body(
             response["body"], finalized_headers, self.config["text_mime_types"]
@@ -185,7 +187,7 @@ class HTTPGateway:
             "aws.context": self.context,
         }
 
-    def __call__(self, response: Response) -> dict:
+    def __call__(self, response: Response) -> dict[str, Any]:
         if self.scope["aws.event"]["version"] == "2.0":
             finalized_headers, cookies = _combine_headers_v2(response["headers"])
 

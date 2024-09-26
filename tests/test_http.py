@@ -1,12 +1,12 @@
+from __future__ import annotations
+
 import base64
 import gzip
 import json
 
-import pytest
-
 import brotli
+import pytest
 from brotli_asgi import BrotliMiddleware
-
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
@@ -582,7 +582,7 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
-def test_http_logging(mock_aws_api_gateway_event, caplog) -> None:
+def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixture) -> None:
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         await send(

@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+set -x
+
+SOURCE_FILES="mangum tests"
+
+uvx ruff format --check --diff $SOURCE_FILES
+uvx ruff check $SOURCE_FILES
+uvx mypy mangum

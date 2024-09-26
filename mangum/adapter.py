@@ -1,32 +1,20 @@
+from __future__ import annotations
+
 import logging
-from itertools import chain
 from contextlib import ExitStack
-from typing import List, Optional, Type
+from itertools import chain
+from typing import Any
 
-from mangum.protocols import HTTPCycle, LifespanCycle
-from mangum.handlers import ALB, HTTPGateway, APIGateway, LambdaAtEdge
 from mangum.exceptions import ConfigurationError
-from mangum.types import (
-    ASGI,
-    LifespanMode,
-    LambdaConfig,
-    LambdaEvent,
-    LambdaContext,
-    LambdaHandler,
-)
-
+from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
+from mangum.protocols import HTTPCycle, LifespanCycle
+from mangum.types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode
 
 logger = logging.getLogger("mangum")
 
+HANDLERS: list[type[LambdaHandler]] = [ALB, HTTPGateway, APIGateway, LambdaAtEdge]
 
-HANDLERS: List[Type[LambdaHandler]] = [
-    ALB,
-    HTTPGateway,
-    APIGateway,
-    LambdaAtEdge,
-]
-
-DEFAULT_TEXT_MIME_TYPES: List[str] = [
+DEFAULT_TEXT_MIME_TYPES: list[str] = [
     "text/",
     "application/json",
     "application/javascript",
@@ -42,9 +30,9 @@ class Mangum:
         app: ASGI,
         lifespan: LifespanMode = "auto",
         api_gateway_base_path: str = "/",
-        custom_handlers: Optional[List[Type[LambdaHandler]]] = None,
-        text_mime_types: Optional[List[str]] = None,
-        exclude_headers: Optional[List[str]] = None,
+        custom_handlers: list[type[LambdaHandler]] | None = None,
+        text_mime_types: list[str] | None = None,
+        exclude_headers: list[str] | None = None,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
             raise ConfigurationError("Invalid argument supplied for `lifespan`. Choices are: auto|on|off")
@@ -70,7 +58,7 @@ class Mangum:
             "supported handler.)"
         )
 
-    def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict:
+    def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict[str, Any]:
         handler = self.infer(event, context)
         with ExitStack() as stack:
             if self.lifespan in ("auto", "on"):

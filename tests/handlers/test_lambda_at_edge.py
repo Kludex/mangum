@@ -26,7 +26,7 @@ def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, 
                         "distributionDomainName": "mock-distribution.local.localhost",
                         "distributionId": "ABC123DEF456G",
                         "eventType": "origin-request",
-                        "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",  # noqa: E501
+                        "requestId": "lBEBo2N0JKYUP2JXwn_4am2xAXB2GzcL2FlwXI8G59PA8wghF2ImFQ==",
                     },
                     "request": {
                         "clientIp": "192.168.100.1",
@@ -84,7 +84,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
                         "distributionDomainName": "d111111abcdef8.cloudfront.net",
                         "distributionId": "EDFDVBD6EXAMPLE",
                         "eventType": "origin-request",
-                        "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==",  # noqa: E501
+                        "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==",
                     },
                     "request": {
                         "clientIp": "203.0.113.178",
@@ -94,7 +94,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
                             "via": [
                                 {
                                     "key": "Via",
-                                    "value": "2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)",  # noqa: E501
+                                    "value": "2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)",
                                 }
                             ],
                             "host": [{"key": "Host", "value": "example.org"}],

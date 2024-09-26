@@ -31,8 +31,7 @@ dependencies = ["typing_extensions"]
 dev-dependencies = [
     "pytest",
     "pytest-cov",
-    "black",
-    "flake8",
+    "ruff",
     "starlette",
     "quart",
     "hypercorn<0.15.0; python_version < '3.8'",
@@ -52,5 +51,50 @@ Changelog = "https://github.com/Kludex/mangum/blob/main/CHANGELOG.md"
 Funding = "https://github.com/sponsors/Kludex"
 Source = "https://github.com/Kludex/mangum"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",      # https://docs.astral.sh/ruff/rules/#error-e
+    "F",      # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "I",      # https://docs.astral.sh/ruff/rules/#isort-i
+    "FA",     # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "UP",     # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "RUF100", # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+]
+ignore = ["UP031"] # https://docs.astral.sh/ruff/rules/printf-string-formatting/
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+addopts = "-rXs --strict-config --strict-markers"
+xfail_strict = true
+filterwarnings = [
+    # Turn warnings that aren't filtered into exceptions
+    "error",
+    "ignore::DeprecationWarning:starlette",
+    "ignore: There is no current event loop:DeprecationWarning",
+    "ignore: 'pkgutil.get_loader' is deprecated.*:DeprecationWarning",
+    "ignore: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
+    "ignore: Attribute s is deprecated and will be removed in Python 3.14; use value instead:DeprecationWarning",
+    "ignore: Constant.__init__ got an unexpected keyword argument 's'. Support for arbitrary keyword arguments is deprecated and will be removed in Python 3.15.:DeprecationWarning",
+    "ignore: Constant.__init__ missing 1 required positional argument.*:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source_pkgs = ["mangum", "tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "pragma: nocover",
+    "if typing.TYPE_CHECKING:",
+    "@typing.overload",
+    "raise NotImplementedError",
+]

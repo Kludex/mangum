@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import enum
 import logging
 from types import TracebackType
-from typing import Optional, Type
 
+from mangum.exceptions import LifespanFailure, LifespanUnsupported, UnexpectedMessage
 from mangum.types import ASGI, LifespanMode, Message
-from mangum.exceptions import LifespanUnsupported, LifespanFailure, UnexpectedMessage
 
 
 class LifespanCycleState(enum.Enum):
@@ -21,7 +22,7 @@ class LifespanCycleState(enum.Enum):
     * **FAILED** - A lifespan failure has been detected, and the connection will be
     closed with an error.
     * **UNSUPPORTED** - An application attempted to send a message before receiving
-    the lifepan startup event. If the lifespan argument is "on", then the connection
+    the lifespan startup event. If the lifespan argument is "on", then the connection
     will be closed with an error.
     """
 
@@ -56,7 +57,7 @@ class LifespanCycle:
         self.app = app
         self.lifespan = lifespan
         self.state: LifespanCycleState = LifespanCycleState.CONNECTING
-        self.exception: Optional[BaseException] = None
+        self.exception: BaseException | None = None
         self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
@@ -70,9 +71,9 @@ class LifespanCycle:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Runs the event loop for application shutdown."""
         self.loop.run_until_complete(self.shutdown())

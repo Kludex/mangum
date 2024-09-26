@@ -2,6 +2,7 @@
 
 set -x
 
-uv run black mangum tests --check
-uv run mypy mangum
-uv run flake8 mangum tests
+SOURCE_FILES="mangum tests"
+
+uvx ruff format $SOURCE_FILES
+uvx ruff check --fix $SOURCE_FILES
