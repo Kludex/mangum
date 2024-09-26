@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import pytest
 from quart import Quart
@@ -7,6 +8,7 @@ from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
+from mangum.types import Receive, Scope, Send
 
 
 @pytest.mark.parametrize(
@@ -210,25 +212,22 @@ def test_lifespan_failure(mock_aws_api_gateway_event, lifespan, failure_type) ->
 
 
 @pytest.mark.parametrize(
-    "mock_aws_api_gateway_event,lifespan_state,lifespan",
-    [
-        (["GET", None, None], {"test_key": "test_value"}, "auto"),
-        (["GET", None, None], {"test_key": "test_value"}, "on"),
-    ],
+    "mock_aws_api_gateway_event,lifespan",
+    [(["GET", None, None], "auto"), (["GET", None, None], "on")],
     indirect=["mock_aws_api_gateway_event"],
 )
-def test_lifespan_state(mock_aws_api_gateway_event, lifespan_state, lifespan) -> None:
+def test_lifespan_state(mock_aws_api_gateway_event, lifespan: Literal["on", "auto"]) -> None:
     startup_complete = False
     shutdown_complete = False
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send):
         nonlocal startup_complete, shutdown_complete
 
         if scope["type"] == "lifespan":
             while True:
                 message = await receive()
                 if message["type"] == "lifespan.startup":
-                    scope["state"].update(lifespan_state)
+                    scope["state"].update({"test_key": b"Hello, world!"})
                     await send({"type": "lifespan.startup.complete"})
                     startup_complete = True
                 elif message["type"] == "lifespan.shutdown":
@@ -237,7 +236,6 @@ def test_lifespan_state(mock_aws_api_gateway_event, lifespan_state, lifespan) ->
                     return
 
         if scope["type"] == "http":
-            assert lifespan_state.items() <= scope["state"].items()
             await send(
                 {
                     "type": "http.response.start",
@@ -245,7 +243,7 @@ def test_lifespan_state(mock_aws_api_gateway_event, lifespan_state, lifespan) ->
                     "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
                 }
             )
-            await send({"type": "http.response.body", "body": b"Hello, world!"})
+            await send({"type": "http.response.body", "body": scope["state"]["test_key"]})
 
     handler = Mangum(app, lifespan=lifespan)
     response = handler(mock_aws_api_gateway_event, {})
