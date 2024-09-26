@@ -1,10 +1,10 @@
 import logging
-from typing import Literal
 
 import pytest
 from quart import Quart
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
+from typing_extensions import Literal
 
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
