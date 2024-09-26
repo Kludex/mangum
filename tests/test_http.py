@@ -2,16 +2,15 @@ import base64
 import gzip
 import json
 
-import pytest
-
 import brotli
+import pytest
 from brotli_asgi import BrotliMiddleware
-
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
+from mangum.types import Receive, Scope, Send
 
 
 @pytest.mark.parametrize(
@@ -556,7 +555,7 @@ def test_http_response_headers(
 def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
     body = json.dumps({"abc": "defg"})
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send):
         assert scope["type"] == "http"
         await send(
             {
@@ -582,8 +581,8 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
-def test_http_logging(mock_aws_api_gateway_event, caplog) -> None:
-    async def app(scope, receive, send):
+def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixture) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send):
         assert scope["type"] == "http"
         await send(
             {

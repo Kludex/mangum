@@ -1,10 +1,4 @@
-from mangum.types import (
-    Scope,
-    Headers,
-    LambdaConfig,
-    LambdaContext,
-    LambdaEvent,
-)
+from mangum.types import Headers, LambdaConfig, LambdaContext, LambdaEvent, Scope
 
 
 class CustomHandler:
@@ -23,7 +17,7 @@ class CustomHandler:
 
     @property
     def scope(self) -> Scope:
-        headers = {}
+        headers: dict[str, str] = {}
         return {
             "type": "http",
             "http_version": "1.1",

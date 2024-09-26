@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from itertools import islice
-from typing import Dict, Generator, List, Tuple
-from urllib.parse import urlencode, unquote, unquote_plus
+from typing import Any, Generator
+from urllib.parse import unquote, unquote_plus, urlencode
 
 from mangum.handlers.utils import (
     get_server_and_port,
@@ -9,12 +11,12 @@ from mangum.handlers.utils import (
     maybe_encode_body,
 )
 from mangum.types import (
+    LambdaConfig,
+    LambdaContext,
+    LambdaEvent,
+    QueryParams,
     Response,
     Scope,
-    LambdaConfig,
-    LambdaEvent,
-    LambdaContext,
-    QueryParams,
 )
 
 
@@ -37,9 +39,9 @@ def all_casings(input_string: str) -> Generator[str, None, None]:
                 yield first.upper() + sub_casing
 
 
-def case_mutated_headers(multi_value_headers: Dict[str, List[str]]) -> Dict[str, str]:
+def case_mutated_headers(multi_value_headers: dict[str, list[str]]) -> dict[str, str]:
     """Create str/str key/value headers, with duplicate keys case mutated."""
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     for key, values in multi_value_headers.items():
         if len(values) > 0:
             casings = list(islice(all_casings(key), len(values)))
@@ -68,8 +70,8 @@ def encode_query_string_for_alb(params: QueryParams) -> bytes:
     return query_string
 
 
-def transform_headers(event: LambdaEvent) -> List[Tuple[bytes, bytes]]:
-    headers: List[Tuple[bytes, bytes]] = []
+def transform_headers(event: LambdaEvent) -> list[tuple[bytes, bytes]]:
+    headers: list[tuple[bytes, bytes]] = []
     if "multiValueHeaders" in event:
         for k, v in event["multiValueHeaders"].items():
             for inner_v in v:
@@ -139,8 +141,8 @@ class ALB:
 
         return scope
 
-    def __call__(self, response: Response) -> dict:
-        multi_value_headers: Dict[str, List[str]] = {}
+    def __call__(self, response: Response) -> dict[str, Any]:
+        multi_value_headers: dict[str, list[str]] = {}
         for key, value in response["headers"]:
             lower_key = key.decode().lower()
             if lower_key not in multi_value_headers:

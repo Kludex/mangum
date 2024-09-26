@@ -31,8 +31,7 @@ dependencies = ["typing_extensions"]
 dev-dependencies = [
     "pytest",
     "pytest-cov",
-    "black",
-    "flake8",
+    "ruff",
     "starlette",
     "quart",
     "hypercorn<0.15.0; python_version < '3.8'",
@@ -52,5 +51,35 @@ Changelog = "https://github.com/Kludex/mangum/blob/main/CHANGELOG.md"
 Funding = "https://github.com/sponsors/Kludex"
 Source = "https://github.com/Kludex/mangum"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",      # https://docs.astral.sh/ruff/rules/#error-e
+    "F",      # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "I",      # https://docs.astral.sh/ruff/rules/#isort-i
+    "FA",     # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "UP",     # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "RUF100", # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+]
+ignore = ["UP031"] # https://docs.astral.sh/ruff/rules/printf-string-formatting/
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+addopts = "-rXs --strict-config --strict-markers"
+xfail_strict = true
+
+[tool.coverage.run]
+source_pkgs = ["starlette", "tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "pragma: nocover",
+    "if typing.TYPE_CHECKING:",
+    "@typing.overload",
+    "raise NotImplementedError",
+]

@@ -27,11 +27,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }} --frozen
 
+      - name: Run linters
+        run: scripts/check
+
       - name: Run tests
         run: scripts/test
-
-      - name: Run linters
-        run: scripts/lint
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:

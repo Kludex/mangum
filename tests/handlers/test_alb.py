@@ -4,7 +4,7 @@ References:
 2. https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html  # noqa: E501
 """
 
-from typing import Dict, List, Optional
+from __future__ import annotations
 
 import pytest
 
@@ -15,8 +15,8 @@ from mangum.handlers.alb import ALB
 def get_mock_aws_alb_event(
     method,
     path,
-    query_parameters: Optional[Dict[str, List[str]]],
-    headers: Optional[Dict[str, List[str]]],
+    query_parameters: dict[str, list[str]] | None,
+    headers: dict[str, list[str]] | None,
     body,
     body_base64_encoded,
     multi_value_headers: bool,
