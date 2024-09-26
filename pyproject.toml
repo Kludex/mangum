@@ -83,6 +83,7 @@ filterwarnings = [
     "ignore: 'pkgutil.get_loader' is deprecated.*:DeprecationWarning",
     "ignore: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
     "ignore: Attribute s is deprecated and will be removed in Python 3.14; use value instead:DeprecationWarning",
+    "ignore: Constant.__init__ got an unexpected keyword argument 's'. Support for arbitrary keyword arguments is deprecated and will be removed in Python 3.15.:DeprecationWarning",
 ]
 
 [tool.coverage.run]
