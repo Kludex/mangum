@@ -1,19 +1,20 @@
 import logging
-from contextlib import ExitStack
 from itertools import chain
+from contextlib import ExitStack
 from typing import List, Optional, Type
 
-from mangum.exceptions import ConfigurationError
-from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
 from mangum.protocols import HTTPCycle, LifespanCycle
+from mangum.handlers import ALB, HTTPGateway, APIGateway, LambdaAtEdge
+from mangum.exceptions import ConfigurationError
 from mangum.types import (
     ASGI,
-    LambdaConfig,
-    LambdaContext,
-    LambdaEvent,
-    LambdaHandler,
     LifespanMode,
+    LambdaConfig,
+    LambdaEvent,
+    LambdaContext,
+    LambdaHandler,
 )
+
 
 logger = logging.getLogger("mangum")
 
