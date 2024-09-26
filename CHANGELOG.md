@@ -1,3 +1,7 @@
+# 0.19.0
+
+* Add support for [Lifespan State](https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state).
+
 # 0.18.0
 
 No changes were made compared to 0.18.0a1.
