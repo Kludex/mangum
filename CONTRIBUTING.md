@@ -56,6 +56,8 @@ There are a few scripts in place to assist with local development, the following
 
 Running the setup script will create a local Python virtual environment. It assumes that `python3.7` is available in the path and will install the development dependencies located in `requirements.txt`.
 
+Additionally, [uv](https://docs.astral.sh/uv/getting-started/installation/) needs to be installed on the system for the script to run properly.
+
 ```shell
 ./scripts/setup
 ```
