@@ -240,7 +240,10 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
         "content-length": "35",
         "vary": "Accept-Encoding",
     }
-    assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
+    # Decode and decompress to compare content, avoiding timestamp differences
+    actual_compressed = base64.b64decode(response["body"])
+    actual_content = gzip.decompress(actual_compressed).decode()
+    assert actual_content == body
 
 
 @pytest.mark.parametrize(

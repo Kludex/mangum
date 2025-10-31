@@ -11,18 +11,14 @@ authors = [
 ]
 description = "AWS Lambda support for ASGI applications"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12,<3.15"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet :: WWW/HTTP",
 ]
 dependencies = ["typing_extensions"]
@@ -33,15 +29,14 @@ dev-dependencies = [
     "pytest-cov",
     "ruff",
     "starlette",
-    "quart",
-    "hypercorn<0.15.0; python_version < '3.8'",
-    "hypercorn>=0.15.0; python_version >= '3.8'",
+    "quart>=0.20.0",
+    "hypercorn>=0.15.0",
     "mypy",
     "brotli",
     "brotli-asgi",
     "mkautodoc",
-    "mkdocs>=1.6.0; python_version >= '3.12'",
-    "mkdocs-material; python_version >= '3.12'",
+    "mkdocs>=1.6.0",
+    "mkdocs-material",
 ]
 
 [project.urls]
@@ -85,6 +80,8 @@ filterwarnings = [
     "ignore: Attribute s is deprecated and will be removed in Python 3.14; use value instead:DeprecationWarning",
     "ignore: Constant.__init__ got an unexpected keyword argument 's'. Support for arbitrary keyword arguments is deprecated and will be removed in Python 3.15.:DeprecationWarning",
     "ignore: Constant.__init__ missing 1 required positional argument.*:DeprecationWarning",
+    # Python 3.14 resource warnings - these are test framework related, not functional issues
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]

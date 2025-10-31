@@ -67,14 +67,13 @@ class LifespanCycle:
             asyncio.AbstractEventLoop: The current or newly created event loop
         """
         try:
-            # Try to get the running event loop (Python 3.7+)
+            # Try to get the running event loop
             return asyncio.get_running_loop()
         except RuntimeError:
             # No running event loop, create a new one
-            return asyncio.new_event_loop()
-        except AttributeError:
-            # Python < 3.7, fall back to old behavior
-            return asyncio.get_event_loop()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
 
     def __init__(self, app: ASGI, lifespan: LifespanMode) -> None:
         self.app = app
@@ -100,7 +99,26 @@ class LifespanCycle:
         traceback: TracebackType | None,
     ) -> None:
         """Runs the event loop for application shutdown."""
-        self.loop.run_until_complete(self.shutdown())
+        try:
+            self.loop.run_until_complete(self.shutdown())
+        finally:
+            # Clean up the event loop if we created it
+            if not self.loop.is_running():
+                try:
+                    # Cancel any remaining tasks
+                    pending = asyncio.all_tasks(self.loop)
+                    for task in pending:
+                        task.cancel()
+                    if pending:
+                        self.loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
+                except Exception:
+                    # Ignore cleanup errors
+                    pass
+                finally:
+                    if not self.loop.is_closed():
+                        self.loop.close()
 
     async def run(self) -> None:
         """Calls the application with the `lifespan` connection scope."""

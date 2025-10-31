@@ -27,6 +27,27 @@ class HTTPCycleState(enum.Enum):
 
 
 class HTTPCycle:
+    @staticmethod
+    def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+        """
+        Get the current event loop or create a new one if none exists.
+        
+        This method handles the Python 3.14 compatibility issue where
+        asyncio.get_event_loop() raises RuntimeError when no current
+        event loop exists.
+        
+        Returns:
+            asyncio.AbstractEventLoop: The current or newly created event loop
+        """
+        try:
+            # Try to get the running event loop
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            # No running event loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
+
     def __init__(self, scope: Scope, body: bytes) -> None:
         self.scope = scope
         self.buffer = BytesIO()
@@ -43,9 +64,30 @@ class HTTPCycle:
 
     def __call__(self, app: ASGI) -> Response:
         asgi_instance = self.run(app)
-        loop = asyncio.get_event_loop()
-        asgi_task = loop.create_task(asgi_instance)
-        loop.run_until_complete(asgi_task)
+        loop = self._get_or_create_event_loop()
+        loop_was_created = not loop.is_running()
+        
+        try:
+            asgi_task = loop.create_task(asgi_instance)
+            loop.run_until_complete(asgi_task)
+        finally:
+            # Clean up the event loop if we created it
+            if loop_was_created and not loop.is_running():
+                try:
+                    # Cancel any remaining tasks
+                    pending = asyncio.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+                    if pending:
+                        loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
+                except Exception:
+                    # Ignore cleanup errors
+                    pass
+                finally:
+                    if not loop.is_closed():
+                        loop.close()
 
         return {
             "status": self.status,
