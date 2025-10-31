@@ -107,5 +107,6 @@ venv.bak/
 .idea/
 .vscode
 .devcontainer
+.kiro/
 
 .DS_Store

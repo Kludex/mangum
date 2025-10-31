@@ -54,12 +54,34 @@ class LifespanCycle:
     shutdown flow.
     """
 
+    @staticmethod
+    def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+        """
+        Get the current event loop or create a new one if none exists.
+        
+        This method handles the Python 3.14 compatibility issue where
+        asyncio.get_event_loop() raises RuntimeError when no current
+        event loop exists.
+        
+        Returns:
+            asyncio.AbstractEventLoop: The current or newly created event loop
+        """
+        try:
+            # Try to get the running event loop (Python 3.7+)
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            # No running event loop, create a new one
+            return asyncio.new_event_loop()
+        except AttributeError:
+            # Python < 3.7, fall back to old behavior
+            return asyncio.get_event_loop()
+
     def __init__(self, app: ASGI, lifespan: LifespanMode) -> None:
         self.app = app
         self.lifespan = lifespan
         self.state: LifespanCycleState = LifespanCycleState.CONNECTING
         self.exception: BaseException | None = None
-        self.loop = asyncio.get_event_loop()
+        self.loop = self._get_or_create_event_loop()
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
