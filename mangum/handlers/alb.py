@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from itertools import islice
-from typing import Any, Generator
+from typing import Any
 from urllib.parse import unquote, unquote_plus, urlencode
 
 from mangum.handlers.utils import (

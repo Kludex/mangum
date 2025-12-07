@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    MutableMapping,
-    Sequence,
-    Union,
-)
+from collections.abc import Awaitable, MutableMapping, Sequence
+from typing import Any, Callable, Union
 
 from typing_extensions import Literal, Protocol, TypeAlias, TypedDict
 
-LambdaEvent = Dict[str, Any]
+LambdaEvent = dict[str, Any]
 QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]
 
 
@@ -92,7 +84,7 @@ class LambdaContext(Protocol):
         ...  # pragma: no cover
 
 
-Headers: TypeAlias = List[List[bytes]]
+Headers: TypeAlias = list[list[bytes]]
 Message: TypeAlias = MutableMapping[str, Any]
 Scope: TypeAlias = MutableMapping[str, Any]
 Receive: TypeAlias = Callable[[], Awaitable[Message]]
