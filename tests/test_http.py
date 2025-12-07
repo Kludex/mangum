@@ -28,7 +28,7 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
                 "body": None,
                 "headers": {
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, lzma, sdch, " "br",
+                    "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
                     "Accept-Language": "en-US,en;q=0.8",
                     "CloudFront-Forwarded-Proto": "https",
                     "CloudFront-Is-Desktop-Viewer": "true",
@@ -86,7 +86,7 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
             "headers": [
                 [
                     b"accept",
-                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/" b"webp,*/*;q=0.8",
+                    b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 ],
                 [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
                 [b"accept-language", b"en-US,en;q=0.8"],

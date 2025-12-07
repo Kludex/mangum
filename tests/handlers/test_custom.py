@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from mangum.types import Headers, LambdaConfig, LambdaContext, LambdaEvent, Scope
 
 
@@ -35,7 +39,7 @@ class CustomHandler:
             "aws.context": self.context,
         }
 
-    def __call__(self, *, status: int, headers: Headers, body: bytes) -> dict:
+    def __call__(self, *, status: int, headers: Headers, body: bytes) -> dict[str, Any]:
         return {"statusCode": status, "headers": {}, "body": body.decode()}
 
 

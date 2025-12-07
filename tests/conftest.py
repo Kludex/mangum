@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import os
+from typing import Any
 
 import pytest
 
 
 @pytest.fixture
-def mock_aws_api_gateway_event(request):
+def mock_aws_api_gateway_event(request: pytest.FixtureRequest):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
-    event = {
+    event: dict[str, Any] = {
         "path": "/test/hello",
         "body": body,
         "headers": {
@@ -63,7 +66,7 @@ def mock_aws_api_gateway_event(request):
 
 
 @pytest.fixture
-def mock_http_api_event_v2(request):
+def mock_http_api_event_v2(request: pytest.FixtureRequest):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
@@ -117,7 +120,7 @@ def mock_http_api_event_v2(request):
 
 
 @pytest.fixture
-def mock_http_api_event_v1(request):
+def mock_http_api_event_v1(request: pytest.FixtureRequest):
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
@@ -174,7 +177,7 @@ def mock_http_api_event_v1(request):
 
 
 @pytest.fixture
-def mock_lambda_at_edge_event(request):
+def mock_lambda_at_edge_event(request: pytest.FixtureRequest):
     method = request.param[0]
     path = request.param[1]
     query_string = request.param[2]

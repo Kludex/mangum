@@ -12,7 +12,7 @@ def get_mock_aws_api_gateway_event(method, path, multi_value_query_parameters, b
         "body": body,
         "isBase64Encoded": body_base64_encoded,
         "headers": {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9," "image/webp,*/*;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
             "Accept-Language": "en-US,en;q=0.8",
             "CloudFront-Forwarded-Proto": "https",
@@ -137,7 +137,7 @@ def test_aws_api_gateway_scope_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded," "query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         (
@@ -206,7 +206,7 @@ def test_aws_api_gateway_scope_real(
         "headers": [
             [
                 b"accept",
-                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/" b"webp,*/*;q=0.8",
+                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             ],
             [b"accept-encoding", b"gzip, deflate, lzma, sdch, br"],
             [b"accept-language", b"en-US,en;q=0.8"],
@@ -241,7 +241,7 @@ def test_aws_api_gateway_scope_real(
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body,body_base64_encoded," "query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,query_string,scope_body",
     [
         ("GET", "/test/hello", None, None, False, b"", None),
     ],

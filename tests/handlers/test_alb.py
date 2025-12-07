@@ -48,7 +48,7 @@ def get_mock_aws_alb_event(
 
     if headers is None:
         headers = {
-            "accept": ["text/html,application/xhtml+xml,application/xml;" "q=0.9,image/webp,image/apng,*/*;q=0.8"],
+            "accept": ["text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"],
             "accept-encoding": ["gzip"],
             "accept-language": ["en-US,en;q=0.9"],
             "connection": ["keep-alive"],
@@ -81,7 +81,7 @@ def get_mock_aws_alb_event(
 
 
 @pytest.mark.parametrize(
-    "method,path,query_parameters,headers,req_body,body_base64_encoded," "query_string,scope_body,multi_value_headers",
+    "method,path,query_parameters,headers,req_body,body_base64_encoded,query_string,scope_body,multi_value_headers",
     [
         ("GET", "/hello/world", None, None, None, False, b"", None, False),
         (
@@ -209,7 +209,7 @@ def test_aws_alb_scope_real(
         "headers": [
             [
                 b"accept",
-                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/" b"webp,image/apng,*/*;q=0.8",
+                b"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
             ],
             [b"accept-encoding", b"gzip"],
             [b"accept-language", b"en-US,en;q=0.9"],

@@ -157,7 +157,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
 
 
 @pytest.mark.parametrize(
-    "method,path,multi_value_query_parameters,req_body," "body_base64_encoded,query_string,scope_body",
+    "method,path,multi_value_query_parameters,req_body,body_base64_encoded,query_string,scope_body",
     [
         ("GET", "/hello/world", None, None, False, b"", None),
         (
