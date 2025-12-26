@@ -158,12 +158,12 @@ def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
-def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
+def test_http_exception_handler(mock_aws_api_gateway_event: str | None) -> None:
     path = mock_aws_api_gateway_event["path"]
     app = Starlette()
 
     @app.exception_handler(Exception)
-    async def all_exceptions(request, exc):
+    async def all_exceptions(request: Request, exc: Exception):
         return PlainTextResponse(content="Error!", status_code=500)
 
     @app.route(path)

@@ -32,7 +32,7 @@ default-groups = ["dev"]
 [dependency-groups]
 dev = [
     "pytest",
-    "pytest-cov",
+    "coverage",
     "ruff",
     "starlette",
     "quart>=0.20.0",
@@ -91,6 +91,7 @@ omit = ["mangum/_compat.py"]
 [tool.coverage.report]
 fail_under = 100
 skip_covered = true
+show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "pragma: nocover",
