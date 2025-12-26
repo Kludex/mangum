@@ -90,6 +90,7 @@ source_pkgs = ["mangum", "tests"]
 omit = ["mangum/_compat.py"]
 
 [tool.coverage.report]
+skip_covered = true
 exclude_lines = [
     "pragma: no cover",
     "pragma: nocover",
