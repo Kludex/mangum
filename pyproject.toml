@@ -31,7 +31,7 @@ default-groups = ["dev"]
 
 [dependency-groups]
 dev = [
-    "pytest",
+    "pytest>=8.0.0",
     "coverage",
     "ruff",
     "starlette",
