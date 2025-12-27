@@ -3,3 +3,4 @@
 set -x # print executed commands to the terminal
 
 uv run coverage run -m pytest "${@}"
+uv run coverage report
