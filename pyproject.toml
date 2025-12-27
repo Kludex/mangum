@@ -85,6 +85,8 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
+patch = ["subprocess"]
+concurrency = ["multiprocessing", "thread"]
 source_pkgs = ["mangum", "tests"]
 omit = ["mangum/_compat.py"]
 
