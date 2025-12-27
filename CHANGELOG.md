@@ -1,3 +1,7 @@
+# 0.20.0
+
+* Support Python 3.14 by @Kludex in https://github.com/Kludex/mangum/pull/354
+
 # 0.19.0
 
 * Add support for [Lifespan State](https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state).
