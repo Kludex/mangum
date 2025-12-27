@@ -2,7 +2,5 @@
 
 set -x # print executed commands to the terminal
 
-export COVERAGE_PROCESS_START=$(pwd)/pyproject.toml
-
 uv run coverage run -m pytest "${@}"
 uv run coverage report

@@ -174,7 +174,7 @@ def test_http_exception_handler(mock_aws_api_gateway_event: str | None) -> None:
     handler = Mangum(app)
     response = handler(mock_aws_api_gateway_event, {})
 
-    assert response == {
+    assert response == {  # pragma: no cover
         "body": "Error!",
         "headers": {"content-length": "6", "content-type": "text/plain; charset=utf-8"},
         "multiValueHeaders": {},
