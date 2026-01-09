@@ -28,7 +28,7 @@ def all_casings(input_string: str) -> Generator[str, None, None]:
     http://stackoverflow.com/questions/6792803/finding-all-possible-case-permutations-in-python
     """
     if not input_string:
-        yield ""
+        yield ''
     else:
         first = input_string[:1]
         if first.lower() == first.upper():
@@ -73,12 +73,12 @@ def encode_query_string_for_alb(params: QueryParams) -> bytes:
 
 def transform_headers(event: LambdaEvent) -> list[tuple[bytes, bytes]]:
     headers: list[tuple[bytes, bytes]] = []
-    if "multiValueHeaders" in event:
-        for k, v in event["multiValueHeaders"].items():
+    if 'multiValueHeaders' in event:
+        for k, v in event['multiValueHeaders'].items():
             for inner_v in v:
                 headers.append((k.lower().encode(), inner_v.encode()))
     else:
-        for k, v in event["headers"].items():
+        for k, v in event['headers'].items():
             headers.append((k.lower().encode(), v.encode()))
 
     return headers
@@ -87,7 +87,7 @@ def transform_headers(event: LambdaEvent) -> list[tuple[bytes, bytes]]:
 class ALB:
     @classmethod
     def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool:
-        return "requestContext" in event and "elb" in event["requestContext"]
+        return 'requestContext' in event and 'elb' in event['requestContext']
 
     def __init__(self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> None:
         self.event = event
@@ -97,8 +97,8 @@ class ALB:
     @property
     def body(self) -> bytes:
         return maybe_encode_body(
-            self.event.get("body", b""),
-            is_base64=self.event.get("isBase64Encoded", False),
+            self.event.get('body', b''),
+            is_base64=self.event.get('isBase64Encoded', False),
         )
 
     @property
@@ -107,16 +107,16 @@ class ALB:
         list_headers = [list(x) for x in headers]
         # Unique headers. If there are duplicates, it will use the last defined.
         uq_headers = {k.decode(): v.decode() for k, v in headers}
-        source_ip = uq_headers.get("x-forwarded-for", "")
-        path = unquote(self.event["path"]) if self.event["path"] else "/"
-        http_method = self.event["httpMethod"]
+        source_ip = uq_headers.get('x-forwarded-for', '')
+        path = unquote(self.event['path']) if self.event['path'] else '/'
+        http_method = self.event['httpMethod']
 
         params = self.event.get(
-            "multiValueQueryStringParameters",
-            self.event.get("queryStringParameters", {}),
+            'multiValueQueryStringParameters',
+            self.event.get('queryStringParameters', {}),
         )
         if not params:
-            query_string = b""
+            query_string = b''
         else:
             query_string = encode_query_string_for_alb(params)
 
@@ -124,27 +124,27 @@ class ALB:
         client = (source_ip, 0)
 
         scope: Scope = {
-            "type": "http",
-            "method": http_method,
-            "http_version": "1.1",
-            "headers": list_headers,
-            "path": path,
-            "raw_path": None,
-            "root_path": "",
-            "scheme": uq_headers.get("x-forwarded-proto", "https"),
-            "query_string": query_string,
-            "server": server,
-            "client": client,
-            "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.event": self.event,
-            "aws.context": self.context,
+            'type': 'http',
+            'method': http_method,
+            'http_version': '1.1',
+            'headers': list_headers,
+            'path': path,
+            'raw_path': None,
+            'root_path': '',
+            'scheme': uq_headers.get('x-forwarded-proto', 'https'),
+            'query_string': query_string,
+            'server': server,
+            'client': client,
+            'asgi': {'version': '3.0', 'spec_version': '2.0'},
+            'aws.event': self.event,
+            'aws.context': self.context,
         }
 
         return scope
 
     def __call__(self, response: Response) -> dict[str, Any]:
         multi_value_headers: dict[str, list[str]] = {}
-        for key, value in response["headers"]:
+        for key, value in response['headers']:
             lower_key = key.decode().lower()
             if lower_key not in multi_value_headers:
                 multi_value_headers[lower_key] = []
@@ -152,21 +152,21 @@ class ALB:
 
         finalized_headers = case_mutated_headers(multi_value_headers)
         finalized_body, is_base64_encoded = handle_base64_response_body(
-            response["body"], finalized_headers, self.config["text_mime_types"]
+            response['body'], finalized_headers, self.config['text_mime_types']
         )
 
         out = {
-            "statusCode": response["status"],
-            "body": finalized_body,
-            "isBase64Encoded": is_base64_encoded,
+            'statusCode': response['status'],
+            'body': finalized_body,
+            'isBase64Encoded': is_base64_encoded,
         }
 
         # You must use multiValueHeaders if you have enabled multi-value headers and
         # headers otherwise.
-        multi_value_headers_enabled = "multiValueHeaders" in self.scope["aws.event"]
+        multi_value_headers_enabled = 'multiValueHeaders' in self.scope['aws.event']
         if multi_value_headers_enabled:
-            out["multiValueHeaders"] = handle_exclude_headers(multi_value_headers, self.config)
+            out['multiValueHeaders'] = handle_exclude_headers(multi_value_headers, self.config)
         else:
-            out["headers"] = handle_exclude_headers(finalized_headers, self.config)
+            out['headers'] = handle_exclude_headers(finalized_headers, self.config)
 
         return out

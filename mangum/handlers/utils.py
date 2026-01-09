@@ -8,7 +8,7 @@ from mangum.types import Headers, LambdaConfig
 
 
 def maybe_encode_body(body: str | bytes, *, is_base64: bool) -> bytes:
-    body = body or b""
+    body = body or b''
     if is_base64:
         body = base64.b64decode(body)
     elif not isinstance(body, bytes):
@@ -18,11 +18,11 @@ def maybe_encode_body(body: str | bytes, *, is_base64: bool) -> bytes:
 
 
 def get_server_and_port(headers: dict[str, Any]) -> tuple[str, int]:
-    server_name = headers.get("host", "mangum")
-    if ":" not in server_name:
-        server_port = headers.get("x-forwarded-port", 80)
+    server_name = headers.get('host', 'mangum')
+    if ':' not in server_name:
+        server_port = headers.get('x-forwarded-port', 80)
     else:
-        server_name, server_port = server_name.split(":")  # pragma: no cover
+        server_name, server_port = server_name.split(':')  # pragma: no cover
     server = (server_name, int(server_port))
 
     return server
@@ -30,11 +30,11 @@ def get_server_and_port(headers: dict[str, Any]) -> tuple[str, int]:
 
 def strip_api_gateway_path(path: str, *, api_gateway_base_path: str) -> str:
     if not path:
-        return "/"
+        return '/'
 
-    if api_gateway_base_path and api_gateway_base_path != "/":
-        if not api_gateway_base_path.startswith("/"):
-            api_gateway_base_path = f"/{api_gateway_base_path}"
+    if api_gateway_base_path and api_gateway_base_path != '/':
+        if not api_gateway_base_path.startswith('/'):
+            api_gateway_base_path = f'/{api_gateway_base_path}'
         if path.startswith(api_gateway_base_path):
             path = path[len(api_gateway_base_path) :]
 
@@ -68,10 +68,10 @@ def handle_base64_response_body(
     text_mime_types: list[str],
 ) -> tuple[str, bool]:
     is_base64_encoded = False
-    output_body = ""
-    if body != b"":
+    output_body = ''
+    if body != b'':
         for text_mime_type in text_mime_types:
-            if text_mime_type in headers.get("content-type", ""):
+            if text_mime_type in headers.get('content-type', ''):
                 try:
                     output_body = body.decode()
                 except UnicodeDecodeError:
@@ -88,7 +88,7 @@ def handle_base64_response_body(
 def handle_exclude_headers(headers: dict[str, Any], config: LambdaConfig) -> dict[str, Any]:
     finalized_headers = {}
     for header_key, header_value in headers.items():
-        if header_key in config["exclude_headers"]:
+        if header_key in config['exclude_headers']:
             continue
         finalized_headers[header_key] = header_value
 

@@ -82,3 +82,23 @@ def hello(request: Request):
 
 handler = Mangum(app)
 ```
+
+## Persistent event loop
+
+For Lambda warm invocations where you want to reuse async resources across requests:
+
+```python
+import asyncio
+from mangum import Mangum
+
+_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(_loop)
+
+handler = Mangum(app, lifespan="off", loop_factory=lambda: _loop)
+```
+
+When `loop_factory` is provided, Mangum won't close the loop after each invocation. You're responsible for managing the loop lifecycle and any background tasks.
+
+Use with `lifespan="off"` if you're managing lifespan startup/shutdown externally.
+
+Note: Don't call the handler from within an already-running event loop.
