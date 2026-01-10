@@ -31,63 +31,63 @@ class HTTPCycle:
         self.scope = scope
         self.buffer = BytesIO()
         self.state = HTTPCycleState.REQUEST
-        self.logger = logging.getLogger('mangum.http')
+        self.logger = logging.getLogger("mangum.http")
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
-        self.app_queue.put_nowait({'type': 'http.request', 'body': body, 'more_body': False})
+        self.app_queue.put_nowait({"type": "http.request", "body": body, "more_body": False})
 
     async def __call__(self, app: ASGI) -> Response:
         await self.run(app)
-        return {'status': self.status, 'headers': self.headers, 'body': self.body}
+        return {"status": self.status, "headers": self.headers, "body": self.body}
 
     async def run(self, app: ASGI) -> None:
         try:
             await app(self.scope, self.receive, self.send)
         except BaseException:
-            self.logger.exception('An error occurred running the application.')
+            self.logger.exception("An error occurred running the application.")
             if self.state is HTTPCycleState.REQUEST:
                 await self.send(
                     {
-                        'type': 'http.response.start',
-                        'status': 500,
-                        'headers': [[b'content-type', b'text/plain; charset=utf-8']],
+                        "type": "http.response.start",
+                        "status": 500,
+                        "headers": [[b"content-type", b"text/plain; charset=utf-8"]],
                     }
                 )
                 await self.send(
                     {
-                        'type': 'http.response.body',
-                        'body': b'Internal Server Error',
-                        'more_body': False,
+                        "type": "http.response.body",
+                        "body": b"Internal Server Error",
+                        "more_body": False,
                     }
                 )
             elif self.state is not HTTPCycleState.COMPLETE:
                 self.status = 500
-                self.body = b'Internal Server Error'
-                self.headers = [[b'content-type', b'text/plain; charset=utf-8']]
+                self.body = b"Internal Server Error"
+                self.headers = [[b"content-type", b"text/plain; charset=utf-8"]]
 
     async def receive(self) -> Message:
         return await self.app_queue.get()  # pragma: no cover
 
     async def send(self, message: Message) -> None:
-        if self.state is HTTPCycleState.REQUEST and message['type'] == 'http.response.start':
-            self.status = message['status']
-            self.headers = message.get('headers', [])
+        if self.state is HTTPCycleState.REQUEST and message["type"] == "http.response.start":
+            self.status = message["status"]
+            self.headers = message.get("headers", [])
             self.state = HTTPCycleState.RESPONSE
-        elif self.state is HTTPCycleState.RESPONSE and message['type'] == 'http.response.body':
-            body = message.get('body', b'')
-            more_body = message.get('more_body', False)
+        elif self.state is HTTPCycleState.RESPONSE and message["type"] == "http.response.body":
+            body = message.get("body", b"")
+            more_body = message.get("more_body", False)
             self.buffer.write(body)
             if not more_body:
                 self.body = self.buffer.getvalue()
                 self.buffer.close()
 
                 self.state = HTTPCycleState.COMPLETE
-                await self.app_queue.put({'type': 'http.disconnect'})
+                await self.app_queue.put({"type": "http.disconnect"})
 
                 self.logger.info(
-                    '%s %s %s',
-                    self.scope['method'],
-                    self.scope['path'],
+                    "%s %s %s",
+                    self.scope["method"],
+                    self.scope["path"],
                     self.status,
                 )
         else:
-            raise UnexpectedMessage(f'Unexpected {message["type"]}')
+            raise UnexpectedMessage(f"Unexpected {message['type']}")
