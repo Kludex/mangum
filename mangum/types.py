@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, MutableMapping, Sequence
 from typing import Any, Callable, Union
 
 from typing_extensions import Literal, Protocol, TypeAlias, TypedDict
+
+LoopFactory: TypeAlias = Callable[[], asyncio.AbstractEventLoop]
 
 LambdaEvent = dict[str, Any]
 QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]

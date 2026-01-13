@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from itertools import chain
 from typing import Any
@@ -8,7 +9,7 @@ from mangum._compat import asyncio_run
 from mangum.exceptions import ConfigurationError
 from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
 from mangum.protocols import HTTPCycle, LifespanCycle
-from mangum.types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode
+from mangum.types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode, LoopFactory
 
 logger = logging.getLogger("mangum")
 
@@ -33,12 +34,17 @@ class Mangum:
         custom_handlers: list[type[LambdaHandler]] | None = None,
         text_mime_types: list[str] | None = None,
         exclude_headers: list[str] | None = None,
+        loop_factory: LoopFactory | None = None,
     ) -> None:
         if lifespan not in ("auto", "on", "off"):
             raise ConfigurationError("Invalid argument supplied for `lifespan`. Choices are: auto|on|off")
 
         self.app = app
         self.lifespan = lifespan
+        self._factory_loop: asyncio.AbstractEventLoop | None = None
+        if loop_factory:
+            self._factory_loop = loop_factory()
+            asyncio.set_event_loop(self._factory_loop)
         self.custom_handlers = custom_handlers or []
         exclude_headers = exclude_headers or []
         self.config = LambdaConfig(
@@ -74,5 +80,8 @@ class Mangum:
                 http_cycle = HTTPCycle(scope, handler.body)
                 http_response = await http_cycle(self.app)
                 return handler(http_response)
+
+        if self._factory_loop is not None:
+            return self._factory_loop.run_until_complete(handle_request())
 
         return asyncio_run(handle_request())
