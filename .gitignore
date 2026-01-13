@@ -109,5 +109,3 @@ venv.bak/
 .devcontainer
 
 .DS_Store
-
-publish.py

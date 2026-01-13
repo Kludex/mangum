@@ -794,8 +794,8 @@ wheels = [
 ]
 
 [[package]]
-name = "mangum-ld"
-version = "0.20.1a2"
+name = "mangum"
+version = "0.20.0"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
