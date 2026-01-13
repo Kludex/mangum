@@ -7,7 +7,7 @@ packages = ["mangum"]
 
 [project]
 name = "mangum-ld"
-version = "0.20.1a2"
+version = "0.20.1.alpha.4"
 authors = [
     { name = "Jordan Eremieff", email = "jordan@eremieff.com" },
     { name = "Marcelo Trylesinski", email = "marcelotryle@gmail.com" },

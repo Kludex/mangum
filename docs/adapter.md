@@ -6,9 +6,11 @@ The heart of Mangum is the adapter class. It is a configurable wrapper that allo
 handler = Mangum(
     app,
     lifespan="auto",
-    api_gateway_base_path=None,
+    api_gateway_base_path="/",
     custom_handlers=None,
     text_mime_types=None,
+    exclude_headers=None,
+    loop_factory=None,
 )
 ```
 
@@ -21,7 +23,7 @@ All arguments are optional.
 
 ## Creating an AWS Lambda handler
 
-The adapter can be used to wrap any application without referencing the underlying methods. It defines a `__call__` method that allows the class instance to be used as an AWS Lambda event handler function. 
+The adapter can be used to wrap any application without referencing the underlying methods. It defines a `__call__` method that allows the class instance to be used as an AWS Lambda event handler function.
 
 ```python
 from mangum import Mangum
@@ -91,13 +93,21 @@ For Lambda warm invocations where you want to reuse async resources across reque
 import asyncio
 from mangum import Mangum
 
-_loop = asyncio.new_event_loop()
-asyncio.set_event_loop(_loop)
-
-handler = Mangum(app, lifespan="off", loop_factory=lambda: _loop)
+handler = Mangum(app, lifespan="off", loop_factory=asyncio.new_event_loop)
 ```
 
-When `loop_factory` is provided, Mangum won't close the loop after each invocation. You're responsible for managing the loop lifecycle and any background tasks.
+When `loop_factory` is provided, Mangum creates the loop once at initialization and reuses it for all invocations. The loop is not closed after each request, allowing you to maintain persistent connections and background tasks across warm invocations.
+
+**Note:** Mangum does not close the factory-created loop. In Lambda, the loop persists until the execution environment is recycled, at which point cleanup happens automatically. If you need explicit cleanup (e.g., in tests), you're responsible for closing the loop.
+
+You can also use `uvloop` for better performance:
+
+```python
+import uvloop
+from mangum import Mangum
+
+handler = Mangum(app, lifespan="off", loop_factory=uvloop.new_event_loop)
+```
 
 Use with `lifespan="off"` if you're managing lifespan startup/shutdown externally.
 
