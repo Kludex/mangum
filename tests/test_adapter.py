@@ -55,23 +55,19 @@ def test_loop_factory_reuses_loop(mock_aws_api_gateway_event):
         asyncio.set_event_loop(None)
 
 
-@pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
-def test_loop_factory_sets_current_loop(mock_aws_api_gateway_event):
-    """loop_factory sets the loop as current."""
+def test_loop_factory_sets_current_loop():
+    """loop_factory sets the loop as current during initialization."""
 
     async def app(scope, receive, send):
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b"OK"})
 
-    handler = Mangum(app, lifespan="off", loop_factory=asyncio.new_event_loop)
+    with patch("mangum.adapter.asyncio.set_event_loop") as mock_set:
+        handler = Mangum(app, lifespan="off", loop_factory=asyncio.new_event_loop)
+        mock_set.assert_called_once_with(handler._factory_loop)
 
-    try:
-        with patch("asyncio.set_event_loop") as mock_set:
-            handler(mock_aws_api_gateway_event, {})
-            mock_set.assert_called_with(handler._factory_loop)
-    finally:
-        handler._factory_loop.close()
-        asyncio.set_event_loop(None)
+    handler._factory_loop.close()
+    asyncio.set_event_loop(None)
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)

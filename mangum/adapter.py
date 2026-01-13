@@ -41,7 +41,10 @@ class Mangum:
 
         self.app = app
         self.lifespan = lifespan
-        self._factory_loop = loop_factory() if loop_factory else None
+        self._factory_loop: asyncio.AbstractEventLoop | None = None
+        if loop_factory:
+            self._factory_loop = loop_factory()
+            asyncio.set_event_loop(self._factory_loop)
         self.custom_handlers = custom_handlers or []
         exclude_headers = exclude_headers or []
         self.config = LambdaConfig(
@@ -79,7 +82,6 @@ class Mangum:
                 return handler(http_response)
 
         if self._factory_loop is not None:
-            asyncio.set_event_loop(self._factory_loop)
             return self._factory_loop.run_until_complete(handle_request())
 
         return asyncio_run(handle_request())
