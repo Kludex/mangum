@@ -1,3 +1,12 @@
+# 0.21.0
+
+This release reverted the previous attempt on support Python 3.14 because it was
+[not working as expected](https://github.com/Kludex/mangum/issues/361), and added
+proper support for Python 3.14 with minimal changes.
+
+* Support Python 3.14 by @Kludex in https://github.com/Kludex/mangum/pull/375
+* Revert "Support Python 3.14 (#354)" by @Kludex in https://github.com/Kludex/mangum/pull/364
+
 # 0.20.0
 
 * Support Python 3.14 by @Kludex in https://github.com/Kludex/mangum/pull/354
