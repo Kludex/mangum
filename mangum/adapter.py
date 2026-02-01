@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import ExitStack
 from itertools import chain
@@ -46,6 +47,7 @@ class Mangum:
             text_mime_types=text_mime_types or [*DEFAULT_TEXT_MIME_TYPES],
             exclude_headers=[header.lower() for header in exclude_headers],
         )
+        self._setup_event_loop()
 
     def infer(self, event: LambdaEvent, context: LambdaContext) -> LambdaHandler:
         for handler_cls in chain(self.custom_handlers, HANDLERS):
@@ -57,6 +59,13 @@ class Mangum:
             "testing locally? Make sure the request payload is valid for a "
             "supported handler.)"
         )
+
+    def _setup_event_loop(self) -> None:
+        try:
+            asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
     def __call__(self, event: LambdaEvent, context: LambdaContext) -> dict[str, Any]:
         handler = self.infer(event, context)

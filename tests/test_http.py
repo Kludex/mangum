@@ -4,13 +4,16 @@ import base64
 import gzip
 import json
 import logging
+from typing import cast
 
 import brotli
 import pytest
 from brotli_asgi import BrotliMiddleware
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 
 from mangum import Mangum
 
@@ -158,17 +161,16 @@ def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
 def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
-    path = mock_aws_api_gateway_event["path"]
-    app = Starlette()
+    path = cast(str, mock_aws_api_gateway_event["path"])
 
-    @app.exception_handler(Exception)
-    async def all_exceptions(request, exc):
+    async def all_exceptions(request: Request, exc: Exception) -> PlainTextResponse:
         return PlainTextResponse(content="Error!", status_code=500)
 
-    @app.route(path)
-    def homepage(request):
+    def homepage(request: Request):
         raise Exception()
-        return PlainTextResponse("Hello, world!")
+        return PlainTextResponse("Hello, world!")  # pragma: no cover
+
+    app = Starlette(exception_handlers={Exception: all_exceptions}, routes=[Route(path, homepage)])
 
     handler = Mangum(app)
     response = handler(mock_aws_api_gateway_event, {})
@@ -241,7 +243,9 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
         "content-length": "35",
         "vary": "Accept-Encoding",
     }
-    assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
+    # Decompress and compare content instead of comparing gzip bytes (which include timestamp)
+    decompressed = gzip.decompress(base64.b64decode(response["body"]))
+    assert decompressed == body.encode()
 
 
 @pytest.mark.parametrize(
