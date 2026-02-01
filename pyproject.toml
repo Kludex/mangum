@@ -27,15 +27,15 @@ dependencies = ["typing_extensions"]
 
 [dependency-groups]
 dev = [
-    "pytest",
-    "pytest-cov",
+    "pytest>=8.0.0",
+    "coverage",
     "ruff",
     "starlette",
-    "quart",
+    "quart>=0.20.0",
     "hypercorn>=0.15.0",
     "mypy",
     "brotli",
-    "brotli-asgi",
+    "brotli-asgi>=1.6.0",
     "mkautodoc",
     "mkdocs>=1.6.0; python_version >= '3.12'",
     "mkdocs-material; python_version >= '3.12'",
@@ -66,10 +66,6 @@ ignore = ["UP031"] # https://docs.astral.sh/ruff/rules/printf-string-formatting/
 strict = true
 
 [tool.pytest.ini_options]
-log_cli = true
-log_cli_level = "INFO"
-log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
-log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 addopts = "-rXs --strict-config --strict-markers"
 xfail_strict = true
 filterwarnings = [
@@ -88,6 +84,9 @@ filterwarnings = [
 source_pkgs = ["mangum", "tests"]
 
 [tool.coverage.report]
+fail_under = 100
+skip_covered = true
+show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "pragma: nocover",

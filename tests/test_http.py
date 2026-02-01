@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import gzip
 import json
+import logging
 
 import brotli
 import pytest
@@ -583,6 +584,8 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
 def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO)
+
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         await send(
