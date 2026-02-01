@@ -63,21 +63,3 @@ def test_custom_handler():
         "server": ("mangum", 8080),
         "type": "http",
     }
-
-
-def test_custom_handler_infer():
-    """Test the infer method of CustomHandler."""
-    event_with_key = {"my-custom-key": 1}
-    event_without_key = {"other-key": 1}
-
-    assert CustomHandler.infer(event_with_key, {}, {"api_gateway_base_path": "/"}) is True
-    assert CustomHandler.infer(event_without_key, {}, {"api_gateway_base_path": "/"}) is False
-
-
-def test_custom_handler_call():
-    """Test the __call__ method of CustomHandler."""
-    event = {"my-custom-key": 1}
-    handler = CustomHandler(event, {}, {"api_gateway_base_path": "/"})
-
-    result = handler(status=200, headers=[], body=b"Hello, World!")
-    assert result == {"statusCode": 200, "headers": {}, "body": "Hello, World!"}

@@ -9,11 +9,9 @@ import pytest
 from brotli_asgi import BrotliMiddleware
 from starlette.applications import Starlette
 from starlette.middleware.gzip import GZipMiddleware
-from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
-from mangum.types import Receive, Scope, Send
 
 
 @pytest.mark.parametrize(
@@ -158,23 +156,23 @@ def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
-def test_http_exception_handler(mock_aws_api_gateway_event: str | None) -> None:
+def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
     path = mock_aws_api_gateway_event["path"]
     app = Starlette()
 
     @app.exception_handler(Exception)
-    async def all_exceptions(request: Request, exc: Exception):
+    async def all_exceptions(request, exc):
         return PlainTextResponse(content="Error!", status_code=500)
 
     @app.route(path)
-    def homepage(request: Request):
+    def homepage(request):
         raise Exception()
-        return PlainTextResponse("Hello, world!")  # pragma: no cover
+        return PlainTextResponse("Hello, world!")
 
     handler = Mangum(app)
     response = handler(mock_aws_api_gateway_event, {})
 
-    assert response == {  # pragma: no cover
+    assert response == {
         "body": "Error!",
         "headers": {"content-length": "6", "content-type": "text/plain; charset=utf-8"},
         "multiValueHeaders": {},
@@ -242,9 +240,7 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
         "content-length": "35",
         "vary": "Accept-Encoding",
     }
-    # Decompress and compare content instead of comparing gzip bytes (which include timestamp)
-    decompressed = gzip.decompress(base64.b64decode(response["body"]))
-    assert decompressed == body.encode()
+    assert response["body"] == base64.b64encode(gzip.compress(body.encode())).decode()
 
 
 @pytest.mark.parametrize(
@@ -587,9 +583,7 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
 def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixture) -> None:
-    caplog.set_level("INFO")
-
-    async def app(scope: Scope, receive: Receive, send: Send):
+    async def app(scope, receive, send):
         assert scope["type"] == "http"
         await send(
             {

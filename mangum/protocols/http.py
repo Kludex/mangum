@@ -33,11 +33,25 @@ class HTTPCycle:
         self.state = HTTPCycleState.REQUEST
         self.logger = logging.getLogger("mangum.http")
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
-        self.app_queue.put_nowait({"type": "http.request", "body": body, "more_body": False})
+        self.app_queue.put_nowait(
+            {
+                "type": "http.request",
+                "body": body,
+                "more_body": False,
+            }
+        )
 
-    async def __call__(self, app: ASGI) -> Response:
-        await self.run(app)
-        return {"status": self.status, "headers": self.headers, "body": self.body}
+    def __call__(self, app: ASGI) -> Response:
+        asgi_instance = self.run(app)
+        loop = asyncio.get_event_loop()
+        asgi_task = loop.create_task(asgi_instance)
+        loop.run_until_complete(asgi_task)
+
+        return {
+            "status": self.status,
+            "headers": self.headers,
+            "body": self.body,
+        }
 
     async def run(self, app: ASGI) -> None:
         try:

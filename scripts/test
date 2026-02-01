@@ -2,5 +2,4 @@
 
 set -x # print executed commands to the terminal
 
-uv run coverage run -m pytest "${@}"
-uv run coverage report
+uv run pytest --ignore venv --cov=mangum --cov=tests --cov-fail-under=100 --cov-report=term-missing "${@}"

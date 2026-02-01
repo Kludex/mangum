@@ -59,26 +59,26 @@ class LifespanCycle:
         self.lifespan = lifespan
         self.state: LifespanCycleState = LifespanCycleState.CONNECTING
         self.exception: BaseException | None = None
+        self.loop = asyncio.get_event_loop()
         self.app_queue: asyncio.Queue[Message] = asyncio.Queue()
         self.startup_event: asyncio.Event = asyncio.Event()
         self.shutdown_event: asyncio.Event = asyncio.Event()
         self.logger = logging.getLogger("mangum.lifespan")
         self.lifespan_state: dict[str, Any] = {}
 
-    async def __aenter__(self) -> LifespanCycle:
+    def __enter__(self) -> None:
         """Runs the event loop for application startup."""
-        asyncio.create_task(self.run())
-        await self.startup()
-        return self
+        self.loop.create_task(self.run())
+        self.loop.run_until_complete(self.startup())
 
-    async def __aexit__(
+    def __exit__(
         self,
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
         """Runs the event loop for application shutdown."""
-        await self.shutdown()
+        self.loop.run_until_complete(self.shutdown())
 
     async def run(self) -> None:
         """Calls the application with the `lifespan` connection scope."""

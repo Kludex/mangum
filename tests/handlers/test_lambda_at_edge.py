@@ -4,7 +4,6 @@ import pytest
 
 from mangum import Mangum
 from mangum.handlers.lambda_at_edge import LambdaAtEdge
-from mangum.types import Receive, Scope, Send
 
 
 def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, body_base64_encoded):
@@ -289,8 +288,14 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
     raw_res_body = utf_res_body.encode()
     b64_res_body = "bmFtZTogJ0pvaG4gRG9lJw=="
 
-    async def app(scope: Scope, receive: Receive, send: Send):
-        await send({"type": "http.response.start", "status": 200, "headers": [[b"content-type", content_type]]})
+    async def app(scope, receive, send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", content_type]],
+            }
+        )
         await send({"type": "http.response.body", "body": raw_res_body})
 
     event = mock_lambda_at_edge_event("POST", "/test", {}, None, False)
@@ -319,7 +324,7 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
 
 
 def test_aws_lambda_at_edge_exclude_():
-    async def app(scope: Scope, receive: Receive, send: Send):
+    async def app(scope, receive, send):
         await send(
             {
                 "type": "http.response.start",
