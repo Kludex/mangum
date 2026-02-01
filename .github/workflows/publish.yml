@@ -16,7 +16,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
-          version: "0.4.12"
+          version: "0.9.18"
           enable-cache: true
 
       - name: Set up Python
@@ -49,11 +49,11 @@ jobs:
       url: https://pypi.org/project/mangum/${{ needs.build.outputs.version }}
 
     steps:
-    - name: Download package
-      uses: actions/download-artifact@v4
-      with:
-        name: package-distributions
-        path: dist/
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: package-distributions
+          path: dist/
 
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
