@@ -110,11 +110,26 @@ class LambdaConfig(TypedDict):
     exclude_headers: list[str]
 
 
+class Cycle(Protocol):
+    def __init__(self, scope: Scope, body: bytes) -> None: ...  # pragma: no cover
+
+    def __call__(self, app: ASGI) -> Response: ...  # pragma: no cover
+
+    async def run(self, app: ASGI) -> None: ...  # pragma: no cover
+
+    async def receive(self) -> Message: ...  # pragma: no cover
+
+    async def send(self, message: Message) -> None: ...  # pragma: no cover
+
+
 class LambdaHandler(Protocol):
     def __init__(self, *args: Any) -> None: ...  # pragma: no cover
 
     @classmethod
     def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool: ...  # pragma: no cover
+
+    @property
+    def cycle_cls(self) -> type[Cycle]: ...  # pragma: no cover
 
     @property
     def body(self) -> bytes: ...  # pragma: no cover

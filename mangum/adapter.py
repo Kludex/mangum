@@ -8,7 +8,7 @@ from typing import Any
 
 from mangum.exceptions import ConfigurationError
 from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
-from mangum.protocols import HTTPCycle, LifespanCycle
+from mangum.protocols import LifespanCycle
 from mangum.types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode
 
 logger = logging.getLogger("mangum")
@@ -76,8 +76,8 @@ class Mangum:
                 stack.enter_context(lifespan_cycle)
                 scope.update({"state": lifespan_cycle.lifespan_state.copy()})
 
-            http_cycle = HTTPCycle(scope, handler.body)
-            http_response = http_cycle(self.app)
+            cycle = handler.cycle_cls(scope, handler.body)
+            http_response = cycle(self.app)
 
             return handler(http_response)
 
