@@ -73,7 +73,6 @@ filterwarnings = [
     # Turn warnings that aren't filtered into exceptions
     "error",
     "ignore::DeprecationWarning:starlette",
-    "ignore: There is no current event loop:DeprecationWarning",
     "ignore: 'pkgutil.get_loader' is deprecated.*:DeprecationWarning",
     "ignore: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
     "ignore: Attribute s is deprecated and will be removed in Python 3.14; use value instead:DeprecationWarning",
