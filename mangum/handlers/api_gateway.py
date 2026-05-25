@@ -4,6 +4,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from mangum.handlers.utils import (
+    get_api_gateway_root_path,
     get_server_and_port,
     handle_base64_response_body,
     handle_exclude_headers,
@@ -94,7 +95,7 @@ class APIGateway:
                 api_gateway_base_path=self.config["api_gateway_base_path"],
             ),
             "raw_path": None,
-            "root_path": "",
+            "root_path": get_api_gateway_root_path(self.config["api_gateway_base_path"]),
             "scheme": headers.get("x-forwarded-proto", "https"),
             "query_string": _encode_query_string_for_apigw(self.event),
             "server": get_server_and_port(headers),
@@ -177,7 +178,7 @@ class HTTPGateway:
             "headers": [[k.encode(), v.encode()] for k, v in headers.items()],
             "path": path,
             "raw_path": None,
-            "root_path": "",
+            "root_path": get_api_gateway_root_path(self.config["api_gateway_base_path"]),
             "scheme": headers.get("x-forwarded-proto", "https"),
             "query_string": query_string,
             "server": server,

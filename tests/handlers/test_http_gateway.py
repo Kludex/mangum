@@ -230,6 +230,14 @@ def test_aws_http_gateway_scope_v1_no_headers():
     assert handler.scope["query_string"] == b""
 
 
+def test_aws_http_gateway_scope_v1_base_path_sets_root_path():
+    event = get_mock_aws_http_gateway_event_v1("GET", "/api/test", {}, None, False)
+    handler = HTTPGateway(event, {}, {"api_gateway_base_path": "api"})
+
+    assert handler.scope["path"] == "/test"
+    assert handler.scope["root_path"] == "/api"
+
+
 def test_aws_http_gateway_scope_basic_v2():
     """
     Test the event from the AWS docs
@@ -307,6 +315,14 @@ def test_aws_http_gateway_scope_basic_v2():
         "server": ("mangum", 80),
         "type": "http",
     }
+
+
+def test_aws_http_gateway_scope_v2_base_path_sets_root_path():
+    event = get_mock_aws_http_gateway_event_v2("GET", "/api/test", {}, None, False)
+    handler = HTTPGateway(event, {}, {"api_gateway_base_path": "api"})
+
+    assert handler.scope["path"] == "/test"
+    assert handler.scope["root_path"] == "/api"
 
 
 @pytest.mark.parametrize(
