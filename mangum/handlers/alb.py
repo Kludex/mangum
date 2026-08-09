@@ -11,7 +11,9 @@ from mangum.handlers.utils import (
     handle_exclude_headers,
     maybe_encode_body,
 )
+from mangum.protocols import HTTPCycle
 from mangum.types import (
+    Cycle,
     LambdaConfig,
     LambdaContext,
     LambdaEvent,
@@ -93,6 +95,10 @@ class ALB:
         self.event = event
         self.context = context
         self.config = config
+
+    @property
+    def cycle_cls(self) -> type[Cycle]:
+        return HTTPCycle
 
     @property
     def body(self) -> bytes:

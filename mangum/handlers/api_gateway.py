@@ -11,7 +11,9 @@ from mangum.handlers.utils import (
     maybe_encode_body,
     strip_api_gateway_path,
 )
+from mangum.protocols import HTTPCycle
 from mangum.types import (
+    Cycle,
     Headers,
     LambdaConfig,
     LambdaContext,
@@ -75,6 +77,10 @@ class APIGateway:
         self.config = config
 
     @property
+    def cycle_cls(self) -> type[Cycle]:
+        return HTTPCycle
+
+    @property
     def body(self) -> bytes:
         return maybe_encode_body(
             self.event.get("body", b""),
@@ -131,6 +137,10 @@ class HTTPGateway:
         self.event = event
         self.context = context
         self.config = config
+
+    @property
+    def cycle_cls(self) -> type[Cycle]:
+        return HTTPCycle
 
     @property
     def body(self) -> bytes:

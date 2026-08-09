@@ -82,3 +82,101 @@ def hello(request: Request):
 
 handler = Mangum(app)
 ```
+
+## Custom Handlers
+
+Mangum supports custom handlers to process Lambda events that don't match the built-in handlers (API Gateway, ALB, Lambda@Edge). This is useful for handling custom event formats or integrating with other AWS services.
+
+### Basic Custom Handler
+
+A custom handler must implement the following interface:
+
+```python
+from mangum import Mangum
+from mangum.protocols import HTTPCycle
+from mangum.types import Cycle, LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
+
+
+class MyCustomHandler:
+    @classmethod
+    def infer(cls, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> bool:
+        """Return True if this handler should process the event."""
+        return "my-custom-key" in event
+
+    def __init__(self, event: LambdaEvent, context: LambdaContext, config: LambdaConfig) -> None:
+        self.event = event
+        self.context = context
+        self.config = config
+
+    @property
+    def cycle_cls(self) -> type[Cycle]:
+        """Return the cycle class to use for request/response processing."""
+        return HTTPCycle
+
+    @property
+    def body(self) -> bytes:
+        """Return the request body."""
+        return self.event.get("body", b"")
+
+    @property
+    def scope(self) -> Scope:
+        """Return the ASGI scope dictionary."""
+        return {
+            "type": "http",
+            "http_version": "1.1",
+            "method": self.event.get("method", "GET"),
+            "headers": [],
+            "path": self.event.get("path", "/"),
+            "raw_path": None,
+            "root_path": "",
+            "scheme": "https",
+            "query_string": b"",
+            "server": ("localhost", 443),
+            "client": ("127.0.0.1", 0),
+            "asgi": {"version": "3.0", "spec_version": "2.0"},
+            "aws.event": self.event,
+            "aws.context": self.context,
+        }
+
+    def __call__(self, response: Response) -> dict:
+        """Transform the ASGI response to a Lambda response."""
+        return {
+            "statusCode": response["status"],
+            "headers": {k.decode(): v.decode() for k, v in response["headers"]},
+            "body": response["body"].decode(),
+        }
+
+
+handler = Mangum(app, custom_handlers=[MyCustomHandler])
+```
+
+Custom handlers are checked **before** the built-in handlers, so they take priority.
+
+### Custom Protocol Cycle
+
+The `cycle_cls` property allows you to specify a custom request/response cycle class. This is useful for implementing custom protocols or adding middleware-like behavior at the cycle level.
+
+```python
+from mangum.protocols import HTTPCycle
+from mangum.types import ASGI, Cycle, Response, Scope
+
+
+class MyCustomCycle:
+    """A custom cycle that adds behavior to the standard HTTP cycle."""
+
+    def __init__(self, scope: Scope, body: bytes) -> None:
+        self.scope = scope
+        self._http_cycle = HTTPCycle(scope, body)
+
+    async def __call__(self, app: ASGI) -> Response:
+        # Add custom logic before/after the request
+        return await self._http_cycle(app)
+
+
+class MyCustomHandler:
+    # ... other methods ...
+
+    @property
+    def cycle_cls(self) -> type[Cycle]:
+        return MyCustomCycle
+```

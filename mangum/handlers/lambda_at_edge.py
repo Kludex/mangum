@@ -8,7 +8,15 @@ from mangum.handlers.utils import (
     handle_multi_value_headers,
     maybe_encode_body,
 )
-from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
+from mangum.protocols import HTTPCycle
+from mangum.types import (
+    Cycle,
+    LambdaConfig,
+    LambdaContext,
+    LambdaEvent,
+    Response,
+    Scope,
+)
 
 
 class LambdaAtEdge:
@@ -24,6 +32,10 @@ class LambdaAtEdge:
         self.event = event
         self.context = context
         self.config = config
+
+    @property
+    def cycle_cls(self) -> type[Cycle]:
+        return HTTPCycle
 
     @property
     def body(self) -> bytes:
