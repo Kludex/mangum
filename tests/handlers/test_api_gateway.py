@@ -260,6 +260,7 @@ def test_aws_api_gateway_base_path(
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         assert scope["path"] == urllib.parse.unquote(event["path"])
+        assert scope["root_path"] == ""
         await send(
             {
                 "type": "http.response.start",
@@ -283,6 +284,7 @@ def test_aws_api_gateway_base_path(
     async def app(scope, receive, send):
         assert scope["type"] == "http"
         assert scope["path"] == urllib.parse.unquote(event["path"][len(f"/{api_gateway_base_path}") :])
+        assert scope["root_path"] == f"/{api_gateway_base_path}"
         await send(
             {
                 "type": "http.response.start",

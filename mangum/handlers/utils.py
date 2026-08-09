@@ -41,6 +41,16 @@ def strip_api_gateway_path(path: str, *, api_gateway_base_path: str) -> str:
     return unquote(path)
 
 
+def get_api_gateway_root_path(api_gateway_base_path: str) -> str:
+    if not api_gateway_base_path or api_gateway_base_path == "/":
+        return ""
+
+    if not api_gateway_base_path.startswith("/"):
+        return f"/{api_gateway_base_path}"
+
+    return api_gateway_base_path
+
+
 def handle_multi_value_headers(
     response_headers: Headers,
 ) -> tuple[dict[str, str], dict[str, list[str]]]:
