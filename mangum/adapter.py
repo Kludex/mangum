@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import warnings
 from contextlib import ExitStack
 from itertools import chain
 from typing import Any
@@ -62,7 +63,9 @@ class Mangum:
 
     def _setup_event_loop(self) -> None:
         try:
-            asyncio.get_event_loop()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
