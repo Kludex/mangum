@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from mangum import Mangum
 from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Receive, Response, Scope, Send
+from tests.context import MockLambdaContext
 
-CONTEXT = cast("LambdaContext", {})
+CONTEXT = MockLambdaContext()
 
 CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
@@ -68,7 +69,7 @@ def test_custom_handler_scope() -> None:
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("127.0.0.1", 0),
         "headers": [],

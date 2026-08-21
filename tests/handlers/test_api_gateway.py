@@ -1,13 +1,13 @@
 import urllib.parse
-from typing import cast
 
 import pytest
 
 from mangum import Mangum
 from mangum.handlers.api_gateway import APIGateway
-from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, QueryParams, Receive, Scope, Send
+from mangum.types import LambdaConfig, LambdaEvent, QueryParams, Receive, Scope, Send
+from tests.context import MockLambdaContext
 
-CONTEXT = cast("LambdaContext", {})
+CONTEXT = MockLambdaContext()
 
 CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
@@ -116,7 +116,7 @@ def test_aws_api_gateway_scope_basic() -> None:
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": example_event,
         "client": (None, 0),
         "headers": [
@@ -213,7 +213,7 @@ def test_aws_api_gateway_scope_real(
 
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("192.168.100.1", 0),
         "headers": [

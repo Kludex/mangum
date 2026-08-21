@@ -9,9 +9,10 @@ from starlette.responses import PlainTextResponse
 
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
-from mangum.types import ASGI, LambdaContext, LambdaEvent, LifespanMode, Receive, Scope, Send
+from mangum.types import ASGI, LambdaEvent, LifespanMode, Receive, Scope, Send
+from tests.context import MockLambdaContext
 
-CONTEXT = cast("LambdaContext", {})
+CONTEXT = MockLambdaContext()
 
 
 @pytest.mark.parametrize(

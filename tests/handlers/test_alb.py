@@ -6,15 +6,14 @@ References:
 
 from __future__ import annotations
 
-from typing import cast
-
 import pytest
 
 from mangum import Mangum
 from mangum.handlers.alb import ALB
-from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, QueryParams, Receive, Scope, Send
+from mangum.types import LambdaConfig, LambdaEvent, QueryParams, Receive, Scope, Send
+from tests.context import MockLambdaContext
 
-CONTEXT = cast("LambdaContext", {})
+CONTEXT = MockLambdaContext()
 
 CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
@@ -210,7 +209,7 @@ def test_aws_alb_scope_real(
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("72.12.164.125", 0),
         "headers": [

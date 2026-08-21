@@ -7,7 +7,8 @@ import pytest
 from mangum import Mangum
 from mangum.adapter import DEFAULT_TEXT_MIME_TYPES
 from mangum.exceptions import ConfigurationError
-from mangum.types import Receive, Scope, Send
+from mangum.types import LambdaContext, Receive, Scope, Send
+from tests.context import MockLambdaContext
 
 
 async def app(scope: Scope, receive: Receive, send: Send) -> None: ...
@@ -63,3 +64,8 @@ def test_event_loop_reused_when_present() -> None:
     thread.join()
 
     loop.close()
+
+
+def test_mock_lambda_context_satisfies_protocol() -> None:
+    context: LambdaContext = MockLambdaContext()
+    assert context.get_remaining_time_in_millis() == 30000

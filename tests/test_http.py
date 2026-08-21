@@ -16,9 +16,10 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from mangum import Mangum
-from mangum.types import LambdaContext, LambdaEvent, Receive, Scope, Send
+from mangum.types import LambdaEvent, Receive, Scope, Send
+from tests.context import MockLambdaContext
 
-CONTEXT = cast("LambdaContext", {})
+CONTEXT = MockLambdaContext()
 
 
 @pytest.mark.parametrize(
@@ -30,7 +31,7 @@ def test_http_response(mock_aws_api_gateway_event: LambdaEvent) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "body": None,
                 "headers": {
@@ -272,7 +273,7 @@ def test_set_cookies_v2(mock_http_api_event_v2: LambdaEvent) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "version": "2.0",
                 "routeKey": "$default",
@@ -387,7 +388,7 @@ def test_set_cookies_v1(mock_http_api_event_v1: LambdaEvent) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "version": "1.0",
                 "routeKey": "$default",
