@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, MutableMapping, Sequence
-from typing import Any, Callable, Union
+from collections.abc import Awaitable, Callable, MutableMapping, Sequence
+from typing import Any, Literal, TypeAlias
 
-from typing_extensions import Literal, Protocol, TypeAlias, TypedDict
+from typing_extensions import Protocol, TypedDict
 
 LambdaEvent = dict[str, Any]
-QueryParams: TypeAlias = MutableMapping[str, Union[str, Sequence[str]]]
+QueryParams: TypeAlias = MutableMapping[str, str | Sequence[str]]
 
 
 class LambdaCognitoIdentity(Protocol):
