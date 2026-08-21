@@ -17,4 +17,4 @@ class MockLambdaContext:
     client_context: LambdaMobileClientContext | None = None
 
     def get_remaining_time_in_millis(self) -> int:
-        return 30000
+        raise NotImplementedError
