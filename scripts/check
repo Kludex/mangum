@@ -6,4 +6,4 @@ SOURCE_FILES="mangum tests"
 
 uvx ruff format --check --diff $SOURCE_FILES
 uvx ruff check $SOURCE_FILES
-uvx mypy mangum
+uv run mypy mangum tests
