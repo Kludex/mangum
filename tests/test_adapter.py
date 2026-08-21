@@ -1,3 +1,6 @@
+import asyncio
+import threading
+
 import pytest
 
 from mangum import Mangum
@@ -31,3 +34,31 @@ def test_invalid_options(arguments, message):
         Mangum(app, **arguments)
 
     assert str(exc.value) == message
+
+
+def test_event_loop_created_when_missing():
+    result: dict[str, Mangum] = {}
+
+    def create_handler() -> None:
+        result["handler"] = Mangum(app)
+        asyncio.get_event_loop().close()
+
+    thread = threading.Thread(target=create_handler)
+    thread.start()
+    thread.join()
+
+    assert result["handler"].lifespan == "auto"
+
+
+def test_event_loop_reused_when_present():
+    loop = asyncio.new_event_loop()
+
+    def create_handler() -> None:
+        asyncio.set_event_loop(loop)
+        Mangum(app)
+
+    thread = threading.Thread(target=create_handler)
+    thread.start()
+    thread.join()
+
+    loop.close()
