@@ -201,9 +201,7 @@ def test_lifespan_failure(mock_aws_api_gateway_event, lifespan, failure_type) ->
                     else:
                         await send({"type": "lifespan.startup.complete"})
                 if message["type"] == "lifespan.shutdown":
-                    if failure_type == "shutdown":
-                        await send({"type": "lifespan.shutdown.failed", "message": "Failed."})
-                    await send({"type": "lifespan.shutdown.complete"})
+                    await send({"type": "lifespan.shutdown.failed", "message": "Failed."})
 
     handler = Mangum(app, lifespan=lifespan)
 

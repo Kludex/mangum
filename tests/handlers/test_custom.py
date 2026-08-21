@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from mangum.types import Headers, LambdaConfig, LambdaContext, LambdaEvent, Scope
+from mangum import Mangum
+from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
 
 
 class CustomHandler:
@@ -39,11 +40,25 @@ class CustomHandler:
             "aws.context": self.context,
         }
 
-    def __call__(self, *, status: int, headers: Headers, body: bytes) -> dict[str, Any]:
-        return {"statusCode": status, "headers": {}, "body": body.decode()}
+    def __call__(self, response: Response) -> dict[str, Any]:
+        return {"statusCode": response["status"], "headers": {}, "body": response["body"].decode()}
 
 
 def test_custom_handler():
+    event = {"my-custom-key": 1}
+
+    async def app(scope, receive, send):
+        assert scope["aws.event"] == event
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"Hello!"})
+
+    handler = Mangum(app, lifespan="off", custom_handlers=[CustomHandler])
+    response = handler(event, {})
+
+    assert response == {"statusCode": 200, "headers": {}, "body": "Hello!"}
+
+
+def test_custom_handler_scope():
     event = {"my-custom-key": 1}
     handler = CustomHandler(event, {}, {"api_gateway_base_path": "/"})
     assert isinstance(handler.body, bytes)
