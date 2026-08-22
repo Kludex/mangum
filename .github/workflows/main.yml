@@ -28,6 +28,7 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }} --frozen
 
       - name: Run linters
+        if: matrix.python-version == '3.14'
         run: scripts/check
 
       - name: Run tests
