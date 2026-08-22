@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from mangum import Mangum
-from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
+from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Receive, Response, Scope, Send
+from tests.context import MockLambdaContext
+
+CONTEXT = MockLambdaContext()
+
+CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
 
 class CustomHandler:
@@ -44,27 +49,27 @@ class CustomHandler:
         return {"statusCode": response["status"], "headers": {}, "body": response["body"].decode()}
 
 
-def test_custom_handler():
+def test_custom_handler() -> None:
     event = {"my-custom-key": 1}
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["aws.event"] == event
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b"Hello!"})
 
     handler = Mangum(app, lifespan="off", custom_handlers=[CustomHandler])
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
 
     assert response == {"statusCode": 200, "headers": {}, "body": "Hello!"}
 
 
-def test_custom_handler_scope():
+def test_custom_handler_scope() -> None:
     event = {"my-custom-key": 1}
-    handler = CustomHandler(event, {}, {"api_gateway_base_path": "/"})
+    handler = CustomHandler(event, CONTEXT, CONFIG)
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("127.0.0.1", 0),
         "headers": [],

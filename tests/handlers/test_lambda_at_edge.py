@@ -4,9 +4,21 @@ import pytest
 
 from mangum import Mangum
 from mangum.handlers.lambda_at_edge import LambdaAtEdge
+from mangum.types import LambdaConfig, LambdaEvent, QueryParams, Receive, Scope, Send
+from tests.context import MockLambdaContext
+
+CONTEXT = MockLambdaContext()
+
+CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
 
-def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, body_base64_encoded):
+def mock_lambda_at_edge_event(
+    method: str,
+    path: str,
+    multi_value_query_parameters: QueryParams | None,
+    body: str | bytes | None,
+    body_base64_encoded: bool,
+) -> LambdaEvent:
     headers_raw = {
         "accept-encoding": "gzip,deflate",
         "x-forwarded-port": "443",
@@ -18,7 +30,7 @@ def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, 
     for key, value in headers_raw.items():
         headers[key.lower()] = [{"key": key, "value": value}]
 
-    event = {
+    event: LambdaEvent = {
         "Records": [
             {
                 "cf": {
@@ -72,7 +84,7 @@ def mock_lambda_at_edge_event(method, path, multi_value_query_parameters, body, 
     return event
 
 
-def test_aws_cf_lambda_at_edge_scope_basic():
+def test_aws_cf_lambda_at_edge_scope_basic() -> None:
     """
     Test the event from the AWS docs
     """
@@ -125,13 +137,13 @@ def test_aws_cf_lambda_at_edge_scope_basic():
             }
         ]
     }
-    example_context = {}
-    handler = LambdaAtEdge(example_event, example_context, {"api_gateway_base_path": "/"})
+    example_context = CONTEXT
+    handler = LambdaAtEdge(example_event, example_context, CONFIG)
 
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": example_event,
         "client": ("203.0.113.178", 0),
         "headers": [
@@ -202,21 +214,21 @@ def test_aws_cf_lambda_at_edge_scope_basic():
     ],
 )
 def test_aws_api_gateway_scope_real(
-    method,
-    path,
-    multi_value_query_parameters,
-    req_body,
-    body_base64_encoded,
-    query_string,
-    scope_body,
-):
+    method: str,
+    path: str,
+    multi_value_query_parameters: QueryParams | None,
+    req_body: str | None,
+    body_base64_encoded: bool,
+    query_string: str,
+    scope_body: bytes | None,
+) -> None:
     event = mock_lambda_at_edge_event(method, path, multi_value_query_parameters, req_body, body_base64_encoded)
-    example_context = {}
-    handler = LambdaAtEdge(event, example_context, {"api_gateway_base_path": "/"})
+    example_context = CONTEXT
+    handler = LambdaAtEdge(event, example_context, CONFIG)
 
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("192.168.100.1", 0),
         "headers": [
@@ -258,8 +270,10 @@ def test_aws_api_gateway_scope_real(
         ),
     ],
 )
-def test_aws_lambda_at_edge_response(method, content_type, raw_res_body, res_body, res_base64_encoded):
-    async def app(scope, receive, send):
+def test_aws_lambda_at_edge_response(
+    method: str, content_type: bytes, raw_res_body: bytes, res_body: str, res_base64_encoded: bool
+) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -273,7 +287,7 @@ def test_aws_lambda_at_edge_response(method, content_type, raw_res_body, res_bod
 
     handler = Mangum(app, lifespan="off")
 
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert response == {
         "status": 200,
         "isBase64Encoded": res_base64_encoded,
@@ -282,13 +296,13 @@ def test_aws_lambda_at_edge_response(method, content_type, raw_res_body, res_bod
     }
 
 
-def test_aws_lambda_at_edge_response_extra_mime_types():
+def test_aws_lambda_at_edge_response_extra_mime_types() -> None:
     content_type = b"application/x-yaml"
     utf_res_body = "name: 'John Doe'"
     raw_res_body = utf_res_body.encode()
     b64_res_body = "bmFtZTogJ0pvaG4gRG9lJw=="
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -302,7 +316,7 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
 
     # Test default behavior
     handler = Mangum(app, lifespan="off")
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert content_type.decode() not in handler.config["text_mime_types"]
     assert response == {
         "status": 200,
@@ -314,7 +328,7 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
     # Test with modified text mime types
     handler = Mangum(app, lifespan="off")
     handler.config["text_mime_types"].append(content_type.decode())
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert response == {
         "status": 200,
         "isBase64Encoded": False,
@@ -323,8 +337,8 @@ def test_aws_lambda_at_edge_response_extra_mime_types():
     }
 
 
-def test_aws_lambda_at_edge_exclude_():
-    async def app(scope, receive, send):
+def test_aws_lambda_at_edge_exclude_() -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -341,7 +355,7 @@ def test_aws_lambda_at_edge_exclude_():
 
     handler = Mangum(app, lifespan="off", exclude_headers=["x-custom-header"])
 
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert response == {
         "status": 200,
         "isBase64Encoded": False,

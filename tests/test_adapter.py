@@ -1,5 +1,6 @@
 import asyncio
 import threading
+from typing import Any
 
 import pytest
 
@@ -9,10 +10,10 @@ from mangum.exceptions import ConfigurationError
 from mangum.types import Receive, Scope, Send
 
 
-async def app(scope: Scope, receive: Receive, send: Send): ...
+async def app(scope: Scope, receive: Receive, send: Send) -> None: ...
 
 
-def test_default_settings():
+def test_default_settings() -> None:
     handler = Mangum(app)
     assert handler.lifespan == "auto"
     assert handler.config["api_gateway_base_path"] == "/"
@@ -29,14 +30,14 @@ def test_default_settings():
         ),
     ],
 )
-def test_invalid_options(arguments, message):
+def test_invalid_options(arguments: dict[str, Any], message: str) -> None:
     with pytest.raises(ConfigurationError) as exc:
         Mangum(app, **arguments)
 
     assert str(exc.value) == message
 
 
-def test_event_loop_created_when_missing():
+def test_event_loop_created_when_missing() -> None:
     result: dict[str, Mangum] = {}
 
     def create_handler() -> None:
@@ -50,7 +51,7 @@ def test_event_loop_created_when_missing():
     assert result["handler"].lifespan == "auto"
 
 
-def test_event_loop_reused_when_present():
+def test_event_loop_reused_when_present() -> None:
     loop = asyncio.new_event_loop()
 
     def create_handler() -> None:

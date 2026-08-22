@@ -4,9 +4,9 @@ import base64
 import gzip
 import json
 import logging
-from typing import cast
+from typing import Any, cast
 
-import brotli
+import brotli  # type: ignore[import-untyped]
 import pytest
 from brotli_asgi import BrotliMiddleware
 from starlette.applications import Starlette
@@ -16,6 +16,10 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from mangum import Mangum
+from mangum.types import LambdaEvent, Receive, Scope, Send
+from tests.context import MockLambdaContext
+
+CONTEXT = MockLambdaContext()
 
 
 @pytest.mark.parametrize(
@@ -23,11 +27,11 @@ from mangum import Mangum
     [["GET", None, {"name": ["me", "you"]}]],
     indirect=True,
 )
-def test_http_response(mock_aws_api_gateway_event) -> None:
-    async def app(scope, receive, send):
+def test_http_response(mock_aws_api_gateway_event: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "body": None,
                 "headers": {
@@ -131,7 +135,7 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -142,13 +146,13 @@ def test_http_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
-def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
-    async def app(scope, receive, send):
+def test_http_exception_mid_response(mock_aws_api_gateway_event: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send({"type": "http.response.start", "status": 200})
         raise Exception()
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
 
     assert response == {
         "body": "Internal Server Error",
@@ -160,20 +164,20 @@ def test_http_exception_mid_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", None, None]], indirect=True)
-def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
+def test_http_exception_handler(mock_aws_api_gateway_event: LambdaEvent) -> None:
     path = cast(str, mock_aws_api_gateway_event["path"])
 
     async def all_exceptions(request: Request, exc: Exception) -> PlainTextResponse:
         return PlainTextResponse(content="Error!", status_code=500)
 
-    def homepage(request: Request):
+    def homepage(request: Request) -> PlainTextResponse:
         raise Exception()
         return PlainTextResponse("Hello, world!")  # pragma: no cover
 
     app = Starlette(exception_handlers={Exception: all_exceptions}, routes=[Route(path, homepage)])
 
     handler = Mangum(app)
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
 
     assert response == {
         "body": "Error!",
@@ -185,13 +189,13 @@ def test_http_exception_handler(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
-def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
-    async def app(scope, receive, send):
+def test_http_cycle_state(mock_aws_api_gateway_event: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
     assert response == {
         "body": "Internal Server Error",
         "headers": {"content-type": "text/plain; charset=utf-8"},
@@ -200,14 +204,14 @@ def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
         "statusCode": 500,
     }
 
-    async def app(scope, receive, send):
+    async def app_double_start(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send({"type": "http.response.start", "status": 200})
         await send({"type": "http.response.start", "status": 200})
 
-    handler = Mangum(app, lifespan="off")
+    handler = Mangum(app_double_start, lifespan="off")
 
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
     assert response == {
         "body": "Internal Server Error",
         "headers": {"content-type": "text/plain; charset=utf-8"},
@@ -218,10 +222,10 @@ def test_http_cycle_state(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
-def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
+def test_http_binary_gzip_response(mock_aws_api_gateway_event: LambdaEvent) -> None:
     body = json.dumps({"abc": "defg"})
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send(
             {
@@ -234,7 +238,7 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
         await send({"type": "http.response.body", "body": body.encode()})
 
     handler = Mangum(GZipMiddleware(app, minimum_size=1), lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
 
     assert response["isBase64Encoded"]
     assert response["headers"] == {
@@ -265,11 +269,11 @@ def test_http_binary_gzip_response(mock_aws_api_gateway_event) -> None:
     ],
     indirect=["mock_http_api_event_v2"],
 )
-def test_set_cookies_v2(mock_http_api_event_v2) -> None:
-    async def app(scope, receive, send):
+def test_set_cookies_v2(mock_http_api_event_v2: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "version": "2.0",
                 "routeKey": "$default",
@@ -350,7 +354,7 @@ def test_set_cookies_v2(mock_http_api_event_v2) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_api_event_v2, {})
+    response = handler(mock_http_api_event_v2, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -380,11 +384,11 @@ def test_set_cookies_v2(mock_http_api_event_v2) -> None:
     ],
     indirect=["mock_http_api_event_v1"],
 )
-def test_set_cookies_v1(mock_http_api_event_v1) -> None:
-    async def app(scope, receive, send):
+def test_set_cookies_v1(mock_http_api_event_v1: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope == {
             "asgi": {"version": "3.0", "spec_version": "2.0"},
-            "aws.context": {},
+            "aws.context": CONTEXT,
             "aws.event": {
                 "version": "1.0",
                 "routeKey": "$default",
@@ -463,7 +467,7 @@ def test_set_cookies_v1(mock_http_api_event_v1) -> None:
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_http_api_event_v1, {})
+    response = handler(mock_http_api_event_v1, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -474,8 +478,8 @@ def test_set_cookies_v1(mock_http_api_event_v1) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
-def test_http_empty_header(mock_aws_api_gateway_event) -> None:
-    async def app(scope, receive, send):
+def test_http_empty_header(mock_aws_api_gateway_event: LambdaEvent) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send(
             {
@@ -490,7 +494,7 @@ def test_http_empty_header(mock_aws_api_gateway_event) -> None:
 
     mock_aws_api_gateway_event["headers"] = None
 
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -526,12 +530,12 @@ def test_http_empty_header(mock_aws_api_gateway_event) -> None:
     indirect=["mock_aws_api_gateway_event"],
 )
 def test_http_response_headers(
-    mock_aws_api_gateway_event,
-    response_headers,
-    expected_headers,
-    expected_multi_value_headers,
-):
-    async def app(scope, receive, send):
+    mock_aws_api_gateway_event: LambdaEvent,
+    response_headers: list[list[bytes]],
+    expected_headers: dict[str, str],
+    expected_multi_value_headers: dict[str, list[str]],
+) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -542,8 +546,8 @@ def test_http_response_headers(
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
-    expected = {
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
+    expected: dict[str, Any] = {
         "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {"content-type": "text/plain; charset=utf-8"},
@@ -558,10 +562,10 @@ def test_http_response_headers(
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", "", None]], indirect=True)
-def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
+def test_http_binary_br_response(mock_aws_api_gateway_event: LambdaEvent) -> None:
     body = json.dumps({"abc": "defg"})
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send(
             {
@@ -574,7 +578,7 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
         await send({"type": "http.response.body", "body": body.encode()})
 
     handler = Mangum(BrotliMiddleware(app, minimum_size=1), lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
 
     assert response["isBase64Encoded"]
     assert response["headers"] == {
@@ -587,10 +591,10 @@ def test_http_binary_br_response(mock_aws_api_gateway_event) -> None:
 
 
 @pytest.mark.parametrize("mock_aws_api_gateway_event", [["GET", b"", None]], indirect=True)
-def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixture) -> None:
+def test_http_logging(mock_aws_api_gateway_event: LambdaEvent, caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO)
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         assert scope["type"] == "http"
         await send(
             {
@@ -603,7 +607,7 @@ def test_http_logging(mock_aws_api_gateway_event, caplog: pytest.LogCaptureFixtu
         await send({"type": "http.response.body", "body": b"Hello, world!"})
 
     handler = Mangum(app, lifespan="off")
-    response = handler(mock_aws_api_gateway_event, {})
+    response = handler(mock_aws_api_gateway_event, CONTEXT)
 
     assert response == {
         "statusCode": 200,

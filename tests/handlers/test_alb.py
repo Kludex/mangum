@@ -10,17 +10,23 @@ import pytest
 
 from mangum import Mangum
 from mangum.handlers.alb import ALB
+from mangum.types import LambdaConfig, LambdaEvent, QueryParams, Receive, Scope, Send
+from tests.context import MockLambdaContext
+
+CONTEXT = MockLambdaContext()
+
+CONFIG = LambdaConfig(api_gateway_base_path="/", text_mime_types=[], exclude_headers=[])
 
 
 def get_mock_aws_alb_event(
-    method,
-    path,
-    query_parameters: dict[str, list[str]] | None,
+    method: str,
+    path: str,
+    query_parameters: QueryParams | None,
     headers: dict[str, list[str]] | None,
-    body,
-    body_base64_encoded,
+    body: str | bytes | None,
+    body_base64_encoded: bool,
     multi_value_headers: bool,
-):
+) -> LambdaEvent:
     """Return a mock AWS ELB event.
 
     The `query_parameters` parameter must be given in the
@@ -31,7 +37,7 @@ def get_mock_aws_alb_event(
     If `headers` is None, then some defaults will be used.
     if `query_parameters` is None, then no query parameters will be used.
     """
-    resp = {
+    resp: LambdaEvent = {
         "requestContext": {
             "elb": {
                 "targetGroupArn": (
@@ -74,8 +80,8 @@ def get_mock_aws_alb_event(
         resp["multiValueHeaders"] = headers
     else:
         # Take the last query parameter/cookie (per AWS docs for ALB/lambda)
-        resp["queryStringParameters"] = {k: (v[-1] if len(v) > 0 else []) for k, v in query_parameters.items()}
-        resp["headers"] = {k: (v[-1] if len(v) > 0 else []) for k, v in headers.items()}
+        resp["queryStringParameters"] = {k: (v[-1] if len(v) > 0 else "") for k, v in query_parameters.items()}
+        resp["headers"] = {k: (v[-1] if len(v) > 0 else "") for k, v in headers.items()}
 
     return resp
 
@@ -174,16 +180,16 @@ def get_mock_aws_alb_event(
     ],
 )
 def test_aws_alb_scope_real(
-    method,
-    path,
-    query_parameters,
-    headers,
-    req_body,
-    body_base64_encoded,
-    query_string,
-    scope_body,
-    multi_value_headers,
-):
+    method: str,
+    path: str,
+    query_parameters: QueryParams | None,
+    headers: dict[str, list[str]] | None,
+    req_body: str | bytes | None,
+    body_base64_encoded: bool,
+    query_string: bytes,
+    scope_body: bytes | None,
+    multi_value_headers: bool,
+) -> None:
     event = get_mock_aws_alb_event(
         method,
         path,
@@ -193,8 +199,8 @@ def test_aws_alb_scope_real(
         body_base64_encoded,
         multi_value_headers,
     )
-    example_context = {}
-    handler = ALB(event, example_context, {"api_gateway_base_path": "/"})
+    example_context = CONTEXT
+    handler = ALB(event, example_context, CONFIG)
 
     scope_path = path
     if scope_path == "":
@@ -203,7 +209,7 @@ def test_aws_alb_scope_real(
     assert isinstance(handler.body, bytes)
     assert handler.scope == {
         "asgi": {"version": "3.0", "spec_version": "2.0"},
-        "aws.context": {},
+        "aws.context": CONTEXT,
         "aws.event": event,
         "client": ("72.12.164.125", 0),
         "headers": [
@@ -245,8 +251,8 @@ def test_aws_alb_scope_real(
 
 
 @pytest.mark.parametrize("multi_value_headers_enabled", (True, False))
-def test_aws_alb_set_cookies(multi_value_headers_enabled) -> None:
-    async def app(scope, receive, send):
+def test_aws_alb_set_cookies(multi_value_headers_enabled: bool) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -262,7 +268,7 @@ def test_aws_alb_set_cookies(multi_value_headers_enabled) -> None:
 
     handler = Mangum(app, lifespan="off")
     event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, multi_value_headers_enabled)
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
 
     expected_response = {
         "statusCode": 200,
@@ -299,8 +305,10 @@ def test_aws_alb_set_cookies(multi_value_headers_enabled) -> None:
         ),
     ],
 )
-def test_aws_alb_response(method, content_type, raw_res_body, res_body, res_base64_encoded):
-    async def app(scope, receive, send):
+def test_aws_alb_response(
+    method: str, content_type: bytes, raw_res_body: bytes, res_body: str, res_base64_encoded: bool
+) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -314,7 +322,7 @@ def test_aws_alb_response(method, content_type, raw_res_body, res_body, res_base
 
     handler = Mangum(app, lifespan="off")
 
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": res_base64_encoded,
@@ -323,13 +331,13 @@ def test_aws_alb_response(method, content_type, raw_res_body, res_body, res_base
     }
 
 
-def test_aws_alb_response_extra_mime_types():
+def test_aws_alb_response_extra_mime_types() -> None:
     content_type = b"application/x-yaml"
     utf_res_body = "name: 'John Doe'"
     raw_res_body = utf_res_body.encode()
     b64_res_body = "bmFtZTogJ0pvaG4gRG9lJw=="
 
-    async def app(scope, receive, send):
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -343,7 +351,7 @@ def test_aws_alb_response_extra_mime_types():
 
     # Test default behavior
     handler = Mangum(app, lifespan="off")
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert content_type.decode() not in handler.config["text_mime_types"]
     assert response == {
         "statusCode": 200,
@@ -355,7 +363,7 @@ def test_aws_alb_response_extra_mime_types():
     # Test with modified text mime types
     handler = Mangum(app, lifespan="off")
     handler.config["text_mime_types"].append(content_type.decode())
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
     assert response == {
         "statusCode": 200,
         "isBase64Encoded": False,
@@ -365,8 +373,8 @@ def test_aws_alb_response_extra_mime_types():
 
 
 @pytest.mark.parametrize("multi_value_headers_enabled", (True, False))
-def test_aws_alb_exclude_headers(multi_value_headers_enabled) -> None:
-    async def app(scope, receive, send):
+def test_aws_alb_exclude_headers(multi_value_headers_enabled: bool) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
         await send(
             {
                 "type": "http.response.start",
@@ -381,7 +389,7 @@ def test_aws_alb_exclude_headers(multi_value_headers_enabled) -> None:
 
     handler = Mangum(app, lifespan="off", exclude_headers=["x-custom-header"])
     event = get_mock_aws_alb_event("GET", "/test", {}, None, None, False, multi_value_headers_enabled)
-    response = handler(event, {})
+    response = handler(event, CONTEXT)
 
     expected_response = {
         "statusCode": 200,

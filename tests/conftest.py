@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 import boto3
 import pytest
 
+from mangum.types import LambdaEvent
+
 if TYPE_CHECKING:
     from testcontainers.community.localstack import LocalStackContainer
 
@@ -17,7 +19,7 @@ APP_DIR = Path(__file__).parent / "lambda_app"
 
 
 @pytest.fixture
-def mock_aws_api_gateway_event(request: pytest.FixtureRequest):
+def mock_aws_api_gateway_event(request: pytest.FixtureRequest) -> LambdaEvent:
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
@@ -76,12 +78,12 @@ def mock_aws_api_gateway_event(request: pytest.FixtureRequest):
 
 
 @pytest.fixture
-def mock_http_api_event_v2(request: pytest.FixtureRequest):
+def mock_http_api_event_v2(request: pytest.FixtureRequest) -> LambdaEvent:
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
     query_string = request.param[3]
-    event = {
+    event: LambdaEvent = {
         "version": "2.0",
         "routeKey": "$default",
         "rawPath": "/my/path",
@@ -130,12 +132,12 @@ def mock_http_api_event_v2(request: pytest.FixtureRequest):
 
 
 @pytest.fixture
-def mock_http_api_event_v1(request: pytest.FixtureRequest):
+def mock_http_api_event_v1(request: pytest.FixtureRequest) -> LambdaEvent:
     method = request.param[0]
     body = request.param[1]
     multi_value_query_parameters = request.param[2]
     query_string = request.param[3]
-    event = {
+    event: LambdaEvent = {
         "version": "1.0",
         "routeKey": "$default",
         "rawPath": "/my/path",
