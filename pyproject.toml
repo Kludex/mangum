@@ -30,7 +30,7 @@ dev = [
     "pytest>=8.0.0",
     "coverage",
     "ruff",
-    "starlette",
+    "starlette>=1.0",
     "quart>=0.20.0",
     "hypercorn>=0.15.0",
     "mypy",
@@ -76,7 +76,6 @@ xfail_strict = true
 filterwarnings = [
     # Turn warnings that aren't filtered into exceptions
     "error",
-    "ignore::DeprecationWarning:starlette",
     # testcontainers calls its own deprecated wait_for_logs API during container startup
     "ignore: The wait_for_logs function with string or callable predicates is deprecated.*:DeprecationWarning",
     "ignore: There is no current event loop:DeprecationWarning",

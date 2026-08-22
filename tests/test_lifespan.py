@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Literal, cast
 
 import pytest
@@ -6,6 +8,7 @@ from quart import Quart
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 
 from mangum import Mangum
 from mangum.exceptions import LifespanFailure
@@ -269,21 +272,18 @@ def test_starlette_lifespan(mock_aws_api_gateway_event: LambdaEvent) -> None:
     shutdown_complete = False
 
     path = mock_aws_api_gateway_event["path"]
-    app = Starlette()
 
-    @app.on_event("startup")
-    async def on_startup() -> None:
-        nonlocal startup_complete
+    @asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[None]:
+        nonlocal startup_complete, shutdown_complete
         startup_complete = True
-
-    @app.on_event("shutdown")
-    async def on_shutdown() -> None:
-        nonlocal shutdown_complete
+        yield
         shutdown_complete = True
 
-    @app.route(path)
     def homepage(request: Request) -> PlainTextResponse:
         return PlainTextResponse("Hello, world!")
+
+    app = Starlette(lifespan=lifespan, routes=[Route(path, homepage)])
 
     assert not startup_complete
     assert not shutdown_complete

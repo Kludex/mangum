@@ -764,7 +764,7 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "quart", specifier = ">=0.20.0" },
     { name = "ruff" },
-    { name = "starlette" },
+    { name = "starlette", specifier = ">=1.0" },
     { name = "testcontainers", extras = ["localstack"], specifier = ">=4.15.0" },
     { name = "types-boto3", specifier = ">=1.43.78" },
 ]
