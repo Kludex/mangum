@@ -39,14 +39,13 @@ dev = [
     "mkautodoc",
     "mkdocs>=1.6.0; python_version >= '3.12'",
     "mkdocs-material; python_version >= '3.12'",
-]
-localstack = [
-    "boto3>=1.42.97",
-    "requests>=2.32.5",
-    "testcontainers[localstack]>=4.13.0",
-    "types-boto3>=1.43.78",
+    "testcontainers[localstack]>=4.15.0",
+    "boto3>=1.43.78",
+    "requests>=2.33.0",
     "types-requests>=2.33.0.20260712",
+    "types-boto3>=1.43.78",
 ]
+localstack = []
 
 [project.urls]
 Homepage = "https://github.com/Kludex/mangum"
@@ -73,7 +72,7 @@ ignore = ["UP031"] # https://docs.astral.sh/ruff/rules/printf-string-formatting/
 strict = true
 
 [tool.pytest.ini_options]
-addopts = "-rXs --strict-config --strict-markers --ignore=tests/localstack"
+addopts = "-rXs --strict-config --strict-markers"
 xfail_strict = true
 filterwarnings = [
     # Turn warnings that aren't filtered into exceptions
@@ -90,7 +89,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source_pkgs = ["mangum", "tests"]
-omit = ["tests/localstack/*"]
+omit = ["tests/lambda_app/*"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -100,6 +99,7 @@ exclude_lines = [
     "pragma: no cover",
     "pragma: nocover",
     "if typing.TYPE_CHECKING:",
+    "if TYPE_CHECKING:",
     "@typing.overload",
     "raise NotImplementedError",
 ]

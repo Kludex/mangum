@@ -1,5 +1,0 @@
-#!/bin/sh -e
-
-set -x
-
-uv run --group localstack pytest tests/localstack --override-ini addopts="" "${@}"

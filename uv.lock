@@ -689,6 +689,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "boto3" },
     { name = "brotli" },
     { name = "brotli-asgi" },
     { name = "coverage" },
@@ -699,12 +700,9 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "quart" },
+    { name = "requests" },
     { name = "ruff" },
     { name = "starlette" },
-]
-localstack = [
-    { name = "boto3" },
-    { name = "requests" },
     { name = "testcontainers", extra = ["localstack"] },
     { name = "types-boto3" },
     { name = "types-requests" },
@@ -715,6 +713,7 @@ requires-dist = [{ name = "typing-extensions" }]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "boto3", specifier = ">=1.43.78" },
     { name = "brotli" },
     { name = "brotli-asgi", specifier = ">=1.6.0" },
     { name = "coverage" },
@@ -725,16 +724,14 @@ dev = [
     { name = "mypy" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "quart", specifier = ">=0.20.0" },
+    { name = "requests", specifier = ">=2.33.0" },
     { name = "ruff" },
     { name = "starlette" },
-]
-localstack = [
-    { name = "boto3", specifier = ">=1.42.97" },
-    { name = "requests", specifier = ">=2.32.5" },
-    { name = "testcontainers", extras = ["localstack"], specifier = ">=4.13.0" },
+    { name = "testcontainers", extras = ["localstack"], specifier = ">=4.15.0" },
     { name = "types-boto3", specifier = ">=1.43.78" },
     { name = "types-requests", specifier = ">=2.33.0.20260712" },
 ]
+localstack = []
 
 [[package]]
 name = "markdown"
