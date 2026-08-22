@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+import json
+
 from mangum import Mangum
 from mangum.types import Receive, Scope, Send
 
+LIFESPAN_STATE = {"startup_complete": False}
+
 
 async def app(scope: Scope, receive: Receive, send: Send) -> None:
+    if scope["type"] == "lifespan":
+        while True:
+            message = await receive()
+            if message["type"] == "lifespan.startup":
+                LIFESPAN_STATE["startup_complete"] = True
+                await send({"type": "lifespan.startup.complete"})
+            elif message["type"] == "lifespan.shutdown":
+                await send({"type": "lifespan.shutdown.complete"})
+                return
+
     assert scope["type"] == "http"
     body = bytearray()
     while True:
@@ -13,12 +27,15 @@ async def app(scope: Scope, receive: Receive, send: Send) -> None:
         if not message.get("more_body", False):
             break
 
-    response_body = b'{"method": "%s", "path": "%s", "query": "%s", "body_length": %d}' % (
-        scope["method"].encode(),
-        scope["path"].encode(),
-        scope["query_string"],
-        len(body),
-    )
+    response_body = json.dumps(
+        {
+            "method": scope["method"],
+            "path": scope["path"],
+            "query": scope["query_string"].decode(),
+            "body_length": len(body),
+            "lifespan_startup_complete": LIFESPAN_STATE["startup_complete"],
+        }
+    ).encode()
     await send(
         {
             "type": "http.response.start",
@@ -26,7 +43,7 @@ async def app(scope: Scope, receive: Receive, send: Send) -> None:
             "headers": [[b"content-type", b"application/json"], [b"x-echo", b"mangum"]],
         }
     )
-    await send({"type": "http.response.body", "body": bytes(response_body)})
+    await send({"type": "http.response.body", "body": response_body})
 
 
-handler = Mangum(app, lifespan="off")
+handler = Mangum(app, lifespan="auto")

@@ -1,5 +1,6 @@
 import urllib.parse
 
+import httpx2
 import pytest
 
 from mangum import Mangum
@@ -427,4 +428,32 @@ def test_aws_api_gateway_exclude_headers() -> None:
         "headers": {"content-type": b"text/plain; charset=utf-8".decode()},
         "multiValueHeaders": {},
         "body": "Hello world",
+    }
+
+
+def test_aws_api_gateway_real_lambda_get(rest_api_url: str) -> None:
+    response = httpx2.get(f"{rest_api_url}test/path", params={"hello": "world"}, timeout=60)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json"
+    assert response.headers["x-echo"] == "mangum"
+    assert response.json() == {
+        "method": "GET",
+        "path": "/test/path",
+        "query": "hello=world",
+        "body_length": 0,
+        "lifespan_startup_complete": True,
+    }
+
+
+def test_aws_api_gateway_real_lambda_post(rest_api_url: str) -> None:
+    response = httpx2.post(f"{rest_api_url}submit", content=b"say=Hi&to=Mom", timeout=60)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "method": "POST",
+        "path": "/submit",
+        "query": "",
+        "body_length": 13,
+        "lifespan_startup_complete": True,
     }
