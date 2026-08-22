@@ -1,3 +1,16 @@
+# 0.22.0
+
+* Add Python 3.15 support by @Kludex in https://github.com/Kludex/mangum/pull/404
+* Drop Python 3.9 support by @Kludex in https://github.com/Kludex/mangum/pull/393
+* Add LocalStack integration tests via testcontainers by @Kludex in https://github.com/Kludex/mangum/pull/400
+* Add API Gateway REST v1 and lifespan end-to-end coverage by @Kludex in https://github.com/Kludex/mangum/pull/401
+* Enforce strict type hints on the test suite by @Kludex in https://github.com/Kludex/mangum/pull/399
+* Use pyproject.toml for coverage config and close test coverage gaps by @Kludex in https://github.com/Kludex/mangum/pull/398
+* Bump starlette to 1.3.1 and require starlette>=1.0 by @Kludex in https://github.com/Kludex/mangum/pull/402
+* Add external link for deploying FastAPI to AWS Lambda by @aminalaee in https://github.com/Kludex/mangum/pull/389
+* Remove dead external docs link by @Kludex in https://github.com/Kludex/mangum/pull/387
+* Remove SECURITY.md by @Kludex in https://github.com/Kludex/mangum/pull/394
+
 # 0.21.0
 
 This release reverted the previous attempt on support Python 3.14 because it was
