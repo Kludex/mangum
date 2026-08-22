@@ -40,6 +40,13 @@ dev = [
     "mkdocs>=1.6.0; python_version >= '3.12'",
     "mkdocs-material; python_version >= '3.12'",
 ]
+localstack = [
+    "boto3>=1.42.97",
+    "requests>=2.32.5",
+    "testcontainers[localstack]>=4.13.0",
+    "types-boto3>=1.43.78",
+    "types-requests>=2.33.0.20260712",
+]
 
 [project.urls]
 Homepage = "https://github.com/Kludex/mangum"
@@ -66,12 +73,13 @@ ignore = ["UP031"] # https://docs.astral.sh/ruff/rules/printf-string-formatting/
 strict = true
 
 [tool.pytest.ini_options]
-addopts = "-rXs --strict-config --strict-markers"
+addopts = "-rXs --strict-config --strict-markers --ignore=tests/localstack"
 xfail_strict = true
 filterwarnings = [
     # Turn warnings that aren't filtered into exceptions
     "error",
     "ignore::DeprecationWarning:starlette",
+    "ignore::DeprecationWarning:testcontainers",
     "ignore: There is no current event loop:DeprecationWarning",
     "ignore: 'pkgutil.get_loader' is deprecated.*:DeprecationWarning",
     "ignore: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
@@ -82,6 +90,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source_pkgs = ["mangum", "tests"]
+omit = ["tests/localstack/*"]
 
 [tool.coverage.report]
 fail_under = 100
