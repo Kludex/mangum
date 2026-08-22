@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from testcontainers.community.localstack import LocalStackContainer
 
 PROJECT_ROOT = Path(__file__).parent.parent
-APP_DIR = Path(__file__).parent / "lambda_app"
+ECHO_LAMBDA_DIR = Path(__file__).parent / "echo_lambda"
 
 
 @pytest.fixture
@@ -193,7 +193,7 @@ def build_lambda_zip() -> bytes:
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for source_dir, prefix in [
             (PROJECT_ROOT / "mangum", "mangum"),
-            (APP_DIR, ""),
+            (ECHO_LAMBDA_DIR, ""),
         ]:
             for path in source_dir.rglob("*.py"):
                 archive.write(path, f"{prefix}/{path.relative_to(source_dir)}" if prefix else path.name)
@@ -230,7 +230,7 @@ def function_url(localstack: LocalStackContainer, lambda_client: Any) -> str:
         FunctionName="mangum-echo",
         Runtime="python3.12",
         Role="arn:aws:iam::000000000000:role/lambda-role",
-        Handler="main.handler",
+        Handler="echo_handler.handler",
         Code={"ZipFile": build_lambda_zip()},
         Timeout=30,
     )

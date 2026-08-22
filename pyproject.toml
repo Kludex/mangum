@@ -78,7 +78,8 @@ filterwarnings = [
     # Turn warnings that aren't filtered into exceptions
     "error",
     "ignore::DeprecationWarning:starlette",
-    "ignore::DeprecationWarning:testcontainers",
+    # testcontainers calls its own deprecated wait_for_logs API during container startup
+    "ignore: The wait_for_logs function with string or callable predicates is deprecated.*:DeprecationWarning",
     "ignore: There is no current event loop:DeprecationWarning",
     "ignore: 'pkgutil.get_loader' is deprecated.*:DeprecationWarning",
     "ignore: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
@@ -89,7 +90,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source_pkgs = ["mangum", "tests"]
-omit = ["tests/lambda_app/*"]
+omit = ["tests/echo_lambda/*"]
 
 [tool.coverage.report]
 fail_under = 100
