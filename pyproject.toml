@@ -41,9 +41,8 @@ dev = [
     "mkdocs-material; python_version >= '3.12'",
     "testcontainers[localstack]>=4.15.0",
     "boto3>=1.43.78",
-    "requests>=2.33.0",
-    "types-requests>=2.33.0.20260712",
     "types-boto3>=1.43.78",
+    "httpx2>=2.12.0",
 ]
 localstack = []
 
