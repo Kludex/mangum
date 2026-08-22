@@ -225,7 +225,7 @@ def lambda_client(localstack: LocalStackContainer) -> Any:
 
 
 @pytest.fixture(scope="session")
-def function_url(localstack: LocalStackContainer, lambda_client: Any) -> str:
+def echo_function_arn(lambda_client: Any) -> str:
     lambda_client.create_function(
         FunctionName="mangum-echo",
         Runtime="python3.12",
@@ -235,7 +235,41 @@ def function_url(localstack: LocalStackContainer, lambda_client: Any) -> str:
         Timeout=30,
     )
     lambda_client.get_waiter("function_active_v2").wait(FunctionName="mangum-echo")
+    return str(lambda_client.get_function(FunctionName="mangum-echo")["Configuration"]["FunctionArn"])
+
+
+@pytest.fixture(scope="session")
+def function_url(localstack: LocalStackContainer, lambda_client: Any, echo_function_arn: str) -> str:
     response = lambda_client.create_function_url_config(FunctionName="mangum-echo", AuthType="NONE")
     url = str(response["FunctionUrl"])
     host_port = localstack.get_exposed_port(localstack.edge_port)
     return url.replace(":4566", f":{host_port}")
+
+
+@pytest.fixture(scope="session")
+def rest_api_url(localstack: LocalStackContainer, echo_function_arn: str) -> str:
+    apigateway = boto3.client(
+        "apigateway",
+        endpoint_url=localstack.get_url(),
+        region_name=localstack.region_name,
+        aws_access_key_id="testcontainers-localstack",
+        aws_secret_access_key="testcontainers-localstack",
+    )
+    rest_api_id = apigateway.create_rest_api(name="mangum-echo")["id"]
+    root_id = apigateway.get_resources(restApiId=rest_api_id)["items"][0]["id"]
+    proxy_id = apigateway.create_resource(restApiId=rest_api_id, parentId=root_id, pathPart="{proxy+}")["id"]
+    for resource_id in (root_id, proxy_id):
+        apigateway.put_method(restApiId=rest_api_id, resourceId=resource_id, httpMethod="ANY", authorizationType="NONE")
+        apigateway.put_integration(
+            restApiId=rest_api_id,
+            resourceId=resource_id,
+            httpMethod="ANY",
+            type="AWS_PROXY",
+            integrationHttpMethod="POST",
+            uri=(
+                f"arn:aws:apigateway:{localstack.region_name}:lambda:path/2015-03-31"
+                f"/functions/{echo_function_arn}/invocations"
+            ),
+        )
+    apigateway.create_deployment(restApiId=rest_api_id, stageName="test")
+    return f"{localstack.get_url()}/restapis/{rest_api_id}/test/_user_request_/"

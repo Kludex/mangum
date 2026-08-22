@@ -687,6 +687,7 @@ def test_aws_http_gateway_real_lambda_get(function_url: str) -> None:
         "path": "/test/path",
         "query": "hello=world",
         "body_length": 0,
+        "lifespan_startup_complete": True,
     }
 
 
@@ -699,4 +700,5 @@ def test_aws_http_gateway_real_lambda_post(function_url: str) -> None:
         "path": "/submit",
         "query": "",
         "body_length": 13,
+        "lifespan_startup_complete": True,
     }
