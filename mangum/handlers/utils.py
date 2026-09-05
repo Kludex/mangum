@@ -18,7 +18,18 @@ def maybe_encode_body(body: str | bytes, *, is_base64: bool) -> bytes:
 
 
 def get_server_and_port(headers: dict[str, Any]) -> tuple[str, int]:
-    server_name = headers.get("host", "mangum")
+    # Proxy chains (e.g. CloudFront in front of a Lambda Function URL) preserve
+    # the original request host only in `x-forwarded-host`, while `host` is
+    # rewritten to the proxy endpoint. Prefer the forwarded host so ASGI
+    # applications build correct absolute URLs, and keep the `host` header
+    # consistent for frameworks that derive URLs from it (e.g. Starlette).
+    forwarded_host = headers.get("x-forwarded-host")
+    if forwarded_host:
+        server_name = forwarded_host.split(",")[0].strip()
+        headers["host"] = server_name
+    else:
+        server_name = headers.get("host", "mangum")
+
     if ":" not in server_name:
         server_port = headers.get("x-forwarded-port", 80)
     else:
