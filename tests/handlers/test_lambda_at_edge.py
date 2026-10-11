@@ -362,3 +362,35 @@ def test_aws_lambda_at_edge_exclude_() -> None:
         "headers": {"content-type": [{"key": "content-type", "value": b"text/plain; charset=utf-8".decode()}]},
         "body": "Hello world",
     }
+
+
+@pytest.mark.parametrize("exclude_headers", [[], ["set-cookie"]])
+def test_aws_lambda_at_edge_response_multiple_cookies(exclude_headers: list[str]) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"text/plain"],
+                    [b"set-cookie", b"session=first; Path=/; HttpOnly"],
+                    [b"Set-Cookie", b"preferences=second; Path=/"],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"Hello world"})
+
+    event = mock_lambda_at_edge_event("GET", "/test", {}, None, False)
+    response = Mangum(app, lifespan="off", exclude_headers=exclude_headers)(event, CONTEXT)
+    expected_headers = {"content-type": [{"key": "content-type", "value": "text/plain"}]}
+    if not exclude_headers:
+        expected_headers["set-cookie"] = [
+            {"key": "set-cookie", "value": "session=first; Path=/; HttpOnly"},
+            {"key": "set-cookie", "value": "preferences=second; Path=/"},
+        ]
+    assert response == {
+        "status": 200,
+        "isBase64Encoded": False,
+        "headers": expected_headers,
+        "body": "Hello world",
+    }

@@ -73,10 +73,10 @@ class LambdaAtEdge:
         response_body, is_base64_encoded = handle_base64_response_body(
             response["body"], multi_value_headers, self.config["text_mime_types"]
         )
-        finalized_headers: dict[str, list[dict[str, str]]] = {
-            key.decode().lower(): [{"key": key.decode().lower(), "value": val.decode()}]
-            for key, val in response["headers"]
-        }
+        finalized_headers: dict[str, list[dict[str, str]]] = {}
+        for key, val in response["headers"]:
+            name = key.decode().lower()
+            finalized_headers.setdefault(name, []).append({"key": name, "value": val.decode()})
 
         return {
             "status": response["status"],
